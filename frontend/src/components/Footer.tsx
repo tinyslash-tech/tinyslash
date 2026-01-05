@@ -23,16 +23,13 @@ const Footer: React.FC = () => {
             </p>
             <div className="space-y-3">
               <div className="flex items-center text-gray-300">
-                <span className="text-blue-400 mr-3">✉</span>
-                <span className="text-white font-medium">hello@tinyslash.com</span>
+                <span className="text-white font-medium">info@tinyslash.com</span>
               </div>
               <div className="flex items-center text-gray-300">
-                <span className="text-blue-400 mr-3">📞</span>
                 <span className="text-white font-medium">+91 91829 28956</span>
               </div>
               <div className="flex items-center text-gray-300">
-                <span className="text-blue-400 mr-3">📍</span>
-                <span className="text-white font-medium">Jaipur, Rajasthan</span>
+                <span className="text-white font-medium">Hyderabad, Telangana</span>
               </div>
             </div>
           </div>
@@ -47,8 +44,8 @@ const Footer: React.FC = () => {
                   className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block"
                 >
                   Pricing
-                  </Link>
-                </li>
+                </Link>
+              </li>
               <li>
                 <Link
                   to="/dashboard"
@@ -94,8 +91,8 @@ const Footer: React.FC = () => {
                   className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block"
                 >
                   Privacy Policy
-                  </Link>
-                </li>
+                </Link>
+              </li>
               <li>
                 <Link
                   to="/terms"
@@ -129,7 +126,7 @@ const Footer: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-300 text-lg mb-4 md:mb-0">
               © 2025 <span className="text-white font-semibold">TinySlash</span>. All rights reserved.
-          </p>
+            </p>
             <div className="flex space-x-8">
               <Link
                 to="/privacy"

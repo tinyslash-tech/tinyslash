@@ -39,11 +39,14 @@ public class JobDataInitializer {
                         createCollectionIfNotExist("shortened_urls");
                         createCollectionIfNotExist("click_analytics");
                         createCollectionIfNotExist("subscriptions");
-                        createCollectionIfNotExist("files");
+                        createCollectionIfNotExist("uploaded_files");
                         createCollectionIfNotExist("support_tickets");
                         createCollectionIfNotExist("domains");
                         createCollectionIfNotExist("coupons");
                         createCollectionIfNotExist("qr_codes");
+                        createCollectionIfNotExist("employees");
+                        createCollectionIfNotExist("team_invites");
+                        createCollectionIfNotExist("job_applications");
 
                         // Seed Admin User
                         com.urlshortener.model.User admin;

@@ -12,20 +12,58 @@ import java.util.HashMap;
 @RequestMapping("/api/v1/subscription")
 @CrossOrigin(origins = "*")
 public class SubscriptionController {
-    
+
     @Autowired
     private SubscriptionService subscriptionService;
-    
+
+    /**
+     * Get all subscriptions (Admin only)
+     */
+    @GetMapping("/admin/all")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getAllSubscriptions() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            java.util.List<com.urlshortener.model.Subscription> subscriptions = subscriptionService
+                    .getAllSubscriptions();
+
+            // Map to response DTOs
+            java.util.List<Map<String, Object>> subscriptionList = new java.util.ArrayList<>();
+            for (com.urlshortener.model.Subscription sub : subscriptions) {
+                Map<String, Object> subMap = new HashMap<>();
+                subMap.put("id", sub.getId());
+                subMap.put("userId", sub.getUserId());
+                subMap.put("planType", sub.getPlanType());
+                subMap.put("amount", sub.getAmountPaid());
+                subMap.put("currency", sub.getCurrency());
+                subMap.put("paymentId", sub.getPaymentId());
+                subMap.put("orderId", sub.getOrderId());
+                subMap.put("status", sub.isActive() ? "Active" : "Inactive");
+                subMap.put("createdAt", sub.getCreatedAt());
+                subMap.put("expiresAt", sub.getExpiresAt());
+                subscriptionList.add(subMap);
+            }
+
+            response.put("success", true);
+            response.put("data", subscriptionList);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to fetch subscriptions: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     /**
      * Get user's current plan information
      */
     @GetMapping("/plan/{userId}")
     public ResponseEntity<Map<String, Object>> getUserPlan(@PathVariable String userId) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             UserPlanInfo planInfo = subscriptionService.getUserPlanInfo(userId);
-            
+
             Map<String, Object> planData = new HashMap<>();
             planData.put("plan", planInfo.getPlan());
             planData.put("hasProAccess", planInfo.isHasPremiumAccess());
@@ -39,7 +77,7 @@ public class SubscriptionController {
             planData.put("remainingMonthlyQrCodes", planInfo.getRemainingMonthlyQrCodes());
             planData.put("remainingMonthlyFiles", planInfo.getRemainingMonthlyFiles());
             planData.put("maxFileSizeMB", planInfo.getMaxFileSizeMB());
-            
+
             // Feature access
             planData.put("canUseCustomAlias", subscriptionService.canUseCustomAlias(userId));
             planData.put("canUsePasswordProtection", subscriptionService.canUsePasswordProtection(userId));
@@ -47,30 +85,30 @@ public class SubscriptionController {
             planData.put("canUseCustomDomain", subscriptionService.canUseCustomDomain(userId));
             planData.put("canAccessDetailedAnalytics", subscriptionService.canAccessDetailedAnalytics(userId));
             planData.put("canCustomizeQrCodes", subscriptionService.canCustomizeQrCodes(userId));
-            
+
             response.put("success", true);
             response.put("data", planData);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to get plan information: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Check if user can perform specific action
      */
     @GetMapping("/check/{userId}/{action}")
     public ResponseEntity<Map<String, Object>> checkAccess(@PathVariable String userId, @PathVariable String action) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             boolean hasAccess = false;
             String message = "";
-            
+
             switch (action.toLowerCase()) {
                 case "create-url":
                     hasAccess = subscriptionService.canCreateUrl(userId);
@@ -79,7 +117,7 @@ public class SubscriptionController {
                         message = "Daily limit reached. You have " + remaining + " URLs remaining today.";
                     }
                     break;
-                    
+
                 case "create-qr":
                     hasAccess = subscriptionService.canCreateQrCode(userId);
                     if (!hasAccess) {
@@ -87,7 +125,7 @@ public class SubscriptionController {
                         message = "Daily limit reached. You have " + remaining + " QR codes remaining today.";
                     }
                     break;
-                    
+
                 case "upload-file":
                     hasAccess = subscriptionService.canUploadFile(userId);
                     if (!hasAccess) {
@@ -95,78 +133,78 @@ public class SubscriptionController {
                         message = "Daily limit reached. You have " + remaining + " file uploads remaining today.";
                     }
                     break;
-                    
+
                 case "custom-alias":
                     hasAccess = subscriptionService.canUseCustomAlias(userId);
                     if (!hasAccess) {
                         message = "Custom aliases are available with Premium plans.";
                     }
                     break;
-                    
+
                 case "password-protection":
                     hasAccess = subscriptionService.canUsePasswordProtection(userId);
                     if (!hasAccess) {
                         message = "Password protection is available with Premium plans.";
                     }
                     break;
-                    
+
                 case "expiration":
                     hasAccess = subscriptionService.canSetExpiration(userId);
                     if (!hasAccess) {
                         message = "Link expiration is available with Premium plans.";
                     }
                     break;
-                    
+
                 case "custom-domain":
                     hasAccess = subscriptionService.canUseCustomDomain(userId);
                     if (!hasAccess) {
                         message = "Custom domains are available with Premium plans.";
                     }
                     break;
-                    
+
                 case "detailed-analytics":
                     hasAccess = subscriptionService.canAccessDetailedAnalytics(userId);
                     if (!hasAccess) {
                         message = "Detailed analytics are available with Premium plans.";
                     }
                     break;
-                    
+
                 case "customize-qr":
                     hasAccess = subscriptionService.canCustomizeQrCodes(userId);
                     if (!hasAccess) {
                         message = "QR code customization is available with Premium plans.";
                     }
                     break;
-                    
+
                 default:
                     response.put("success", false);
                     response.put("message", "Unknown action: " + action);
                     return ResponseEntity.badRequest().body(response);
             }
-            
+
             response.put("success", true);
             response.put("hasAccess", hasAccess);
             response.put("message", message);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to check access: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Start trial for eligible user
      */
     @PostMapping("/trial/{userId}")
     public ResponseEntity<Map<String, Object>> startTrial(@PathVariable String userId) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             boolean started = subscriptionService.startTrial(userId);
-            
+
             if (started) {
                 response.put("success", true);
                 response.put("message", "Trial started successfully! You now have 1-day premium access.");
@@ -174,160 +212,161 @@ public class SubscriptionController {
                 response.put("success", false);
                 response.put("message", "You are not eligible for trial or have already used it.");
             }
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to start trial: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Upgrade user to premium plan
      */
     @PostMapping("/upgrade")
     public ResponseEntity<Map<String, Object>> upgradePlan(@RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) request.get("userId");
             String planType = (String) request.get("planType");
             String subscriptionId = (String) request.get("subscriptionId");
             String customerId = (String) request.get("customerId");
-            
+
             if (userId == null || planType == null) {
                 response.put("success", false);
                 response.put("message", "User ID and plan type are required");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             subscriptionService.upgradeToPremium(userId, planType, subscriptionId, customerId);
-            
+
             response.put("success", true);
             response.put("message", "Plan upgraded successfully to " + planType);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to upgrade plan: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Cancel user subscription
      */
     @PostMapping("/cancel/{userId}")
     public ResponseEntity<Map<String, Object>> cancelSubscription(@PathVariable String userId) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             boolean cancelled = subscriptionService.cancelSubscription(userId);
-            
+
             if (cancelled) {
                 response.put("success", true);
-                response.put("message", "Subscription cancelled successfully. You will retain access until the end of your billing period.");
+                response.put("message",
+                        "Subscription cancelled successfully. You will retain access until the end of your billing period.");
             } else {
                 response.put("success", false);
                 response.put("message", "No active subscription found to cancel.");
             }
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to cancel subscription: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Get pricing information
      */
     @GetMapping("/pricing")
     public ResponseEntity<Map<String, Object>> getPricing() {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             Map<String, Object> pricing = new HashMap<>();
-            
+
             // Free plan
             Map<String, Object> freePlan = new HashMap<>();
             freePlan.put("name", "Free");
             freePlan.put("price", 0);
             freePlan.put("currency", "INR");
             freePlan.put("period", "forever");
-            freePlan.put("features", new String[]{
-                "75 URLs per month",
-                "30 QR codes per month", 
-                "5 file conversions per month",
-                "Basic QR codes",
-                "5MB file uploads",
-                "Basic analytics",
-                "Community support"
+            freePlan.put("features", new String[] {
+                    "75 URLs per month",
+                    "30 QR codes per month",
+                    "5 file conversions per month",
+                    "Basic QR codes",
+                    "5MB file uploads",
+                    "Basic analytics",
+                    "Community support"
             });
-            
+
             // Premium Monthly
             Map<String, Object> monthlyPlan = new HashMap<>();
             monthlyPlan.put("name", "Premium Monthly");
             monthlyPlan.put("price", 299);
             monthlyPlan.put("currency", "INR");
             monthlyPlan.put("period", "month");
-            monthlyPlan.put("features", new String[]{
-                "100 URLs per day",
-                "60 QR codes per day",
-                "10 file uploads per day",
-                "Custom QR codes with logos",
-                "500MB file uploads",
-                "Detailed analytics",
-                "Custom aliases",
-                "Password protection",
-                "Link expiration",
-                "Custom domains",
-                "Priority support"
+            monthlyPlan.put("features", new String[] {
+                    "100 URLs per day",
+                    "60 QR codes per day",
+                    "10 file uploads per day",
+                    "Custom QR codes with logos",
+                    "500MB file uploads",
+                    "Detailed analytics",
+                    "Custom aliases",
+                    "Password protection",
+                    "Link expiration",
+                    "Custom domains",
+                    "Priority support"
             });
-            
+
             // Update monthly plan to Pro
             monthlyPlan.put("name", "Pro");
             monthlyPlan.put("monthlyPrice", 349);
             monthlyPlan.put("yearlyPrice", 2999);
-            monthlyPlan.put("features", new String[]{
-                "Unlimited URLs & QR codes",
-                "50 file conversions/month",
-                "Advanced analytics",
-                "1 custom domain",
-                "Up to 3 team members",
-                "Priority support",
-                "API access"
+            monthlyPlan.put("features", new String[] {
+                    "Unlimited URLs & QR codes",
+                    "50 file conversions/month",
+                    "Advanced analytics",
+                    "1 custom domain",
+                    "Up to 3 team members",
+                    "Priority support",
+                    "API access"
             });
-            
+
             // Business Plan
             Map<String, Object> businessPlan = new HashMap<>();
             businessPlan.put("name", "Business");
             businessPlan.put("monthlyPrice", 699);
             businessPlan.put("yearlyPrice", 5999);
             businessPlan.put("currency", "INR");
-            businessPlan.put("features", new String[]{
-                "Everything in Pro",
-                "200 file conversions/month",
-                "3 custom domains",
-                "Up to 10 team members",
-                "White-label branding",
-                "VIP support"
+            businessPlan.put("features", new String[] {
+                    "Everything in Pro",
+                    "200 file conversions/month",
+                    "3 custom domains",
+                    "Up to 10 team members",
+                    "White-label branding",
+                    "VIP support"
             });
-            
+
             pricing.put("free", freePlan);
             pricing.put("pro", monthlyPlan);
             pricing.put("business", businessPlan);
-            
+
             response.put("success", true);
             response.put("data", pricing);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to get pricing: " + e.getMessage());

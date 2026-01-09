@@ -16,196 +16,74 @@ const UsersPage = ({ hasPermission }) => {
     source: 'all'
   });
 
-  // Mock comprehensive user data
-  const users = [
-    {
-      id: 'usr_001',
-      name: 'Venkatesh Lahori',
-      email: 'venkatesh@bitaurl.com',
-      avatar: 'V',
-      plan: 'Business',
-      status: 'Active',
-      links: 325,
-      domains: 3,
-      qrCodes: 89,
-      team: 'BitaTeam',
-      teamRole: 'Owner',
-      createdAt: '2024-10-15',
-      lastActive: '2 minutes ago',
-      lastLogin: '2024-01-30 14:30:00',
-      ipAddress: '122.45.67.1',
-      location: 'Mumbai, India',
-      device: 'Chrome on MacOS',
-      source: 'Email Signup',
-      trialEnd: null,
-      subscription: {
-        id: 'sub_123',
-        status: 'active',
-        currentPeriodEnd: '2024-02-29',
-        amount: 2999,
-        currency: 'INR'
-      },
-      usage: {
-        linksThisMonth: 45,
-        clicksThisMonth: 12456,
-        domainsUsed: 3,
-        storageUsed: '2.3 GB'
-      },
-      billing: {
-        totalSpent: 8997,
-        invoices: 3,
-        paymentMethod: 'Razorpay',
-        nextBilling: '2024-02-29'
-      },
-      security: {
-        twoFactorEnabled: true,
-        lastPasswordChange: '2024-01-15',
-        loginDevices: 3
-      },
-      notes: 'Premium customer - provides excellent feedback on new features'
-    },
-    {
-      id: 'usr_002',
-      name: 'Sarah Wilson',
-      email: 'sarah@company.com',
-      avatar: 'S',
-      plan: 'Pro',
-      status: 'Active',
-      links: 156,
-      domains: 1,
-      qrCodes: 34,
-      team: 'Marketing Team',
-      teamRole: 'Admin',
-      createdAt: '2024-01-20',
-      lastActive: '1 hour ago',
-      lastLogin: '2024-01-30 13:15:00',
-      ipAddress: '192.168.1.101',
-      location: 'New York, USA',
-      device: 'Chrome on Windows',
-      source: 'Google OAuth',
-      trialEnd: null,
-      subscription: {
-        id: 'sub_124',
-        status: 'active',
-        currentPeriodEnd: '2024-02-20',
-        amount: 999,
-        currency: 'USD'
-      },
-      usage: {
-        linksThisMonth: 23,
-        clicksThisMonth: 5678,
-        domainsUsed: 1,
-        storageUsed: '890 MB'
-      },
-      billing: {
-        totalSpent: 2997,
-        invoices: 3,
-        paymentMethod: 'Stripe',
-        nextBilling: '2024-02-20'
-      },
-      security: {
-        twoFactorEnabled: false,
-        lastPasswordChange: '2024-01-10',
-        loginDevices: 2
-      },
-      notes: 'Heavy user of analytics features'
-    },
-    {
-      id: 'usr_003',
-      name: 'Mike Johnson',
-      email: 'mike@startup.io',
-      avatar: 'M',
-      plan: 'Free',
-      status: 'Trial',
-      links: 45,
-      domains: 0,
-      qrCodes: 12,
-      team: null,
-      teamRole: null,
-      createdAt: '2024-01-28',
-      lastActive: '3 days ago',
-      lastLogin: '2024-01-27 09:45:00',
-      ipAddress: '203.0.113.45',
-      location: 'London, UK',
-      device: 'Safari on iPhone',
-      source: 'Product Hunt',
-      trialEnd: '2024-02-05',
-      subscription: null,
-      usage: {
-        linksThisMonth: 12,
-        clicksThisMonth: 234,
-        domainsUsed: 0,
-        storageUsed: '45 MB'
-      },
-      billing: {
-        totalSpent: 0,
-        invoices: 0,
-        paymentMethod: null,
-        nextBilling: null
-      },
-      security: {
-        twoFactorEnabled: false,
-        lastPasswordChange: '2024-01-28',
-        loginDevices: 1
-      },
-      notes: 'Trial user - showing high engagement, potential conversion'
-    },
-    {
-      id: 'usr_004',
-      name: 'Emma Davis',
-      email: 'emma@agency.com',
-      avatar: 'E',
-      plan: 'Business',
-      status: 'Suspended',
-      links: 234,
-      domains: 2,
-      qrCodes: 67,
-      team: 'Digital Agency',
-      teamRole: 'Owner',
-      createdAt: '2024-01-05',
-      lastActive: '1 week ago',
-      lastLogin: '2024-01-23 16:20:00',
-      ipAddress: '198.51.100.23',
-      location: 'Toronto, Canada',
-      device: 'Firefox on Linux',
-      source: 'Email Signup',
-      trialEnd: null,
-      subscription: {
-        id: 'sub_125',
-        status: 'past_due',
-        currentPeriodEnd: '2024-01-25',
-        amount: 4999,
-        currency: 'CAD'
-      },
-      usage: {
-        linksThisMonth: 0,
-        clicksThisMonth: 0,
-        domainsUsed: 2,
-        storageUsed: '1.8 GB'
-      },
-      billing: {
-        totalSpent: 14997,
-        invoices: 3,
-        paymentMethod: 'Stripe',
-        nextBilling: 'Overdue'
-      },
-      security: {
-        twoFactorEnabled: true,
-        lastPasswordChange: '2024-01-01',
-        loginDevices: 4
-      },
-      notes: 'Payment failed - contacted customer support twice'
-    }
-  ];
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingActivities, setLoadingActivities] = useState(false);
 
-  // User activity logs
-  const userActivities = {
-    'usr_001': [
-      { date: '2024-01-30 14:30', action: 'Created 5 new links', ip: '122.45.67.1', device: 'Chrome' },
-      { date: '2024-01-30 10:15', action: 'Added custom domain bitaurl.com', ip: '122.45.67.1', device: 'Chrome' },
-      { date: '2024-01-29 16:45', action: 'Upgraded to Business plan', ip: '122.45.67.1', device: 'Chrome' },
-      { date: '2024-01-29 09:30', action: 'Login successful', ip: '122.45.67.1', device: 'Chrome' }
-    ]
+  // Real user activity logs (initially empty)
+  const [userActivities, setUserActivities] = useState({});
+
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Transform data to match UI expectations if needed
+        const mappedUsers = data.map(u => ({
+          id: u.id,
+          name: u.name || `${u.firstName} ${u.lastName}`,
+          email: u.email,
+          avatar: u.firstName ? u.firstName[0].toUpperCase() : u.email[0].toUpperCase(),
+          plan: u.subscriptionPlan || 'Free',
+          status: u.active ? 'Active' : 'Suspended',
+          links: u.totalUrls || 0,
+          domains: u.totalDomains || 0, // Assuming totalDomains exists or 0
+          qrCodes: u.totalQrCodes || 0,
+          team: null, // Teams not yet implemented
+          teamRole: null,
+          createdAt: new Date(u.createdAt).toLocaleDateString(),
+          lastActive: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never',
+          lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never',
+          location: 'Unknown', // IP Geolocation not yet implemented
+          source: u.authProvider,
+          trialEnd: u.trialEndDate ? new Date(u.trialEndDate).toLocaleDateString() : null,
+          subscription: u.subscriptionPlan !== 'FREE' ? {
+            amount: 0,
+            currency: 'USD'
+          } : null,
+          usage: {
+            linksThisMonth: u.monthlyUrlsCreated || 0,
+            clicksThisMonth: u.totalClicks || 0
+          },
+          billing: {
+            totalSpent: 0
+          },
+          security: {
+            twoFactorEnabled: false
+          }
+        }));
+        setUsers(mappedUsers);
+      } else {
+        console.error("Failed to fetch users");
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Summary metrics
@@ -280,7 +158,7 @@ const UsersPage = ({ hasPermission }) => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Complete control center for BitaURL users</p>
+          <p className="text-gray-600 dark:text-gray-400">Complete control center for Tinyslash users</p>
         </div>
         <div className="flex space-x-3">
           {hasPermission('users', 'export') && (

@@ -20,6 +20,16 @@ public class SubscriptionService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.urlshortener.repository.SubscriptionRepository subscriptionRepository;
+
+    /**
+     * Get all subscriptions (for admin)
+     */
+    public List<com.urlshortener.model.Subscription> getAllSubscriptions() {
+        return subscriptionRepository.findAll();
+    }
+
     // Plan constants
     public static final String FREE_PLAN = "FREE";
     public static final String PRO_MONTHLY = "PRO_MONTHLY";

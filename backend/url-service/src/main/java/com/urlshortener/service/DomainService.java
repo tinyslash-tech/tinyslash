@@ -29,32 +29,32 @@ import java.util.stream.Collectors;
 
 @Service
 public class DomainService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(DomainService.class);
     private static final String DOMAIN_BLACKLIST_KEY = "domain:blacklist:";
     private static final String DOMAIN_RATE_LIMIT_KEY = "domain:rate:";
     private static final String VERIFICATION_RATE_LIMIT_KEY = "verify:rate:";
-    
+
     @Autowired
     private DomainRepository domainRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private TeamRepository teamRepository;
-    
+
     @Autowired(required = false)
     private RedisTemplate<String, Object> redisTemplate;
-    
+
     @Autowired(required = false)
     private EmailService emailService;
-    
+
     @Autowired
     private CloudflareSaasService cloudflareSaasService;
-    
+
     private final SecureRandom secureRandom = new SecureRandom();
-    
+
     /**
      * Reserve a domain with rate limiting and quota enforcement
      */
@@ -62,65 +62,64 @@ public class DomainService {
     public DomainResponse reserveDomain(DomainRequest request, String currentUserId) {
         // Validate rate limits
         validateRateLimit(currentUserId, "domain_add", 20, 24 * 60 * 60); // 20/day
-        
+
         // Validate domain quota based on subscription
         validateDomainQuota(request.getOwnerId(), request.getOwnerType());
-        
+
         // Check if domain is blacklisted
         validateDomainSafety(request.getDomainName());
-        
+
         // Check for existing domain
         if (domainRepository.existsByDomainName(request.getDomainName())) {
             throw new IllegalArgumentException("Domain already exists or is reserved by another user");
         }
-        
+
         // Generate unique verification token
         String verificationToken = generateVerificationToken();
-        
+
         // Create domain reservation
         Domain domain = new Domain(
-            request.getDomainName(),
-            request.getOwnerType(),
-            request.getOwnerId(),
-            verificationToken
-        );
-        
+                request.getDomainName(),
+                request.getOwnerType(),
+                request.getOwnerId(),
+                verificationToken);
+
         domain = domainRepository.save(domain);
-        
-        logger.info("Domain reserved: {} for owner: {}/{}", 
-            request.getDomainName(), request.getOwnerType(), request.getOwnerId());
-        
+
+        logger.info("Domain reserved: {} for owner: {}/{}",
+                request.getDomainName(), request.getOwnerType(), request.getOwnerId());
+
         return DomainResponse.forPublicApi(domain);
     }
-    
+
     /**
      * Trigger domain verification (async)
      */
     public DomainResponse verifyDomain(String domainId, String currentUserId) {
         Domain domain = domainRepository.findById(domainId)
-            .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
-        
+                .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
         // Validate ownership
         validateDomainOwnership(domain, currentUserId);
-        
+
         // Check verification rate limit
         validateRateLimit(domain.getDomainName(), "verification", 5, 60 * 60); // 5/hour
-        
+
         // Check if reservation expired
         if (domain.isReservationExpired() && !"VERIFIED".equals(domain.getStatus())) {
             throw new IllegalArgumentException("Domain reservation has expired");
         }
-        
+
         // Increment attempts
         domain.incrementVerificationAttempts();
-        
+
         // Perform DNS verification
         boolean isVerified = performDnsVerification(domain);
-        
+
         if (isVerified) {
             // Trigger Cloudflare SSL provisioning
             boolean sslProvisioned = cloudflareSaasService.createCustomHostname(domain);
-            
+
             if (sslProvisioned) {
                 domain.markAsVerified();
                 domain.setSslStatus("PENDING");
@@ -131,15 +130,15 @@ public class DomainService {
             domain.setStatus("PENDING");
             domain.setVerificationError("DNS CNAME record not found or incorrect. Please point to tinyslash.com");
         }
-        
+
         domain = domainRepository.save(domain);
-        
+
         // Clear cache
         clearDomainCache(domain.getOwnerId(), domain.getOwnerType());
-        
+
         return DomainResponse.forPublicApi(domain);
     }
-    
+
     /**
      * Get domains for user or team (cached)
      */
@@ -147,10 +146,10 @@ public class DomainService {
     public List<DomainResponse> getDomainsByOwner(String ownerId, String ownerType) {
         List<Domain> domains = domainRepository.findByOwnerIdAndOwnerType(ownerId, ownerType);
         return domains.stream()
-            .map(DomainResponse::forPublicApi)
-            .collect(Collectors.toList());
+                .map(DomainResponse::forPublicApi)
+                .collect(Collectors.toList());
     }
-    
+
     /**
      * Get verified domains only (for link creation dropdown)
      */
@@ -158,118 +157,118 @@ public class DomainService {
     public List<DomainResponse> getVerifiedDomains(String ownerId, String ownerType) {
         List<Domain> domains = domainRepository.findVerifiedDomainsByOwner(ownerId, ownerType);
         return domains.stream()
-            .map(DomainResponse::forPublicApi)
-            .collect(Collectors.toList());
+                .map(DomainResponse::forPublicApi)
+                .collect(Collectors.toList());
     }
-    
+
     /**
      * Transfer domain ownership (with email confirmation)
      */
     @Transactional
     public DomainResponse transferDomain(DomainTransferRequest request, String currentUserId) {
         Domain domain = domainRepository.findById(request.getDomainId())
-            .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
-        
+                .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
         // Validate current ownership
         validateDomainOwnership(domain, currentUserId);
-        
+
         // Validate target owner exists and has quota
         validateDomainQuota(request.getTargetOwnerId(), request.getTargetOwnerType());
-        
+
         // Add to ownership history
         domain.addOwnershipHistory(
-            domain.getOwnerType(), 
-            domain.getOwnerId(), 
-            request.getReason()
-        );
-        
+                domain.getOwnerType(),
+                domain.getOwnerId(),
+                request.getReason());
+
         // Update ownership
         domain.setOwnerType(request.getTargetOwnerType());
         domain.setOwnerId(request.getTargetOwnerId());
         domain.setUpdatedAt(LocalDateTime.now());
-        
+
         domain = domainRepository.save(domain);
-        
+
         // Clear caches for both old and new owners
         clearDomainCache(domain.getOwnerId(), domain.getOwnerType());
         clearDomainCache(request.getTargetOwnerId(), request.getTargetOwnerType());
-        
+
         // Send confirmation email
         sendTransferConfirmationEmail(domain, request.getReason());
-        
-        logger.info("Domain transferred: {} from {}/{} to {}/{}", 
-            domain.getDomainName(), 
-            domain.getOwnerType(), domain.getOwnerId(),
-            request.getTargetOwnerType(), request.getTargetOwnerId());
-        
+
+        logger.info("Domain transferred: {} from {}/{} to {}/{}",
+                domain.getDomainName(),
+                domain.getOwnerType(), domain.getOwnerId(),
+                request.getTargetOwnerType(), request.getTargetOwnerId());
+
         return DomainResponse.forPublicApi(domain);
     }
-    
+
     /**
      * Get domain status (for polling)
      */
     public DomainResponse getDomainStatus(String domainId, String currentUserId) {
         Domain domain = domainRepository.findById(domainId)
-            .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
-        
+                .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
         validateDomainOwnership(domain, currentUserId);
-        
+
         // Check real-time SSL status if it's pending
         if ("PENDING".equals(domain.getSslStatus())) {
             String status = cloudflareSaasService.checkSslStatus(domain);
             if (!status.equals(domain.getSslStatus())) {
-               // Status changed, update it
-               domainRepository.save(domain);
+                // Status changed, update it
+                domainRepository.save(domain);
             }
         }
-        
+
         return DomainResponse.forPublicApi(domain);
     }
-    
+
     /**
      * Find domains available for team migration
      */
     public List<DomainResponse> getUserDomainsForMigration(String userId) {
         List<Domain> domains = domainRepository.findUserDomainsForMigration(userId);
         return domains.stream()
-            .map(DomainResponse::forPublicApi)
-            .collect(Collectors.toList());
+                .map(DomainResponse::forPublicApi)
+                .collect(Collectors.toList());
     }
-    
+
     // Private helper methods
-    
+
     private void validateRateLimit(String key, String action, int limit, int windowSeconds) {
         // Skip rate limiting if Redis is not available
         if (redisTemplate == null) {
             logger.warn("Redis not available, skipping rate limit check for {}", action);
             return;
         }
-        
+
         String rateLimitKey = DOMAIN_RATE_LIMIT_KEY + action + ":" + key;
         String currentCount = (String) redisTemplate.opsForValue().get(rateLimitKey);
-        
+
         if (currentCount != null && Integer.parseInt(currentCount) >= limit) {
             throw new IllegalArgumentException("Rate limit exceeded for " + action + ". Try again later.");
         }
-        
+
         redisTemplate.opsForValue().increment(rateLimitKey);
         redisTemplate.expire(rateLimitKey, windowSeconds, TimeUnit.SECONDS);
     }
-    
+
     private void validateDomainQuota(String ownerId, String ownerType) {
         long currentCount = domainRepository.countVerifiedDomainsByOwner(ownerId, ownerType);
         int maxDomains = getMaxDomainsForOwner(ownerId, ownerType);
-        
+
         if (currentCount >= maxDomains) {
             throw new IllegalArgumentException("Domain quota exceeded. Upgrade your plan for more domains.");
         }
     }
-    
+
     private int getMaxDomainsForOwner(String ownerId, String ownerType) {
         if ("USER".equals(ownerType)) {
             User user = userRepository.findById(ownerId).orElse(null);
-            if (user == null) return 0;
-            
+            if (user == null)
+                return 0;
+
             return switch (user.getSubscriptionPlan()) {
                 case "PRO_MONTHLY", "PRO_YEARLY" -> 1;
                 case "BUSINESS_MONTHLY", "BUSINESS_YEARLY" -> 3;
@@ -277,36 +276,37 @@ public class DomainService {
             };
         } else if ("TEAM".equals(ownerType)) {
             Team team = teamRepository.findById(ownerId).orElse(null);
-            if (team == null) return 0;
-            
+            if (team == null)
+                return 0;
+
             return switch (team.getSubscriptionPlan()) {
                 case "BUSINESS_MONTHLY", "BUSINESS_YEARLY" -> 3;
                 default -> 0;
             };
         }
-        
+
         return 0;
     }
-    
+
     private void validateDomainSafety(String domainName) {
         // Check Redis blacklist cache first (if available)
         if (redisTemplate != null) {
             String blacklistKey = DOMAIN_BLACKLIST_KEY + domainName;
             Boolean isBlacklisted = (Boolean) redisTemplate.opsForValue().get(blacklistKey);
-            
+
             if (Boolean.TRUE.equals(isBlacklisted)) {
                 throw new IllegalArgumentException("Domain is blacklisted for security reasons");
             }
         }
-        
+
         // Basic domain validation
-        if (domainName.contains("localhost") || 
-            domainName.contains("127.0.0.1") || 
-            domainName.contains("0.0.0.0")) {
+        if (domainName.contains("localhost") ||
+                domainName.contains("127.0.0.1") ||
+                domainName.contains("0.0.0.0")) {
             throw new IllegalArgumentException("Invalid domain name");
         }
     }
-    
+
     private void validateDomainOwnership(Domain domain, String currentUserId) {
         if ("USER".equals(domain.getOwnerType())) {
             if (!domain.getOwnerId().equals(currentUserId)) {
@@ -319,35 +319,35 @@ public class DomainService {
             }
         }
     }
-    
+
     private String generateVerificationToken() {
         StringBuilder token = new StringBuilder();
         String chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        
+
         for (int i = 0; i < 12; i++) {
             token.append(chars.charAt(secureRandom.nextInt(chars.length())));
         }
-        
+
         return token.toString();
     }
-    
+
     private boolean performDnsVerification(Domain domain) {
         try {
             InetAddress[] addresses = InetAddress.getAllByName(domain.getCnameTarget());
-            
+
             // Check if CNAME points to our backend domain
             String backendUrl = System.getenv("BACKEND_URL");
             String backendHost = "tinyslash.com"; // Expected CNAME target
-            
+
             for (InetAddress addr : addresses) {
-                if (addr.getHostName().contains(backendHost) || 
-                    addr.getHostName().contains("onrender.com") ||
-                    // Also accept if it resolves to Cloudflare IPs (proxied)
-                    isCloudflareIp(addr)) {
+                if (addr.getHostName().contains(backendHost) ||
+                        addr.getHostName().contains("onrender.com") ||
+                        // Also accept if it resolves to Cloudflare IPs (proxied)
+                        isCloudflareIp(addr)) {
                     return true;
                 }
             }
-            
+
             // Alternative: check CNAME directly
             InetAddress[] cnameAddresses = InetAddress.getAllByName(domain.getDomainName());
             for (InetAddress addr : cnameAddresses) {
@@ -355,41 +355,44 @@ public class DomainService {
                     return true;
                 }
             }
-            
+
         } catch (UnknownHostException e) {
             logger.warn("DNS verification failed for domain: {} - {}", domain.getDomainName(), e.getMessage());
             domain.setVerificationError("DNS lookup failed: " + e.getMessage());
         }
-        
+
         return false;
     }
-    
+
     private boolean isCloudflareIp(InetAddress addr) {
         // Simple check for common Cloudflare ranges or if hostname implies cloudflare
-        return addr.getHostName().contains("cloudflare") || 
-               addr.getHostName().contains("cdn") ||
-               // In production, CNAME flattening might just return an IP, 
-               // so we might want to trust the existence of the CNAME record itself.
-               true; // For now, if we found ANY address for the CNAME, we assume it's valid if it matches target
+        return addr.getHostName().contains("cloudflare") ||
+                addr.getHostName().contains("cdn") ||
+                // In production, CNAME flattening might just return an IP,
+                // so we might want to trust the existence of the CNAME record itself.
+                true; // For now, if we found ANY address for the CNAME, we assume it's valid if it
+                      // matches target
     }
 
     private void provisionSslAsync(Domain domain) {
-       // Deprecated: Logic moved to synchronous call in verifyDomain
-       // Kept method stub to avoid compilation errors if called elsewhere, but it's now empty
+        // Deprecated: Logic moved to synchronous call in verifyDomain
+        // Kept method stub to avoid compilation errors if called elsewhere, but it's
+        // now empty
     }
-    
-    @CacheEvict(value = {"domains_list", "verified_domains"}, key = "#ownerId + ':' + #ownerType")
+
+    @CacheEvict(value = { "domains_list", "verified_domains" }, key = "#ownerId + ':' + #ownerType")
     private void clearDomainCache(String ownerId, String ownerType) {
         // Cache eviction handled by annotation
     }
-    
+
     private void sendTransferConfirmationEmail(Domain domain, String reason) {
         try {
             if (emailService == null) {
-                logger.warn("EmailService not available, skipping transfer confirmation email for domain: {}", domain.getDomainName());
+                logger.warn("EmailService not available, skipping transfer confirmation email for domain: {}",
+                        domain.getDomainName());
                 return;
             }
-            
+
             // Get owner details for email
             if ("USER".equals(domain.getOwnerType())) {
                 User user = userRepository.findById(domain.getOwnerId()).orElse(null);
@@ -400,5 +403,10 @@ public class DomainService {
         } catch (Exception e) {
             logger.error("Failed to send transfer confirmation email for domain: {}", domain.getDomainName(), e);
         }
+    }
+
+    // Admin methods
+    public List<Domain> getAllDomains() {
+        return domainRepository.findAll();
     }
 }

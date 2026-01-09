@@ -16,7 +16,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-@EnableMongoRepositories(basePackages = {"com.urlshortener.repository", "com.urlshortener.admin.repository"})
+@EnableMongoRepositories(basePackages = { "com.urlshortener.repository", "com.urlshortener.admin.repository" })
 @ConditionalOnProperty(name = "spring.data.mongodb.uri")
 public class MongoConfiguration {
 
@@ -36,29 +36,27 @@ public class MongoConfiguration {
                 return null;
             }
 
-            System.out.println("Attempting to connect to MongoDB with URI: " + mongoUri.replaceAll("://[^@]+@", "://***:***@"));
-            
+            System.out.println(
+                    "Attempting to connect to MongoDB with URI: " + mongoUri.replaceAll("://[^@]+@", "://***:***@"));
+
             ConnectionString connectionString = new ConnectionString(mongoUri);
             MongoClientSettings settings = MongoClientSettings.builder()
                     .applyConnectionString(connectionString)
-                    .applyToConnectionPoolSettings(builder -> 
-                        builder.maxSize(10)
-                               .minSize(1)
-                               .maxWaitTime(5000, TimeUnit.MILLISECONDS)
-                               .maxConnectionIdleTime(30000, TimeUnit.MILLISECONDS))
-                    .applyToSocketSettings(builder -> 
-                        builder.connectTimeout(10000, TimeUnit.MILLISECONDS)
-                               .readTimeout(10000, TimeUnit.MILLISECONDS))
-                    .applyToServerSettings(builder -> 
-                        builder.heartbeatFrequency(10000, TimeUnit.MILLISECONDS))
+                    .applyToConnectionPoolSettings(builder -> builder.maxSize(10)
+                            .minSize(1)
+                            .maxWaitTime(5000, TimeUnit.MILLISECONDS)
+                            .maxConnectionIdleTime(30000, TimeUnit.MILLISECONDS))
+                    .applyToSocketSettings(builder -> builder.connectTimeout(10000, TimeUnit.MILLISECONDS)
+                            .readTimeout(10000, TimeUnit.MILLISECONDS))
+                    .applyToServerSettings(builder -> builder.heartbeatFrequency(10000, TimeUnit.MILLISECONDS))
                     .build();
-            
+
             MongoClient client = MongoClients.create(settings);
-            
+
             // Test the connection
             client.getDatabase(databaseName).runCommand(new org.bson.Document("ping", 1));
             System.out.println("✅ MongoDB connection successful!");
-            
+
             return client;
         } catch (Exception e) {
             System.err.println("❌ Failed to create MongoDB client: " + e.getMessage());

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Database, 
-  CreditCard, 
-  Mail, 
-  Globe, 
-  Server, 
+import {
+  Database,
+  CreditCard,
+  Mail,
+  Globe,
+  Server,
   RefreshCw,
   CheckCircle,
   XCircle,
@@ -173,7 +173,7 @@ export const SystemHealth: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">System Health</h1>
-          <p className="text-gray-600">Monitor the health of all BitaURL services</p>
+          <p className="text-gray-600">Monitor the health of all Tinyslash services</p>
         </div>
         <div className="flex items-center space-x-3">
           <span className="text-sm text-gray-500">
@@ -223,7 +223,7 @@ export const SystemHealth: React.FC = () => {
       {healthData?.mongodb && (
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">MongoDB Database Details</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{healthData.mongodb.connections}</div>
@@ -263,7 +263,7 @@ export const SystemHealth: React.FC = () => {
       {healthData?.sendgrid && (
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">SendGrid Email Service</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{healthData.sendgrid.emailsSent24h}</div>
@@ -285,7 +285,7 @@ export const SystemHealth: React.FC = () => {
       {healthData?.render && (
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Render Backend Service</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{healthData.render.cpuUsage}%</div>
@@ -311,7 +311,7 @@ export const SystemHealth: React.FC = () => {
       {healthData?.vercel && (
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Vercel Frontend Service</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-lg font-bold text-blue-600">{healthData.vercel.deploymentStatus}</div>

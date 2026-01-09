@@ -36,6 +36,9 @@ import ShippingPolicy from './pages/ShippingPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import CancellationRefund from './pages/CancellationRefund';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Careers from './pages/Careers';
+import JobDetail from './pages/JobDetail';
+import Apply from './pages/Apply';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -203,6 +206,12 @@ const AppContent: React.FC = () => {
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/cancellation-refund" element={<CancellationRefund />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+
+
+            {/* Careers Routes */}
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/careers/apply" element={<Apply />} />
+            <Route path="/careers/:jobId" element={<JobDetail />} />
 
             {/* Team Invite Route */}
             <Route path="/invite/:inviteToken" element={

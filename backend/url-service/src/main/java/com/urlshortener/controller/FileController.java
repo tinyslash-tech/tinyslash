@@ -21,13 +21,13 @@ import java.util.Optional;
 @RequestMapping("/api/v1/files")
 @CrossOrigin(origins = "*")
 public class FileController {
-    
+
     @Autowired
     private FileUploadService fileUploadService;
-    
+
     @Autowired
     private DashboardService dashboardService;
-    
+
     @PostMapping("/upload")
     @RequiresPlan(feature = "fileUpload", checkLimit = true)
     public ResponseEntity<Map<String, Object>> uploadFile(
@@ -38,14 +38,13 @@ public class FileController {
             @RequestParam(required = false) String password,
             @RequestParam(required = false) Integer expirationDays,
             @RequestParam(required = false, defaultValue = "false") boolean isPublic) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             UploadedFile uploadedFile = fileUploadService.uploadFile(
-                file, userId, title, description, password, expirationDays, isPublic
-            );
-            
+                    file, userId, title, description, password, expirationDays, isPublic);
+
             Map<String, Object> fileData = new HashMap<>();
             fileData.put("id", uploadedFile.getId());
             fileData.put("fileCode", uploadedFile.getFileCode());
@@ -59,67 +58,67 @@ public class FileController {
             fileData.put("expiresAt", uploadedFile.getExpiresAt());
             fileData.put("isPublic", uploadedFile.isPublic());
             fileData.put("requiresPassword", uploadedFile.isRequiresPassword());
-            
+
             response.put("success", true);
             response.put("message", "File uploaded successfully");
             response.put("data", fileData);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @GetMapping("/{fileCode}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileCode,
-                                               @RequestParam(required = false) String password) {
+            @RequestParam(required = false) String password) {
         try {
             Optional<UploadedFile> fileOpt = fileUploadService.getFileByCode(fileCode);
-            
+
             if (fileOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-            
+
             UploadedFile file = fileOpt.get();
-            
+
             // Check password if required
             if (file.isRequiresPassword()) {
                 if (password == null || !password.equals(file.getPassword())) {
                     return ResponseEntity.status(401).build();
                 }
             }
-            
+
             Resource resource = fileUploadService.getFileContent(fileCode);
-            
+
             return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(file.getFileType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, 
-                       "attachment; filename=\"" + file.getOriginalFileName() + "\"")
-                .body(resource);
-                
+                    .contentType(MediaType.parseMediaType(file.getFileType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + file.getOriginalFileName() + "\"")
+                    .body(resource);
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
     @GetMapping("/{fileCode}/info")
     public ResponseEntity<Map<String, Object>> getFileInfo(@PathVariable String fileCode) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             Optional<UploadedFile> fileOpt = fileUploadService.getFileByCode(fileCode);
-            
+
             if (fileOpt.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "File not found");
                 return ResponseEntity.notFound().build();
             }
-            
+
             UploadedFile file = fileOpt.get();
-            
+
             Map<String, Object> fileData = new HashMap<>();
             fileData.put("id", file.getId());
             fileData.put("fileCode", file.getFileCode());
@@ -146,27 +145,27 @@ public class FileController {
             fileData.put("requiresPassword", file.isRequiresPassword());
             fileData.put("hasQrCode", file.isHasQrCode());
             fileData.put("fileUrl", file.getFileUrl());
-            
+
             response.put("success", true);
             response.put("data", fileData);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserFiles(@PathVariable String userId) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             // Use cached dashboard service for better performance
             List<UploadedFile> files = dashboardService.getUserFiles(userId);
-            
+
             List<Map<String, Object>> filesData = files.stream().map(file -> {
                 Map<String, Object> fileData = new HashMap<>();
                 fileData.put("id", file.getId());
@@ -185,104 +184,154 @@ public class FileController {
                 fileData.put("hasQrCode", file.isHasQrCode());
                 return fileData;
             }).toList();
-            
+
             response.put("success", true);
             response.put("count", files.size());
             response.put("data", filesData);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
+    @GetMapping("/admin/all")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getAllFilesForAdmin() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<UploadedFile> files = fileUploadService.getAllFiles();
+
+            // Map to response format
+            List<Map<String, Object>> fileList = files.stream().map(file -> {
+                Map<String, Object> fileData = new HashMap<>();
+                fileData.put("id", file.getId());
+                fileData.put("fileCode", file.getFileCode());
+                fileData.put("fileName", file.getOriginalFileName());
+                fileData.put("originalName", file.getOriginalFileName());
+                fileData.put("fileType", file.getFileType());
+                fileData.put("fileSize", file.getFileSize());
+                fileData.put("owner", file.getUserId());
+                fileData.put("uploadDate", file.getUploadedAt());
+                fileData.put("lastAccessed", file.getLastAccessedAt());
+                fileData.put("downloads", file.getTotalDownloads());
+                fileData.put("uniqueDownloads", file.getUniqueDownloads());
+                fileData.put("status", file.isActive() ? "Active" : "Inactive");
+                fileData.put("isPublic", file.isPublic());
+                fileData.put("hasPassword", file.isRequiresPassword());
+                fileData.put("expiryDate", file.getExpiresAt());
+                fileData.put("shortUrl", file.getFileUrl());
+
+                // Add basic stats for admin view if available
+                Map<String, Object> analytics = new HashMap<>();
+                if (file.getDownloadsByCountry() != null)
+                    analytics.put("countries", file.getDownloadsByCountry());
+                if (file.getDownloadsByDevice() != null)
+                    analytics.put("devices", file.getDownloadsByDevice());
+                fileData.put("analytics", analytics);
+
+                return fileData;
+            }).collect(java.util.stream.Collectors.toList());
+
+            response.put("success", true);
+            response.put("files", fileList);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     @PutMapping("/{fileCode}")
     public ResponseEntity<Map<String, Object>> updateFile(@PathVariable String fileCode,
-                                                         @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) request.get("userId");
-            
+
             if (userId == null) {
                 response.put("success", false);
                 response.put("message", "User ID is required");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             UploadedFile updates = new UploadedFile();
-            if (request.containsKey("title")) updates.setTitle((String) request.get("title"));
-            if (request.containsKey("description")) updates.setDescription((String) request.get("description"));
-            if (request.containsKey("password")) updates.setPassword((String) request.get("password"));
-            
+            if (request.containsKey("title"))
+                updates.setTitle((String) request.get("title"));
+            if (request.containsKey("description"))
+                updates.setDescription((String) request.get("description"));
+            if (request.containsKey("password"))
+                updates.setPassword((String) request.get("password"));
+
             UploadedFile updated = fileUploadService.updateFile(fileCode, userId, updates);
-            
+
             response.put("success", true);
             response.put("message", "File updated successfully");
             response.put("data", Map.of(
-                "fileCode", updated.getFileCode(),
-                "title", updated.getTitle(),
-                "description", updated.getDescription(),
-                "updatedAt", updated.getUpdatedAt()
-            ));
-            
+                    "fileCode", updated.getFileCode(),
+                    "title", updated.getTitle(),
+                    "description", updated.getDescription(),
+                    "updatedAt", updated.getUpdatedAt()));
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @DeleteMapping("/{fileCode}")
     public ResponseEntity<Map<String, Object>> deleteFile(@PathVariable String fileCode,
-                                                         @RequestParam String userId) {
+            @RequestParam String userId) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             fileUploadService.deleteFile(fileCode, userId);
-            
+
             response.put("success", true);
             response.put("message", "File deleted successfully");
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @PostMapping("/bulk-delete")
     public ResponseEntity<Map<String, Object>> bulkDeleteFiles(@RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             @SuppressWarnings("unchecked")
             List<String> fileCodes = (List<String>) request.get("fileCodes");
             String userId = (String) request.get("userId");
-            
+
             if (fileCodes == null || fileCodes.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "No files selected for deletion");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             if (userId == null || userId.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "User ID is required");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             int successCount = 0;
             int failCount = 0;
             List<String> errors = new ArrayList<>();
-            
+
             for (String fileCode : fileCodes) {
                 try {
                     fileUploadService.deleteFile(fileCode, userId);
@@ -292,7 +341,7 @@ public class FileController {
                     errors.add(fileCode + ": " + e.getMessage());
                 }
             }
-            
+
             response.put("success", true);
             response.put("message", String.format("Deleted %d files successfully", successCount));
             response.put("successCount", successCount);
@@ -300,78 +349,78 @@ public class FileController {
             if (!errors.isEmpty()) {
                 response.put("errors", errors);
             }
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Bulk delete failed: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     @PostMapping("/{fileCode}/download")
     public ResponseEntity<Map<String, Object>> recordDownload(@PathVariable String fileCode,
-                                                             @RequestBody Map<String, String> request) {
+            @RequestBody Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String ipAddress = request.get("ipAddress");
             String userAgent = request.get("userAgent");
             String country = request.get("country");
             String city = request.get("city");
             String deviceType = request.get("deviceType");
-            
+
             fileUploadService.recordDownload(fileCode, ipAddress, userAgent, country, city, deviceType);
-            
+
             response.put("success", true);
             response.put("message", "Download recorded successfully");
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @PostMapping("/{fileCode}/redirect")
     public ResponseEntity<Map<String, Object>> handleFileRedirect(
             @PathVariable String fileCode,
             @RequestBody(required = false) Map<String, Object> request) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             Optional<UploadedFile> fileOpt = fileUploadService.getFileByCode(fileCode);
-            
+
             if (fileOpt.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "File not found");
                 return ResponseEntity.status(404).body(response);
             }
-            
+
             UploadedFile file = fileOpt.get();
-            
+
             // Check if file is active
             if (!file.isActive()) {
                 response.put("success", false);
                 response.put("message", "File is no longer active");
                 return ResponseEntity.status(404).body(response);
             }
-            
+
             // Check if file has expired
             if (file.getExpiresAt() != null && file.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
                 response.put("success", false);
                 response.put("message", "File has expired");
                 return ResponseEntity.status(410).body(response);
             }
-            
+
             // Check password protection
             if (file.isRequiresPassword()) {
                 String providedPassword = request != null ? (String) request.get("password") : null;
-                
+
                 if (providedPassword == null || !providedPassword.equals(file.getPassword())) {
                     response.put("success", false);
                     response.put("message", "Password required");
@@ -379,7 +428,7 @@ public class FileController {
                     return ResponseEntity.status(401).body(response);
                 }
             }
-            
+
             // Record download analytics
             if (request != null) {
                 String ipAddress = (String) request.get("ipAddress");
@@ -387,16 +436,16 @@ public class FileController {
                 String country = (String) request.get("country");
                 String city = (String) request.get("city");
                 String deviceType = (String) request.get("deviceType");
-                
+
                 fileUploadService.recordDownload(fileCode, ipAddress, userAgent, country, city, deviceType);
             }
-            
+
             // Return the download URL (full backend URL for actual file download)
             String backendUrl = System.getenv("BACKEND_URL");
             if (backendUrl == null) {
                 backendUrl = "https://urlshortner-1-hpyu.onrender.com"; // fallback to production backend
             }
-            
+
             Map<String, Object> fileData = new HashMap<>();
             fileData.put("fileUrl", backendUrl + "/api/v1/files/" + fileCode);
             fileData.put("downloadUrl", backendUrl + "/api/v1/files/" + fileCode);
@@ -404,11 +453,11 @@ public class FileController {
             fileData.put("originalFileName", file.getOriginalFileName());
             fileData.put("fileType", file.getFileType());
             fileData.put("fileSize", file.getFileSize());
-            
+
             response.put("success", true);
             response.put("data", fileData);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());

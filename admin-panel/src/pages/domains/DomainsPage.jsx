@@ -6,126 +6,74 @@ const DomainsPage = ({ hasPermission }) => {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const [activeTab, setActiveTab] = useState('domains');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [domains, setDomains] = useState([]);
 
-  // Mock domain data
-  const domains = [
-    {
-      id: 1,
-      domain: 'marketing.pebly.com',
-      owner: 'Marketing Team',
-      ownerEmail: 'sarah@company.com',
-      type: 'Subdomain',
-      status: 'Active',
-      ssl: 'Valid',
-      sslExpiry: '2024-12-15',
-      verified: true,
-      created: '2024-01-15',
-      lastChecked: '2024-01-30 14:30',
-      usage: { links: 1250, clicks: 45678, bandwidth: '2.3 GB' },
-      dnsRecords: [
-        { type: 'A', name: '@', value: '192.168.1.100', ttl: 300 },
-        { type: 'CNAME', name: 'www', value: 'marketing.pebly.com', ttl: 300 }
-      ]
-    },
-    {
-      id: 2,
-      domain: 'short.company.com',
-      owner: 'Development Team',
-      ownerEmail: 'mike@company.com',
-      type: 'Custom Domain',
-      status: 'Active',
-      ssl: 'Valid',
-      sslExpiry: '2024-11-20',
-      verified: true,
-      created: '2024-01-10',
-      lastChecked: '2024-01-30 14:25',
-      usage: { links: 3450, clicks: 123456, bandwidth: '8.7 GB' },
-      dnsRecords: [
-        { type: 'A', name: '@', value: '192.168.1.101', ttl: 300 },
-        { type: 'CNAME', name: 'www', value: 'short.company.com', ttl: 300 }
-      ]
-    },
-    {
-      id: 3,
-      domain: 'links.salesteam.io',
-      owner: 'Sales Team',
-      ownerEmail: 'emma@company.com',
-      type: 'Custom Domain',
-      status: 'Pending Verification',
-      ssl: 'Pending',
-      sslExpiry: null,
-      verified: false,
-      created: '2024-01-28',
-      lastChecked: '2024-01-30 14:20',
-      usage: { links: 0, clicks: 0, bandwidth: '0 GB' },
-      dnsRecords: [
-        { type: 'A', name: '@', value: '192.168.1.102', ttl: 300, status: 'Not Configured' }
-      ]
-    },
-    {
-      id: 4,
-      domain: 'help.support.com',
-      owner: 'Support Team',
-      ownerEmail: 'alex@company.com',
-      type: 'Custom Domain',
-      status: 'SSL Error',
-      ssl: 'Expired',
-      sslExpiry: '2024-01-15',
-      verified: true,
-      created: '2024-01-05',
-      lastChecked: '2024-01-30 14:15',
-      usage: { links: 234, clicks: 5678, bandwidth: '0.5 GB' },
-      dnsRecords: [
-        { type: 'A', name: '@', value: '192.168.1.103', ttl: 300 },
-        { type: 'CNAME', name: 'www', value: 'help.support.com', ttl: 300 }
-      ]
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  // Use correct endpoint base
+  const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
+  React.useEffect(() => {
+    fetchDomains();
+  }, []);
+
+  const fetchDomains = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      // Note: CustomDomainController is mapped to /api/domains
+      const response = await fetch(`${API_URL}/domains/admin/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          const mappedDomains = result.domains.map((d, index) => ({
+            id: d.id || index,
+            domain: d.domain,
+            owner: d.ownerId, // Ideally map to name if available
+            ownerEmail: 'N/A', // Not returned by admin endpoint yet
+            type: d.ownerType === 'TEAM' ? 'Team Domain' : 'Personal Domain',
+            status: d.isVerified ? 'Active' : (d.status === 'PENDING' ? 'Pending Verification' : d.status),
+            ssl: d.sslStatus || 'Pending',
+            sslExpiry: null,
+            verified: d.isVerified,
+            created: d.created ? new Date(d.created).toLocaleDateString() : 'N/A',
+            lastChecked: d.lastChecked ? new Date(d.lastChecked).toLocaleString() : 'Never',
+            usage: d.usage || { links: 0, clicks: 0, bandwidth: '0 GB' },
+            dnsRecords: [] // Not fetched in list view
+          }));
+          setDomains(mappedDomains);
+        } else {
+          throw new Error(result.message || "Failed to fetch domains");
+        }
+      } else {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+    } catch (err) {
+      console.error("Error fetching domains:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const sslCertificates = [
-    {
-      id: 1,
-      domain: 'marketing.pebly.com',
-      issuer: 'Let\'s Encrypt',
-      type: 'DV SSL',
-      status: 'Valid',
-      issued: '2024-01-15',
-      expires: '2024-12-15',
-      autoRenew: true,
-      daysLeft: 320
-    },
-    {
-      id: 2,
-      domain: 'short.company.com',
-      issuer: 'DigiCert',
-      type: 'EV SSL',
-      status: 'Valid',
-      issued: '2023-11-20',
-      expires: '2024-11-20',
-      autoRenew: false,
-      daysLeft: 295
-    },
-    {
-      id: 3,
-      domain: 'help.support.com',
-      issuer: 'Let\'s Encrypt',
-      type: 'DV SSL',
-      status: 'Expired',
-      issued: '2023-01-15',
-      expires: '2024-01-15',
-      autoRenew: true,
-      daysLeft: -15
-    }
-  ];
+  const sslCertificates = domains.map(d => ({
+    id: d.id,
+    domain: d.domain,
+    issuer: 'Cloudflare',
+    type: 'Universal SSL',
+    status: d.ssl,
+    issued: 'N/A',
+    expires: 'Auto-renew',
+    autoRenew: true,
+    daysLeft: 90
+  }));
 
-  const dnsRecords = [
-    { id: 1, domain: 'marketing.pebly.com', type: 'A', name: '@', value: '192.168.1.100', ttl: 300, status: 'Active' },
-    { id: 2, domain: 'marketing.pebly.com', type: 'CNAME', name: 'www', value: 'marketing.pebly.com', ttl: 300, status: 'Active' },
-    { id: 3, domain: 'short.company.com', type: 'A', name: '@', value: '192.168.1.101', ttl: 300, status: 'Active' },
-    { id: 4, domain: 'short.company.com', type: 'CNAME', name: 'www', value: 'short.company.com', ttl: 300, status: 'Active' },
-    { id: 5, domain: 'links.salesteam.io', type: 'A', name: '@', value: '192.168.1.102', ttl: 300, status: 'Not Configured' },
-    { id: 6, domain: 'help.support.com', type: 'A', name: '@', value: '192.168.1.103', ttl: 300, status: 'Active' }
-  ];
+  const dnsRecords = []; // Placeholder until DNS details are fetched individually
 
   return (
     <div className="space-y-6">

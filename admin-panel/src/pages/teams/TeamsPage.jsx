@@ -7,73 +7,123 @@ const TeamsPage = ({ hasPermission }) => {
 
   const [activeTab, setActiveTab] = useState('teams');
 
-  // Mock team data
-  const teams = [
-    {
-      id: 1,
-      name: 'Marketing Team',
-      description: 'Handles all marketing campaigns and content',
-      owner: 'Sarah Wilson',
-      members: 8,
-      plan: 'Business',
-      created: '2024-01-15',
-      status: 'Active',
-      domains: ['marketing.pebly.com', 'campaigns.pebly.com'],
-      usage: { links: 1250, clicks: 45678, storage: '2.3 GB' }
-    },
-    {
-      id: 2,
-      name: 'Development Team',
-      description: 'Software development and technical operations',
-      owner: 'Mike Johnson',
-      members: 12,
-      plan: 'Enterprise',
-      created: '2024-01-10',
-      status: 'Active',
-      domains: ['dev.pebly.com', 'api.pebly.com', 'staging.pebly.com'],
-      usage: { links: 3450, clicks: 123456, storage: '8.7 GB' }
-    },
-    {
-      id: 3,
-      name: 'Sales Team',
-      description: 'Customer acquisition and relationship management',
-      owner: 'Emma Davis',
-      members: 6,
-      plan: 'Pro',
-      created: '2024-01-20',
-      status: 'Active',
-      domains: ['sales.pebly.com'],
-      usage: { links: 890, clicks: 23456, storage: '1.2 GB' }
-    },
-    {
-      id: 4,
-      name: 'Support Team',
-      description: 'Customer support and success',
-      owner: 'Alex Brown',
-      members: 4,
-      plan: 'Pro',
-      created: '2024-01-25',
-      status: 'Suspended',
-      domains: ['help.pebly.com'],
-      usage: { links: 234, clicks: 5678, storage: '0.5 GB' }
+  const [teams, setTeams] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [invitations, setInvitations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
+  React.useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const mappedTeams = await fetchTeams();
+      await fetchInvites(mappedTeams);
+    } catch (e) {
+      console.error("Error loading data", e);
+      setError(e.message || "Failed to load data");
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const teamMembers = [
-    { id: 1, name: 'Sarah Wilson', email: 'sarah@company.com', role: 'Owner', team: 'Marketing Team', status: 'Active', lastActive: '2 min ago' },
-    { id: 2, name: 'John Doe', email: 'john@company.com', role: 'Admin', team: 'Marketing Team', status: 'Active', lastActive: '1 hour ago' },
-    { id: 3, name: 'Jane Smith', email: 'jane@company.com', role: 'Member', team: 'Marketing Team', status: 'Active', lastActive: '3 hours ago' },
-    { id: 4, name: 'Mike Johnson', email: 'mike@company.com', role: 'Owner', team: 'Development Team', status: 'Active', lastActive: '5 min ago' },
-    { id: 5, name: 'Lisa Chen', email: 'lisa@company.com', role: 'Admin', team: 'Development Team', status: 'Active', lastActive: '30 min ago' },
-    { id: 6, name: 'Emma Davis', email: 'emma@company.com', role: 'Owner', team: 'Sales Team', status: 'Active', lastActive: '1 hour ago' },
-    { id: 7, name: 'Alex Brown', email: 'alex@company.com', role: 'Owner', team: 'Support Team', status: 'Inactive', lastActive: '2 days ago' }
-  ];
+  const fetchTeams = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/v1/teams/admin/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          const mappedTeams = result.teams.map(t => ({
+            id: t.id,
+            name: t.teamName,
+            description: t.description || 'No description',
+            owner: t.ownerId,
+            members: t.members ? t.members.length : 0,
+            plan: t.subscriptionPlan || 'Free',
+            created: new Date(t.createdAt).toLocaleDateString(),
+            status: t.active ? 'Active' : 'Inactive',
+            domains: [],
+            usage: { links: t.linkCount || 0, clicks: 0, storage: '0 GB' }
+          }));
+          setTeams(mappedTeams);
 
-  const invitations = [
-    { id: 1, email: 'newuser@company.com', team: 'Marketing Team', role: 'Member', invitedBy: 'Sarah Wilson', sent: '2024-01-30', status: 'Pending' },
-    { id: 2, email: 'developer@company.com', team: 'Development Team', role: 'Admin', invitedBy: 'Mike Johnson', sent: '2024-01-29', status: 'Accepted' },
-    { id: 3, email: 'sales@company.com', team: 'Sales Team', role: 'Member', invitedBy: 'Emma Davis', sent: '2024-01-28', status: 'Expired' }
-  ];
+          // Extract and Map Members
+          const allMembers = [];
+          result.teams.forEach(t => {
+            if (t.members) {
+              t.members.forEach(m => {
+                allMembers.push({
+                  id: m.userId + '-' + t.id, // unique key
+                  name: m.userId,
+                  email: 'N/A',
+                  role: m.role,
+                  team: t.teamName,
+                  status: m.active ? 'Active' : 'Inactive',
+                  lastActive: m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : 'N/A'
+                });
+              });
+            }
+          });
+          setTeamMembers(allMembers);
+
+          return mappedTeams;
+        } else {
+          throw new Error(result.message || "Failed to fetch teams");
+        }
+      } else {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      setError(error.message);
+    }
+    return [];
+  };
+
+  const fetchInvites = async (currentTeams) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/v1/teams/admin/invites/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          const mappedInvites = result.invites.map(i => {
+            const team = currentTeams.find(t => t.id === i.teamId);
+            const teamName = team ? team.name : i.teamId;
+
+            let status = 'Pending';
+            if (i.accepted) status = 'Accepted';
+            else if (i.expired) status = 'Expired';
+
+            return {
+              id: i.inviteToken,
+              email: i.email,
+              team: teamName,
+              role: i.role,
+              invitedBy: i.invitedBy,
+              sent: new Date(i.createdAt).toLocaleDateString(),
+              status: status
+            };
+          });
+          setInvitations(mappedInvites);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching invites:", error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -152,71 +202,83 @@ const TeamsPage = ({ hasPermission }) => {
       {/* Teams Tab */}
       {activeTab === 'teams' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Team</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Owner</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Members</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Usage</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {teams.map((team) => (
-                <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{team.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{team.description}</div>
-                      <div className="text-xs text-gray-400 mt-1">{team.domains.length} domains</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{team.owner}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{team.members}</span>
-                      <span className="ml-2 text-xs text-gray-500">members</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${team.plan === 'Enterprise' ? 'bg-purple-100 text-purple-800' :
-                      team.plan === 'Business' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                      {team.plan}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      <div>{team.usage.links} links</div>
-                      <div>{team.usage.clicks.toLocaleString()} clicks</div>
-                      <div>{team.usage.storage}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${team.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                      {team.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-800">View</button>
-                      {hasPermission('teams', 'edit') && (
-                        <button className="text-green-600 hover:text-green-800">Edit</button>
-                      )}
-                      {hasPermission('teams', 'delete') && (
-                        <button className="text-red-600 hover:text-red-800">Suspend</button>
-                      )}
-                    </div>
-                  </td>
+          {error && (
+            <div className="p-4 bg-red-50 text-red-700 border-b border-red-200">
+              Error loading teams: {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">Loading teams...</div>
+          ) : teams.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No teams found.</div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Owner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Members</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Usage</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {teams.map((team) => (
+                  <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{team.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{team.description}</div>
+                        <div className="text-xs text-gray-400 mt-1">{team.domains.length} domains</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{team.owner}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{team.members}</span>
+                        <span className="ml-2 text-xs text-gray-500">members</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded-full ${team.plan === 'Enterprise' ? 'bg-purple-100 text-purple-800' :
+                        team.plan === 'Business' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                        {team.plan}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div>{team.usage.links} links</div>
+                        <div>{team.usage.clicks.toLocaleString()} clicks</div>
+                        <div>{team.usage.storage}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded-full ${team.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                        {team.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex space-x-2">
+                        <button className="text-blue-600 hover:text-blue-800">View</button>
+                        {hasPermission('teams', 'edit') && (
+                          <button className="text-green-600 hover:text-green-800">Edit</button>
+                        )}
+                        {hasPermission('teams', 'delete') && (
+                          <button className="text-red-600 hover:text-red-800">Suspend</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 

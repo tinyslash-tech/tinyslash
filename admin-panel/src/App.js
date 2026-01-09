@@ -18,9 +18,14 @@ import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import ResourceManagementPage from './pages/resources/ResourceManagementPage';
 import SystemHealthPage from './pages/system/SystemHealthPage';
 import AuditLogsPage from './pages/audit/AuditLogsPage';
+import CareersPage from './pages/careers/CareersPage';
+import JobApplicantsPage from './pages/careers/JobApplicantsPage';
+import EmployeeManagementPage from './pages/employees/EmployeeManagement';
+import SettingsPage from './pages/settings/SettingsPage';
 
 const AppContent = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [selectedJobId, setSelectedJobId] = useState(null);
   const { isAuthenticated, user, login, hasPermission } = useAuth();
 
   if (!isAuthenticated) {
@@ -43,7 +48,11 @@ const AppContent = () => {
       analytics: { resource: 'analytics', action: 'read' },
       resources: { resource: 'resources', action: 'read' },
       system: { resource: 'system', action: 'read' },
-      audit: { resource: 'audit', action: 'read' }
+      audit: { resource: 'audit', action: 'read' },
+      careers: { resource: 'jobs', action: 'read' },
+      'job-applicants': { resource: 'jobs', action: 'read' },
+      employees: { resource: 'employees', action: 'read' },
+      settings: { resource: 'settings', action: 'read' }
     };
 
     const permission = pagePermissions[page];
@@ -70,6 +79,10 @@ const AppContent = () => {
     switch (currentPage) {
       case 'dashboard':
         return <DashboardPage hasPermission={hasPermission} user={user} />;
+      case 'careers':
+        return <CareersPage onViewApplicants={(id) => { setSelectedJobId(id); setCurrentPage('job-applicants'); }} />;
+      case 'job-applicants':
+        return <JobApplicantsPage jobId={selectedJobId} onBack={() => { setSelectedJobId(null); setCurrentPage('careers'); }} />;
       case 'users':
         return <UsersPage hasPermission={hasPermission} />;
       case 'teams':
@@ -96,6 +109,10 @@ const AppContent = () => {
         return <SystemHealthPage hasPermission={hasPermission} />;
       case 'audit':
         return <AuditLogsPage hasPermission={hasPermission} />;
+      case 'employees':
+        return <EmployeeManagementPage hasPermission={hasPermission} />;
+      case 'settings':
+        return <SettingsPage />;
       default:
         return <DashboardPage hasPermission={hasPermission} user={user} />;
     }

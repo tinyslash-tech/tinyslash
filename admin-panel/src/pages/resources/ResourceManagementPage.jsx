@@ -1,59 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Resource Management Page - Complete Implementation
 const ResourceManagementPage = ({ hasPermission }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState('30d');
 
-  // Mock resource usage data
-  const resourceData = {
-    storage: {
-      total: 107374182400, // 100 GB
-      used: 53687091200,   // 50 GB
-      available: 53687091200, // 50 GB
-      byPlan: {
-        Free: 1073741824,      // 1 GB
-        Pro: 10737418240,      // 10 GB
-        Business: 42949672960  // 40 GB
-      }
-    },
-    bandwidth: {
-      total: 1099511627776, // 1 TB
-      used: 549755813888,   // 500 GB
-      thisMonth: 107374182400, // 100 GB
-      byRegion: {
-        'North America': 274877906944, // 256 GB
-        'Europe': 171798691840,        // 160 GB
-        'Asia Pacific': 103079215104   // 96 GB
-      }
-    },
-    apiUsage: {
-      totalRequests: 2456789,
-      thisMonth: 456789,
-      rateLimits: {
-        Free: { limit: 1000, used: 890 },
-        Pro: { limit: 10000, used: 7650 },
-        Business: { limit: 100000, used: 45670 }
-      }
-    },
-    users: {
-      total: 1234,
-      active: 987,
-      byPlan: {
-        Free: 856,
-        Pro: 267,
-        Business: 111
-      }
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [resourceData, setResourceData] = useState(null);
+
+  useEffect(() => {
+    fetchResourceUsage();
+  }, []);
+
+  const fetchResourceUsage = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/resources/admin/usage`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch resource usage');
+
+      const data = await response.json();
+      setResourceData(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0 || !bytes) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-red-500">{error}</p>
+        <button onClick={fetchResourceUsage} className="mt-4 px-4 py-2 bg-primary-600 text-white rounded">Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -555,6 +555,14 @@ public class TeamService {
                 pageable);
     }
 
+    public List<Team> getAllTeams() {
+        return teamRepository.findAll();
+    }
+
+    public List<TeamInvite> getAllInvites() {
+        return teamInviteRepository.findAll();
+    }
+
     public Page<Team> findAllTeams(Pageable pageable) {
         return teamRepository.findAll(pageable);
     }

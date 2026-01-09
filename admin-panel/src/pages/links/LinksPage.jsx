@@ -7,102 +7,66 @@ const LinksPage = ({ hasPermission }) => {
   const [selectedLinks, setSelectedLinks] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [links, setLinks] = useState([]);
 
-  // Mock link data
-  const links = [
-    {
-      id: 1,
-      shortUrl: 'pebly.com/abc123',
-      originalUrl: 'https://example.com/very-long-marketing-campaign-url-with-parameters',
-      title: 'Marketing Campaign Landing Page',
-      owner: 'Marketing Team',
-      ownerEmail: 'sarah@company.com',
-      domain: 'marketing.pebly.com',
-      created: '2024-01-15',
-      lastClicked: '2024-01-30 14:30',
-      status: 'Active',
-      clicks: 1250,
-      uniqueClicks: 890,
-      tags: ['marketing', 'campaign', 'q1-2024'],
-      qrCode: true,
-      password: false,
-      expiry: null,
-      analytics: {
-        countries: { US: 45, UK: 25, CA: 15, DE: 10, FR: 5 },
-        devices: { Desktop: 60, Mobile: 35, Tablet: 5 },
-        referrers: { Direct: 40, Google: 30, Facebook: 20, Twitter: 10 }
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
+  React.useEffect(() => {
+    fetchLinks();
+  }, []);
+
+  const fetchLinks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/v1/urls/admin/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          const mappedLinks = result.urls.map((l, index) => ({
+            id: l.id || index,
+            shortUrl: l.shortUrl,
+            originalUrl: l.originalUrl,
+            title: l.title || 'Untitled',
+            owner: l.userId, // Display userId as owner for now
+            ownerEmail: 'N/A', // Email not available in this endpoint yet
+            domain: l.domain || 'pebly.com',
+            created: l.createdAt ? new Date(l.createdAt).toLocaleDateString() : 'N/A',
+            lastClicked: l.lastClickedAt ? new Date(l.lastClickedAt).toLocaleString() : 'Never',
+            status: l.expiresAt && new Date(l.expiresAt) < new Date() ? 'Expired' : 'Active',
+            clicks: l.totalClicks || 0,
+            uniqueClicks: l.uniqueClicks || 0,
+            tags: l.tags || [],
+            qrCode: l.hasQrCode,
+            password: l.isPasswordProtected,
+            expiry: l.expiresAt ? new Date(l.expiresAt).toLocaleDateString() : null,
+            analytics: { // Placeholders until deep analytics are fetched
+              countries: {},
+              devices: {},
+              referrers: {}
+            }
+          }));
+          setLinks(mappedLinks);
+        } else {
+          throw new Error(result.message || "Failed to fetch links");
+        }
+      } else {
+        throw new Error(`HTTP Error: ${response.status}`);
       }
-    },
-    {
-      id: 2,
-      shortUrl: 'short.company.com/dev456',
-      originalUrl: 'https://github.com/company/project/releases/latest',
-      title: 'Latest Release Download',
-      owner: 'Development Team',
-      ownerEmail: 'mike@company.com',
-      domain: 'short.company.com',
-      created: '2024-01-10',
-      lastClicked: '2024-01-30 13:45',
-      status: 'Active',
-      clicks: 3450,
-      uniqueClicks: 2100,
-      tags: ['development', 'release', 'download'],
-      qrCode: true,
-      password: true,
-      expiry: '2024-06-30',
-      analytics: {
-        countries: { US: 50, IN: 20, UK: 15, DE: 10, CA: 5 },
-        devices: { Desktop: 80, Mobile: 15, Tablet: 5 },
-        referrers: { Direct: 60, GitHub: 25, Slack: 10, Email: 5 }
-      }
-    },
-    {
-      id: 3,
-      shortUrl: 'sales.pebly.com/demo789',
-      originalUrl: 'https://calendly.com/sales-team/product-demo',
-      title: 'Product Demo Booking',
-      owner: 'Sales Team',
-      ownerEmail: 'emma@company.com',
-      domain: 'sales.pebly.com',
-      created: '2024-01-20',
-      lastClicked: '2024-01-30 12:15',
-      status: 'Active',
-      clicks: 890,
-      uniqueClicks: 650,
-      tags: ['sales', 'demo', 'booking'],
-      qrCode: false,
-      password: false,
-      expiry: null,
-      analytics: {
-        countries: { US: 60, UK: 20, CA: 10, AU: 5, DE: 5 },
-        devices: { Desktop: 70, Mobile: 25, Tablet: 5 },
-        referrers: { LinkedIn: 40, Direct: 30, Email: 20, Google: 10 }
-      }
-    },
-    {
-      id: 4,
-      shortUrl: 'help.support.com/guide',
-      originalUrl: 'https://docs.company.com/troubleshooting-guide',
-      title: 'Troubleshooting Guide',
-      owner: 'Support Team',
-      ownerEmail: 'alex@company.com',
-      domain: 'help.support.com',
-      created: '2024-01-05',
-      lastClicked: '2024-01-28 16:20',
-      status: 'Expired',
-      clicks: 234,
-      uniqueClicks: 180,
-      tags: ['support', 'documentation', 'help'],
-      qrCode: true,
-      password: false,
-      expiry: '2024-01-25',
-      analytics: {
-        countries: { US: 40, UK: 25, CA: 15, AU: 10, DE: 10 },
-        devices: { Desktop: 55, Mobile: 40, Tablet: 5 },
-        referrers: { Direct: 50, Google: 30, Support: 15, Email: 5 }
-      }
+    } catch (err) {
+      console.error("Error fetching links:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const filteredLinks = links.filter(link => {
     const matchesSearch = link.shortUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||

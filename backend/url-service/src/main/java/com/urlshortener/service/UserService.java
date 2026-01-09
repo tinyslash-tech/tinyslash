@@ -15,22 +15,22 @@ import java.security.NoSuchAlgorithmException;
 
 @Service
 public class UserService {
-    
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
-    
+
     public User registerUser(String email, String password, String firstName, String lastName) {
         // Check if user already exists
         if (userRepository.existsByEmail(email)) {
             throw new RuntimeException("User with email " + email + " already exists");
         }
-        
+
         // Create new user
         User user = new User();
         user.setEmail(email);
@@ -41,31 +41,35 @@ public class UserService {
         user.setApiKey(generateApiKey());
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        
+
+        // Default role
+        user.getRoles().add("ROLE_USER");
+
         return userRepository.save(user);
     }
-    
+
     public User loginUser(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
-        
+
         if (userOpt.isEmpty()) {
             throw new RuntimeException("User not found");
         }
-        
+
         User user = userOpt.get();
-        
+
         if (!verifyPassword(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
-        
+
         // Update last login
         user.setLastLoginAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        
+
         return userRepository.save(user);
     }
-    
-    public User registerWithGoogle(String email, String googleId, String firstName, String lastName, String profilePicture) {
+
+    public User registerWithGoogle(String email, String googleId, String firstName, String lastName,
+            String profilePicture) {
         // Check if user already exists
         Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
@@ -80,7 +84,7 @@ public class UserService {
             }
             return user;
         }
-        
+
         // Create new user with Google auth
         User user = new User();
         user.setEmail(email);
@@ -94,31 +98,34 @@ public class UserService {
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         user.setLastLoginAt(LocalDateTime.now());
-        
+
+        // Default role
+        user.getRoles().add("ROLE_USER");
+
         return userRepository.save(user);
     }
-    
+
     public Optional<User> findById(String id) {
         return userRepository.findById(id);
     }
-    
+
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
-    
+
     public Optional<User> findByGoogleId(String googleId) {
         return userRepository.findByGoogleId(googleId);
     }
-    
+
     public java.util.List<User> findAllUsers() {
         return (java.util.List<User>) userRepository.findAll();
     }
-    
+
     public User updateUser(User user) {
         user.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
-    
+
     private String hashPassword(String password) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -132,31 +139,34 @@ public class UserService {
             throw new RuntimeException("Error hashing password", e);
         }
     }
-    
+
     private boolean verifyPassword(String password, String hashedPassword) {
         return hashPassword(password).equals(hashedPassword);
     }
-    
+
     private String generateApiKey() {
         return "pk_" + UUID.randomUUID().toString().replace("-", "");
     }
 
     // Admin-specific methods
     public Page<User> searchUsers(String search, Pageable pageable) {
-        return userRepository.findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-                search, search, search, pageable);
+        return userRepository
+                .findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                        search, search, search, pageable);
     }
 
     public Page<User> findAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
 
-    public Page<User> findUsersWithFilters(String status, String plan, String dateFrom, String dateTo, Pageable pageable) {
+    public Page<User> findUsersWithFilters(String status, String plan, String dateFrom, String dateTo,
+            Pageable pageable) {
         // Implementation for filtering users
         return userRepository.findUsersWithFilters(status, plan, dateFrom, dateTo, pageable);
     }
 
-    public User createUserByAdmin(String email, String name, String password, String plan, String status, boolean emailVerified) {
+    public User createUserByAdmin(String email, String name, String password, String plan, String status,
+            boolean emailVerified) {
         User user = new User(email, passwordEncoder.encode(password));
         String[] nameParts = name.split(" ", 2);
         user.setFirstName(nameParts[0]);
@@ -172,7 +182,7 @@ public class UserService {
     public User updateUserByAdmin(String id, Object updateRequest) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         // Update user properties based on request
         // This is a simplified implementation
         user.setUpdatedAt(LocalDateTime.now());
@@ -182,7 +192,7 @@ public class UserService {
     public void suspendUser(String id, String reason) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         user.setActive(false);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
@@ -191,7 +201,7 @@ public class UserService {
     public void reactivateUser(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         user.setActive(true);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
@@ -200,7 +210,7 @@ public class UserService {
     public void deleteUser(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         // Soft delete
         user.setActive(false);
         user.setUpdatedAt(LocalDateTime.now());
@@ -272,7 +282,7 @@ public class UserService {
     public Map<String, Object> exportUserData(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Map<String, Object> userData = new HashMap<>();
         userData.put("id", user.getId());
         userData.put("email", user.getEmail());
@@ -281,7 +291,7 @@ public class UserService {
         userData.put("status", user.getStatus());
         userData.put("createdAt", user.getCreatedAt());
         userData.put("lastLogin", user.getLastLogin());
-        
+
         return userData;
     }
 
@@ -306,5 +316,13 @@ public class UserService {
     public void bulkSendEmail(List<String> userIds, String template) {
         // Implementation for bulk email sending
         // Placeholder
+    }
+
+    public void updateUserRoles(String userId, Set<String> roles) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setRoles(roles);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
     }
 }

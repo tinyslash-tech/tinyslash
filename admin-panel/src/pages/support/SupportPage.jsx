@@ -1,255 +1,194 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  Search,
+  Filter,
+  MoreVertical,
+  CheckCircle,
+  Clock,
+  MessageSquare,
+  AlertCircle,
+  User,
+  ExternalLink,
+  ChevronDown
+} from 'lucide-react';
 
-// Complete Support Ticket Management Page - Matching User-Side Functionality
 const SupportPage = ({ hasPermission }) => {
-  const [activeTab, setActiveTab] = useState('tickets');
+  // State for data
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // State for UI
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showTicketDetail, setShowTicketDetail] = useState(false);
-  const [showBulkActions, setShowBulkActions] = useState(false);
-  const [selectedTickets, setSelectedTickets] = useState([]);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
-  // Mock comprehensive support ticket data matching user-side structure exactly
-  const supportTickets = [
-    {
-      id: 'ticket_001',
-      userId: 'usr_001',
-      category: 'technical',
-      subject: 'Custom domain verification failing',
-      message: 'I have added the CNAME record as instructed but my domain verification keeps failing. I have waited 24 hours for DNS propagation. Can you please help me troubleshoot this issue?',
-      priority: 'high',
-      status: 'open',
-      createdAt: '2024-01-30T09:15:00Z',
-      updatedAt: '2024-01-30T14:30:00Z',
-      assignedAgent: 'Sarah Wilson',
-      assignedTo: 'support@pebly.com',
-      userName: 'John Doe',
-      userEmail: 'john@company.com',
-      userPlan: 'Business',
-      currentPage: '/domains',
-      responseTime: '2h 5m',
-      resolutionTime: null,
-      attachments: ['att_001'],
-      tags: ['domain', 'dns'],
-      responses: [
-        {
-          id: 'resp_001',
-          ticketId: 'ticket_001',
-          message: 'Thank you for contacting support. I can see the CNAME record is correctly configured. Let me check our verification system and get back to you shortly.',
-          sender: 'agent',
-          senderName: 'Sarah Wilson',
-          timestamp: '2024-01-30T11:20:00Z',
-          attachments: []
-        }
-      ],
-      metadata: {
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-        ipAddress: '192.168.1.100',
-        sessionId: 'sess_abc123',
-        referrer: 'https://tinyslash.com/domains'
-      }
-    },
-    {
-      id: 'ticket_002',
-      userId: 'usr_002',
-      category: 'payment',
-      subject: 'Billing issue - charged twice for Pro plan',
-      message: 'I was charged twice for my Pro plan subscription this month. Please refund the duplicate charge. Transaction IDs: TXN123 and TXN124. I have attached the payment receipts for both charges.',
-      priority: 'medium',
-      status: 'in-progress',
-      createdAt: '2024-01-29T16:45:00Z',
-      updatedAt: '2024-01-30T10:15:00Z',
-      assignedAgent: 'Mike Johnson',
-      assignedTo: 'billing@pebly.com',
-      userName: 'Jane Smith',
-      userEmail: 'jane@startup.com',
-      userPlan: 'Pro',
-      currentPage: '/billing',
-      responseTime: '45m',
-      resolutionTime: null,
-      attachments: ['att_002'],
-      tags: ['billing', 'refund'],
-      responses: [
-        {
-          id: 'resp_002',
-          ticketId: 'ticket_002',
-          message: 'I have located both transactions and initiated a refund for the duplicate charge. You should see the refund in 3-5 business days. I will follow up to ensure the refund is processed correctly.',
-          sender: 'agent',
-          senderName: 'Mike Johnson',
-          timestamp: '2024-01-30T10:15:00Z',
-          attachments: []
-        }
-      ],
-      metadata: {
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        ipAddress: '203.0.113.45',
-        sessionId: 'sess_def456',
-        referrer: 'https://tinyslash.com/billing'
-      }
-    },
-    {
-      id: 'ticket_003',
-      userId: 'usr_003',
-      category: 'technical',
-      subject: 'QR code not generating with logo',
-      message: 'When I try to generate QR codes with my company logo, the generation fails. Works fine without logo. Error message says "Invalid image format". I have attached my logo file.',
-      priority: 'low',
-      status: 'resolved',
-      createdAt: '2024-01-28T14:20:00Z',
-      updatedAt: '2024-01-29T09:30:00Z',
-      assignedAgent: 'Emma Davis',
-      assignedTo: 'tech@pebly.com',
-      userName: 'Alex Brown',
-      userEmail: 'alex@agency.com',
-      userPlan: 'Business',
-      currentPage: '/qr-generator',
-      responseTime: '1h 15m',
-      resolutionTime: '18h 10m',
-      attachments: ['att_003'],
-      tags: ['qr-code', 'bug'],
-      responses: [
-        {
-          id: 'resp_003',
-          ticketId: 'ticket_003',
-          message: 'I found the issue - your logo needs to be in PNG format with transparent background. I have converted it for you and the QR code generation should work now. Please try again and let me know if you need any further assistance.',
-          sender: 'agent',
-          senderName: 'Emma Davis',
-          timestamp: '2024-01-29T09:30:00Z',
-          attachments: []
-        }
-      ],
-      metadata: {
-        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)',
-        ipAddress: '198.51.100.23',
-        sessionId: 'sess_ghi789',
-        referrer: 'https://tinyslash.com/qr'
-      }
-    },
-    {
-      id: 'ticket_004',
-      userId: 'usr_004',
-      category: 'general',
-      subject: 'Need help with team collaboration features',
-      message: 'I am trying to set up team collaboration for my organization but having trouble understanding the permission system. Can someone guide me through the process of adding team members and setting up proper access controls?',
-      priority: 'medium',
-      status: 'open',
-      createdAt: '2024-01-27T11:30:00Z',
-      updatedAt: '2024-01-30T15:45:00Z',
-      assignedAgent: 'Support Team',
-      assignedTo: 'support@pebly.com',
-      userName: 'Lisa Chen',
-      userEmail: 'lisa@techcorp.com',
-      userPlan: 'Business',
-      currentPage: '/teams',
-      responseTime: '30m',
-      resolutionTime: null,
-      attachments: [],
-      tags: ['feature-request', 'help'],
-      responses: [
-        {
-          id: 'resp_004',
-          ticketId: 'ticket_004',
-          message: 'I would be happy to help you set up team collaboration. Let me schedule a quick call to walk you through the process. What time works best for you this week?',
-          sender: 'agent',
-          senderName: 'Support Team',
-          timestamp: '2024-01-30T15:45:00Z',
-          attachments: []
-        }
-      ],
-      metadata: {
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-        ipAddress: '172.16.0.1',
-        sessionId: 'sess_jkl012',
-        referrer: 'https://tinyslash.com/teams'
-      }
-    }
-  ];
+  // Fetch tickets on mount
+  useEffect(() => {
+    fetchTickets();
+  }, []);
 
-  // Support analytics matching user-side structure
-  const supportStats = {
-    totalTickets: supportTickets.length,
-    openTickets: supportTickets.filter(t => t.status === 'open').length,
-    inProgressTickets: supportTickets.filter(t => t.status === 'in-progress').length,
-    resolvedTickets: supportTickets.filter(t => t.status === 'resolved').length,
-    closedTickets: supportTickets.filter(t => t.status === 'closed').length,
-    avgResponseTime: '1h 24m',
-    avgResolutionTime: '4h 32m',
-    satisfactionScore: 4.7,
-    unreadCount: supportTickets.filter(t =>
-      t.responses.some(r => r.sender === 'user' && new Date(r.timestamp) > new Date(t.updatedAt))
-    ).length,
-    categories: {
-      payment: supportTickets.filter(t => t.category === 'payment').length,
-      technical: supportTickets.filter(t => t.category === 'technical').length,
-      account: supportTickets.filter(t => t.category === 'account').length,
-      general: supportTickets.filter(t => t.category === 'general').length
-    },
-    priorities: {
-      urgent: supportTickets.filter(t => t.priority === 'urgent').length,
-      high: supportTickets.filter(t => t.priority === 'high').length,
-      medium: supportTickets.filter(t => t.priority === 'medium').length,
-      low: supportTickets.filter(t => t.priority === 'low').length
+  const fetchTickets = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/support/admin/all`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch tickets');
+
+      const result = await response.json();
+      if (result.success) {
+        setTickets(result.data || []);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Category functions matching user-side exactly
+  const handleStatusUpdate = async (ticketId, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        status: newStatus,
+        updatedBy: 'Admin', // In real app, get from auth context
+        reason: 'Status updated by admin'
+      };
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/support/tickets/${ticketId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Update local state
+        setTickets(tickets.map(t => t.id === ticketId ? { ...t, status: newStatus } : t));
+        if (selectedTicket && selectedTicket.id === ticketId) {
+          setSelectedTicket({ ...selectedTicket, status: newStatus });
+        }
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      alert('Failed to update status: ' + err.message);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!replyMessage.trim()) return;
+
+    try {
+      setSendingReply(true);
+      const token = localStorage.getItem('token');
+      const payload = {
+        message: replyMessage,
+        sender: 'AGENT',
+        senderId: 'admin-1', // Should be current user ID
+        senderName: 'Support Agent', // Should be current user name
+        senderEmail: 'support@example.com'
+      };
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/support/tickets/${selectedTicket.id}/responses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Refresh ticket data
+        const updatedTicket = result.data;
+        setTickets(tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t));
+        setSelectedTicket(updatedTicket);
+        setReplyMessage('');
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      alert('Failed to send reply: ' + err.message);
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  // Calculate stats from real data
+  const calculateStats = () => {
+    return {
+      totalTickets: tickets.length,
+      openTickets: tickets.filter(t => t.status === 'OPEN').length,
+      inProgressTickets: tickets.filter(t => t.status === 'IN_PROGRESS').length,
+      resolvedTickets: tickets.filter(t => t.status === 'RESOLVED').length,
+      unreadCount: 0, // Need read status logic on backend ideally
+      categories: {
+        payment: tickets.filter(t => t.category === 'PAYMENT').length,
+        technical: tickets.filter(t => t.category === 'TECHNICAL').length,
+        account: tickets.filter(t => t.category === 'ACCOUNT').length,
+        general: tickets.filter(t => t.category === 'GENERAL').length
+      }
+    };
+  };
+
+  const supportStats = calculateStats();
+
+  // Helper functions for UI
   const getCategoryColor = (category) => {
-    switch (category) {
-      case 'payment': return 'bg-green-100 text-green-800';
-      case 'technical': return 'bg-blue-100 text-blue-800';
-      case 'account': return 'bg-purple-100 text-purple-800';
-      case 'general': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'payment': return '💳';
-      case 'technical': return '🔧';
-      case 'account': return '👤';
-      case 'general': return '💬';
-      default: return '📋';
-    }
+    const map = {
+      'PAYMENT': 'bg-green-100 text-green-800',
+      'TECHNICAL': 'bg-blue-100 text-blue-800',
+      'ACCOUNT': 'bg-purple-100 text-purple-800',
+      'GENERAL': 'bg-gray-100 text-gray-800',
+      'FEATURE_REQUEST': 'bg-yellow-100 text-yellow-800'
+    };
+    return map[category] || 'bg-gray-100 text-gray-800';
   };
 
   const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const map = {
+      'URGENT': 'bg-red-100 text-red-800',
+      'HIGH': 'bg-orange-100 text-orange-800',
+      'MEDIUM': 'bg-yellow-100 text-yellow-800',
+      'LOW': 'bg-green-100 text-green-800'
+    };
+    return map[priority] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'open': return 'bg-orange-100 text-orange-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const map = {
+      'OPEN': 'bg-red-100 text-red-800',
+      'IN_PROGRESS': 'bg-blue-100 text-blue-800',
+      'WAITING_FOR_USER': 'bg-yellow-100 text-yellow-800',
+      'RESOLVED': 'bg-green-100 text-green-800',
+      'CLOSED': 'bg-gray-100 text-gray-800'
+    };
+    return map[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'open': return '🔴';
-      case 'in-progress': return '🔵';
-      case 'resolved': return '✅';
-      case 'closed': return '⚫';
-      default: return '📋';
-    }
-  };
-
-  const filteredTickets = supportTickets.filter(ticket => {
-    const matchesSearch = ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.id.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filtering
+  const filteredTickets = tickets.filter(ticket => {
+    const matchesSearch =
+      (ticket.subject?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (ticket.userName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (ticket.id?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
     const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
     const matchesPriority = filterPriority === 'all' || ticket.priority === filterPriority;
@@ -258,497 +197,311 @@ const SupportPage = ({ hasPermission }) => {
     return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
   });
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Support Tickets</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage customer support requests and communications</p>
-        </div>
-        <div className="flex space-x-3">
-          {hasPermission('support', 'export') && (
-            <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-              Export Report
-            </button>
-          )}
-          {hasPermission('support', 'create') && (
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Create Ticket
-            </button>
-          )}
+          <p className="text-gray-600 dark:text-gray-400">Manage customer support requests</p>
         </div>
       </div>
 
-      {/* Support Analytics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tickets</h3>
-          <p className="text-2xl font-bold text-blue-600 mt-1">{supportStats.totalTickets}</p>
-          <p className="text-xs text-gray-500 mt-1">All time</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{supportStats.totalTickets}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Open</h3>
-          <p className="text-2xl font-bold text-orange-600 mt-1">{supportStats.openTickets}</p>
-          <p className="text-xs text-orange-600 mt-1">Needs attention</p>
+          <p className="text-2xl font-bold text-red-600 mt-1">{supportStats.openTickets}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">In Progress</h3>
           <p className="text-2xl font-bold text-blue-600 mt-1">{supportStats.inProgressTickets}</p>
-          <p className="text-xs text-blue-600 mt-1">Being handled</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Resolved</h3>
           <p className="text-2xl font-bold text-green-600 mt-1">{supportStats.resolvedTickets}</p>
-          <p className="text-xs text-green-600 mt-1">Completed</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Unread</h3>
-          <p className="text-2xl font-bold text-red-600 mt-1">{supportStats.unreadCount}</p>
-          <p className="text-xs text-red-600 mt-1">New responses</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Response</h3>
-          <p className="text-2xl font-bold text-indigo-600 mt-1">{supportStats.avgResponseTime}</p>
-          <p className="text-xs text-indigo-600 mt-1">Response time</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Resolution</h3>
-          <p className="text-2xl font-bold text-pink-600 mt-1">{supportStats.avgResolutionTime}</p>
-          <p className="text-xs text-pink-600 mt-1">Resolution time</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Satisfaction</h3>
-          <p className="text-2xl font-bold text-yellow-600 mt-1">{supportStats.satisfactionScore}/5</p>
-          <p className="text-xs text-yellow-600 mt-1">Customer rating</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search tickets..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="pl-10 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            >
-              <option value="all">All Status</option>
-              <option value="open">Open</option>
-              <option value="in-progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
-            <select
-              value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            >
-              <option value="all">All Priority</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            >
-              <option value="all">All Categories</option>
-              <option value="payment">💳 Payment</option>
-              <option value="technical">🔧 Technical</option>
-              <option value="account">👤 Account</option>
-              <option value="general">💬 General</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Agent</label>
-            <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-              <option value="all">All Agents</option>
-              <option value="sarah">Sarah Wilson</option>
-              <option value="mike">Mike Johnson</option>
-              <option value="emma">Emma Davis</option>
-            </select>
-          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+          >
+            <option value="all">All Status</option>
+            <option value="OPEN">Open</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+          <select
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+          >
+            <option value="all">All Priorities</option>
+            <option value="URGENT">Urgent</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+          >
+            <option value="all">All Categories</option>
+            <option value="TECHNICAL">Technical</option>
+            <option value="PAYMENT">Payment</option>
+            <option value="ACCOUNT">Account</option>
+            <option value="GENERAL">General</option>
+          </select>
         </div>
       </div>
 
-      {/* Tickets Table */}
+      {/* Tickets List */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ticket</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Customer</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Priority</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Agent</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Response Time</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ticket</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredTickets.map((ticket) => (
-              <tr key={ticket.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="text-2xl">{getCategoryIcon(ticket.category)}</div>
-                    <div>
-                      <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                        #{ticket.id.slice(-6)}
-                      </div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-xs">
-                        {ticket.subject}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Created: {new Date(ticket.createdAt).toLocaleDateString()}
-                      </div>
-                      {ticket.attachments && ticket.attachments.length > 0 && (
-                        <div className="text-xs text-purple-600 mt-1">
-                          📎 {ticket.attachments.length} attachment{ticket.attachments.length > 1 ? 's' : ''}
+            {filteredTickets.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  No tickets found matching your filters.
+                </td>
+              </tr>
+            ) : (
+              filteredTickets.map((ticket) => (
+                <tr key={ticket.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <MessageSquare className="h-5 w-5 text-gray-400 mr-3" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {ticket.subject}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
-                        {ticket.userName.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {ticket.userName}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {ticket.userEmail}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {ticket.userPlan} Plan
+                        <div className="text-xs text-gray-500">
+                          #{ticket.id.substring(0, 8)} • <span className={`px-1.5 py-0.5 rounded text-[10px] ${getCategoryColor(ticket.category)}`}>{ticket.category}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(ticket.category)}`}>
-                    {ticket.category.charAt(0).toUpperCase() + ticket.category.slice(1)}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(ticket.priority)}`}>
-                    {ticket.priority}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
-                    {ticket.status.replace('_', ' ')}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 dark:text-white">
-                    {ticket.assignedAgent}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {ticket.assignedTo}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {ticket.responseTime}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Last: {ticket.lastResponseAt}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex space-x-2">
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
+                        {ticket.userName?.charAt(0) || 'U'}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{ticket.userName}</div>
+                        <div className="text-xs text-gray-500">{ticket.userEmail}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${getPriorityColor(ticket.priority)}`}>
+                      {ticket.priority}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(ticket.status)}`}>
+                      {ticket.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {new Date(ticket.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-right">
                     <button
-                      onClick={() => {
-                        setSelectedTicket(ticket);
-                        setShowTicketDetail(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-800 text-sm"
+                      onClick={() => { setSelectedTicket(ticket); setShowTicketDetail(true); }}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                     >
                       View
                     </button>
-                    {hasPermission('support', 'respond') && (
-                      <button className="text-green-600 hover:text-green-800 text-sm">
-                        Reply
-                      </button>
-                    )}
-                    {hasPermission('support', 'resolve') && ticket.status !== 'RESOLVED' && (
-                      <button className="text-purple-600 hover:text-purple-800 text-sm">
-                        Resolve
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Support Categories Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tickets by Category</h3>
-          <div className="space-y-3">
-            {Object.entries(supportStats.categories).map(([category, count]) => (
-              <div key={category} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(category)} mr-3`}>
-                    {category.replace('_', ' ')}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">{count} tickets</div>
-                  <div className="text-xs text-gray-500">
-                    {((count / supportStats.totalTickets) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Agent Performance</h3>
-          <div className="space-y-3">
-            {[
-              { agent: 'Sarah Wilson', tickets: 15, avgResponse: '1h 12m', satisfaction: 4.8 },
-              { agent: 'Mike Johnson', tickets: 12, avgResponse: '1h 45m', satisfaction: 4.6 },
-              { agent: 'Emma Davis', tickets: 8, avgResponse: '58m', satisfaction: 4.9 },
-              { agent: 'Tech Lead', tickets: 3, avgResponse: '2h 15m', satisfaction: 4.5 }
-            ].map((agent, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {agent.agent}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {agent.tickets} tickets • {agent.avgResponse} avg response
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-yellow-600">
-                    {agent.satisfaction}/5
-                  </div>
-                  <div className="text-xs text-gray-500">satisfaction</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Ticket Detail Modal */}
       {showTicketDetail && selectedTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="flex">
-              {/* Ticket Details */}
-              <div className="flex-1 p-6 overflow-y-auto">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {selectedTicket.id}: {selectedTicket.subject}
-                    </h2>
-                    <div className="flex items-center space-x-3 mt-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(selectedTicket.status)}`}>
-                        {selectedTicket.status.replace('_', ' ')}
-                      </span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(selectedTicket.priority)}`}>
-                        {selectedTicket.priority}
-                      </span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(selectedTicket.category)}`}>
-                        {selectedTicket.category.replace('_', ' ')}
-                      </span>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start bg-gray-50 dark:bg-gray-900/50">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  {selectedTicket.subject}
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(selectedTicket.status)}`}>
+                    {selectedTicket.status.replace('_', ' ')}
+                  </span>
+                </h2>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                  <span>Ticket #{selectedTicket.id.substring(0, 8)}</span>
+                  <span>•</span>
+                  <span>Created {new Date(selectedTicket.createdAt).toLocaleString()}</span>
+                  <span>•</span>
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${getCategoryColor(selectedTicket.category)}`}>
+                    {selectedTicket.category}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTicketDetail(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden flex">
+              {/* Chat Area */}
+              <div className="flex-1 flex flex-col border-r border-gray-200 dark:border-gray-700">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  {/* Original Message */}
+                  <div className="flex gap-4">
+                    <div className="h-10 w-10 rounded-full bg-indigo-100 flex-shrink-0 flex items-center justify-center text-indigo-700 font-bold">
+                      {selectedTicket.userName?.charAt(0) || 'U'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-semibold text-gray-900 dark:text-white">{selectedTicket.userName}</span>
+                        <span className="text-xs text-gray-500">{new Date(selectedTicket.createdAt).toLocaleString()}</span>
+                      </div>
+                      <div className="mt-1 p-4 bg-gray-100 dark:bg-gray-750 rounded-lg rounded-tl-none text-gray-800 dark:text-gray-200">
+                        {selectedTicket.message}
+                      </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowTicketDetail(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
-                </div>
 
-                {/* Customer Info */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-6">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Customer Information</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Name:</span>
-                      <span className="ml-2 text-gray-900 dark:text-white">{selectedTicket.userName}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Email:</span>
-                      <span className="ml-2 text-gray-900 dark:text-white">{selectedTicket.userEmail}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Plan:</span>
-                      <span className="ml-2 text-gray-900 dark:text-white">{selectedTicket.userPlan}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">User ID:</span>
-                      <span className="ml-2 text-gray-900 dark:text-white font-mono">{selectedTicket.userId}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Conversation */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Conversation</h3>
-                  {selectedTicket.responses.map((response) => (
-                    <div key={response.id} className={`flex ${response.sender === 'user' ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`max-w-3xl p-4 rounded-lg ${response.sender === 'user'
-                        ? 'bg-gray-100 dark:bg-gray-700'
-                        : 'bg-blue-100 dark:bg-blue-900'
+                  {/* Responses */}
+                  {selectedTicket.responses && selectedTicket.responses.map((response) => (
+                    <div key={response.id} className={`flex gap-4 ${response.sender === 'USER' ? '' : 'flex-row-reverse'}`}>
+                      <div className={`h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${response.sender === 'USER' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-600 text-white'
                         }`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {response.senderName}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {response.timestamp}
-                          </span>
+                        {response.senderName?.charAt(0) || (response.sender === 'USER' ? 'U' : 'A')}
+                      </div>
+                      <div className="flex-1 max-w-[80%]">
+                        <div className={`flex items-baseline justify-between ${response.sender === 'USER' ? '' : 'flex-row-reverse'}`}>
+                          <span className="font-semibold text-gray-900 dark:text-white">{response.senderName}</span>
+                          <span className="text-xs text-gray-500">{new Date(response.timestamp).toLocaleString()}</span>
                         </div>
-                        <p className="text-sm text-gray-800 dark:text-gray-200">
+                        <div className={`mt-1 p-4 rounded-lg text-gray-800 dark:text-gray-200 ${response.sender === 'USER'
+                            ? 'bg-gray-100 dark:bg-gray-750 rounded-tl-none'
+                            : 'bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-tr-none'
+                          }`}>
                           {response.message}
-                        </p>
-                        {response.attachments.length > 0 && (
-                          <div className="mt-2">
-                            {response.attachments.map((attId) => {
-                              const attachment = selectedTicket.attachments.find(a => a.id === attId);
-                              return attachment ? (
-                                <div key={attId} className="text-xs text-blue-600 dark:text-blue-400">
-                                  📎 {attachment.fileName} ({attachment.fileSize})
-                                </div>
-                              ) : null;
-                            })}
-                          </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Reply Form */}
-                {hasPermission('support', 'respond') && (
-                  <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Reply to Customer</h4>
+                {/* Reply Box */}
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <div className="relative">
                     <textarea
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      rows="4"
-                      placeholder="Type your response..."
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      placeholder="Type your reply..."
+                      className="w-full pl-4 pr-4 pt-3 pb-12 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                      rows="3"
                     />
-                    <div className="flex justify-between items-center mt-3">
-                      <div className="flex space-x-2">
-                        <button className="text-sm text-gray-600 hover:text-gray-800">
-                          📎 Attach File
-                        </button>
-                        <button className="text-sm text-gray-600 hover:text-gray-800">
-                          📝 Use Template
-                        </button>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-                          Save Draft
-                        </button>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                          Send Reply
-                        </button>
-                      </div>
+                    <div className="absolute bottom-2 right-2 flex gap-2">
+                      <button
+                        onClick={handleSendReply}
+                        disabled={sendingReply || !replyMessage.trim()}
+                        className={`px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {sendingReply ? 'Sending...' : 'Send Reply'}
+                      </button>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Ticket Metadata Sidebar */}
-              <div className="w-80 bg-gray-50 dark:bg-gray-900 p-6 border-l border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ticket Details</h3>
+              {/* Sidebar Info */}
+              <div className="w-80 bg-white dark:bg-gray-800 p-6 overflow-y-auto">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Meta Data</h3>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
-                    <label className="text-sm text-gray-500">Assigned Agent</label>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedTicket.assignedAgent}</p>
+                    <label className="text-xs text-gray-500 uppercase tracking-wider">Status</label>
+                    <select
+                      value={selectedTicket.status}
+                      onChange={(e) => handleStatusUpdate(selectedTicket.id, e.target.value)}
+                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <option value="OPEN">Open</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="WAITING_FOR_USER">Waiting for User</option>
+                      <option value="RESOLVED">Resolved</option>
+                      <option value="CLOSED">Closed</option>
+                    </select>
                   </div>
 
                   <div>
-                    <label className="text-sm text-gray-500">Response Time</label>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedTicket.responseTime}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-500">Created</label>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedTicket.createdAt}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-500">Last Updated</label>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedTicket.updatedAt}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-500">Tags</label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedTicket.tags && selectedTicket.tags.map((tag, index) => (
-                        <span key={index} className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
-                          {tag}
-                        </span>
-                      ))}
+                    <label className="text-xs text-gray-500 uppercase tracking-wider">User Info</label>
+                    <div className="mt-2 text-sm">
+                      <div className="font-medium text-gray-900 dark:text-white">{selectedTicket.userName}</div>
+                      <div className="text-gray-500">{selectedTicket.userEmail}</div>
+                      <div className="text-xs text-gray-400 mt-1 font-mono">{selectedTicket.userId}</div>
                     </div>
                   </div>
 
-                  {selectedTicket.metadata && (
-                    <div>
-                      <label className="text-sm text-gray-500">Technical Info</label>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-1">
-                        <div>IP: {selectedTicket.metadata.ipAddress}</div>
-                        <div>Session: {selectedTicket.metadata.sessionId}</div>
-                        <div>Referrer: {selectedTicket.metadata.referrer}</div>
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wider">Tech Details</label>
+                    <div className="mt-2 text-xs text-gray-500 space-y-1">
+                      <div className="flex justify-between">
+                        <span>IP:</span>
+                        <span className="font-mono">{selectedTicket.ipAddress || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Browser:</span>
+                        <span className="truncate max-w-[150px]" title={selectedTicket.userAgent}>{selectedTicket.userAgent || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Page:</span>
+                        <span>{selectedTicket.currentPage || 'N/A'}</span>
                       </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Quick Actions */}
-                <div className="mt-6 space-y-2">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">Quick Actions</h4>
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                    Change Priority
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                    Reassign Agent
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                    Add Internal Note
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded">
-                    Mark as Resolved
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>

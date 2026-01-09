@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// System Health Page - BitaURL Services Implementation
+// System Health Page - Tinyslash Services Implementation
 const SystemHealthPage = ({ hasPermission }) => {
   const [healthData, setHealthData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -153,7 +153,7 @@ const SystemHealthPage = ({ hasPermission }) => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Health</h1>
-          <p className="text-gray-600 dark:text-gray-400">Monitor the health of all BitaURL services</p>
+          <p className="text-gray-600 dark:text-gray-400">Monitor the health of all Tinyslash services</p>
         </div>
         <div className="flex items-center space-x-3">
           <span className="text-sm text-gray-500">

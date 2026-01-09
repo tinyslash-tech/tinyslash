@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 @Configuration
 @EnableCaching
 public class CacheConfig {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(CacheConfig.class);
-    
+
     /**
      * Fallback cache manager when Redis is not available
      */
@@ -25,21 +25,25 @@ public class CacheConfig {
     public CacheManager simpleCacheManager() {
         logger.info("Using simple in-memory cache manager (Redis not configured)");
         ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager();
-        
+
         // Pre-configure cache names
         cacheManager.setCacheNames(java.util.Arrays.asList(
-            "userUrls",
-            "userQRCodes", 
-            "userFiles",
-            "urlAnalytics",
-            "userAnalytics",
-            "dashboardOverview",
-            "realtimeAnalytics",
-            "clickCounts",
-            "countryStats",
-            "short_urls"  // Added missing cache for URL lookups
-        ));
-        
+                "userUrls",
+                "userQRCodes",
+                "userFiles",
+                "urlAnalytics",
+                "userAnalytics",
+                "dashboardOverview",
+                "realtimeAnalytics",
+                "clickCounts",
+                "countryStats",
+                "short_urls", // Added missing cache for URL lookups
+                "systemAnalytics",
+                "adminDashboard",
+                "domains_list",
+                "verified_domains",
+                "geoData"));
+
         cacheManager.setAllowNullValues(false);
         return cacheManager;
     }

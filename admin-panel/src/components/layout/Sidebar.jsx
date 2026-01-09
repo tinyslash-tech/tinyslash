@@ -4,7 +4,7 @@ import {
   Home, Users, Globe, Link, QrCode, FileText,
   CreditCard, Ticket, Headphones, BarChart2,
   HardDrive, Monitor, Shield, LogOut, ChevronLeft, ChevronRight,
-  Menu
+  Menu, Briefcase, Settings
 } from 'lucide-react';
 
 const Sidebar = ({ currentPage, setCurrentPage }) => {
@@ -14,9 +14,12 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, resource: 'dashboard', action: 'read' },
+    { id: 'careers', label: 'Careers', icon: Briefcase, resource: 'jobs', action: 'read' },
     { id: 'users', label: 'Users', icon: Users, resource: 'users', action: 'read' },
     { id: 'teams', label: 'Teams', icon: Globe, resource: 'teams', action: 'read' },
     { id: 'domains', label: 'Domains', icon: Globe, resource: 'domains', action: 'read' },
+    { id: 'employees', label: 'Employees', icon: Users, resource: 'employees', action: 'read' },
+    { id: 'settings', label: 'Settings', icon: Settings, resource: 'settings', action: 'read' },
     { id: 'links', label: 'Links', icon: Link, resource: 'links', action: 'read' },
     { id: 'qrcodes', label: 'QR Codes', icon: QrCode, resource: 'qr', action: 'read' },
     { id: 'files', label: 'Files', icon: FileText, resource: 'files', action: 'read' },

@@ -19,6 +19,7 @@ spring:
     cors:
       allowed-origins: 
         - ${FRONTEND_URL:http://localhost:3000}
+        - "http://localhost:3001"
         - "https://tinyslash.com"
         - "https://*.vercel.app"
         - "https://urlshortner-1-hpyu.onrender.com"

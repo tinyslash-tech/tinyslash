@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.ArrayList;
 
 @Component
@@ -37,7 +38,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String userId = null;
         String jwtToken = null;
 
-        // JWT Token is in the form "Bearer token". Remove Bearer word and get only the Token
+        // JWT Token is in the form "Bearer token". Remove Bearer word and get only the
+        // Token
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             jwtToken = requestTokenHeader.substring(7);
             try {
@@ -53,28 +55,70 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 // Check if user exists
                 var userOpt = userService.findById(userId);
-            if (userOpt.isPresent() && jwtUtil.validateToken(jwtToken, userId)) {
-                
-                com.urlshortener.model.User user = userOpt.get();
-                
-                // Create UserDetails for Spring Security - use user ID as username for easier access
-                UserDetails userDetails = User.builder()
-                        .username(user.getId()) // Use user ID instead of email for easier access in controllers
-                        .password("") // We don't need password for JWT auth
-                        .authorities(new ArrayList<>())
-                        .build();
+                if (userOpt.isPresent() && jwtUtil.validateToken(jwtToken, userId)) {
 
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = 
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                
-                // Set the user in the request for easy access
-                request.setAttribute("currentUser", user);
-                request.setAttribute("currentUserId", user.getId());
-                request.setAttribute("currentUserEmail", user.getEmail());
-                
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-            }
+                    com.urlshortener.model.User user = userOpt.get();
+
+                    List<org.springframework.security.core.GrantedAuthority> authorities = new ArrayList<>();
+
+                    // Assign roles from database
+                    if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+                        for (String role : user.getRoles()) {
+                            authorities
+                                    .add(new org.springframework.security.core.authority.SimpleGrantedAuthority(role));
+                        }
+                    } else {
+                        // Fallback default role
+                        authorities.add(
+                                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"));
+                    }
+
+                    // Ensure admin@tinyslash.com always has full access (Safety Net)
+                    if ("admin@tinyslash.com".equals(user.getEmail())) {
+                        boolean hasSuperAdmin = false;
+                        boolean hasHr = false;
+                        boolean hasAdmin = false;
+
+                        for (org.springframework.security.core.GrantedAuthority auth : authorities) {
+                            if (auth.getAuthority().equals("ROLE_SUPER_ADMIN"))
+                                hasSuperAdmin = true;
+                            if (auth.getAuthority().equals("ROLE_HR"))
+                                hasHr = true;
+                            if (auth.getAuthority().equals("ROLE_ADMIN"))
+                                hasAdmin = true;
+                        }
+
+                        if (!hasSuperAdmin)
+                            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                                    "ROLE_SUPER_ADMIN"));
+                        if (!hasHr)
+                            authorities.add(
+                                    new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_HR"));
+                        if (!hasAdmin)
+                            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                                    "ROLE_ADMIN"));
+                    }
+
+                    // Create UserDetails for Spring Security - use user ID as username for easier
+                    // access
+                    UserDetails userDetails = User.builder()
+                            .username(user.getId()) // Use user ID instead of email for easier access in controllers
+                            .password("") // We don't need password for JWT auth
+                            .authorities(authorities)
+                            .build();
+
+                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    usernamePasswordAuthenticationToken
+                            .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    // Set the user in the request for easy access
+                    request.setAttribute("currentUser", user);
+                    request.setAttribute("currentUserId", user.getId());
+                    request.setAttribute("currentUserEmail", user.getEmail());
+
+                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                }
             } catch (Exception e) {
                 logger.warn("Error validating user: " + e.getMessage());
             }

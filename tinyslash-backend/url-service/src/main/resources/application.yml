@@ -5,7 +5,7 @@ spring:
   application:
     name: tinyslash-url-service
   
-  # Default profiles if none selected (safe default: dev)
+  # Default profiles if none selected
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
@@ -21,7 +21,7 @@ spring:
 
   # Common JWT Config
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:defaultSecretKeyForDevelopmentOnlyDoNotUseInProduction}
     expiration: 86400000 # 24h
 
 # Actuator for Health Checks
@@ -33,3 +33,43 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+# External Service Configurations (Validation Fix)
+razorpay:
+  key:
+    id: ${RAZORPAY_KEY_ID:rzp_test_default}
+    secret: ${RAZORPAY_KEY_SECRET:rzp_secret_default}
+
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID:google_id_default}
+    secret: ${GOOGLE_CLIENT_SECRET:google_secret_default}
+  redirect:
+    uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/auth/callback}
+
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY:SG.default}
+  from:
+    email: ${SENDGRID_FROM_EMAIL:noreply@tinyslash.com}
+    name: ${SENDGRID_FROM_NAME:Tinyslash Team}
+
+cloudflare:
+  api:
+    token: ${CLOUDFLARE_API_TOKEN:default}
+  zone:
+    id: ${CLOUDFLARE_ZONE_ID:default}
+
+# Application Configuration
+app:
+  # Base defaults, overridden by profiles
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+  shorturl:
+    domain: ${SHORT_URL_DOMAIN:http://localhost:8080}
+  
+  # Custom Domain Defaults
+  domain:
+    proxy-target: ${PROXY_TARGET:tinyslash.com}
+    ssl:
+      provider: ${SSL_PROVIDER:CLOUDFLARE}

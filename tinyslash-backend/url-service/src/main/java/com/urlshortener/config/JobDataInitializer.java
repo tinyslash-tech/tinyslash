@@ -14,11 +14,37 @@ import java.util.List;
 @Component
 public class JobDataInitializer {
 
-        @Bean
-        public CommandLineRunner initJobs(JobRepository jobRepository,
+        private final JobRepository jobRepository;
+        private final com.urlshortener.service.UserService userService;
+        private final com.urlshortener.service.TeamService teamService;
+        private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
+        public JobDataInitializer(JobRepository jobRepository,
                         com.urlshortener.service.UserService userService,
-                        com.urlshortener.service.TeamService teamService) {
+                        com.urlshortener.service.TeamService teamService,
+                        org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
+                this.jobRepository = jobRepository;
+                this.userService = userService;
+                this.teamService = teamService;
+                this.mongoTemplate = mongoTemplate;
+        }
+
+        @Bean
+        public CommandLineRunner initJobs() {
                 return args -> {
+                        // Ensure all collections exist
+                        createCollectionIfNotExist("users");
+                        createCollectionIfNotExist("jobs");
+                        createCollectionIfNotExist("teams");
+                        createCollectionIfNotExist("shortened_urls");
+                        createCollectionIfNotExist("click_analytics");
+                        createCollectionIfNotExist("subscriptions");
+                        createCollectionIfNotExist("files");
+                        createCollectionIfNotExist("support_tickets");
+                        createCollectionIfNotExist("domains");
+                        createCollectionIfNotExist("coupons");
+                        createCollectionIfNotExist("qr_codes");
+
                         // Seed Admin User
                         com.urlshortener.model.User admin;
                         if (userService.findByEmail("admin@tinyslash.com").isEmpty()) {
@@ -325,5 +351,12 @@ public class JobDataInitializer {
                                 }
                         }
                 };
+        }
+
+        private void createCollectionIfNotExist(String collectionName) {
+                if (!mongoTemplate.collectionExists(collectionName)) {
+                        mongoTemplate.createCollection(collectionName);
+                        System.out.println("Created collection: " + collectionName);
+                }
         }
 }

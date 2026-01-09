@@ -17,6 +17,8 @@ spring:
         - "http://localhost:3001"
         - "https://dev.tinyslash.com"
         - "https://api-dev.tinyslash.com"
+        - "https://tinyslash-backend-dev.onrender.com"
+        - "https://*.vercel.app"
       allow-credentials: true
 
 app:

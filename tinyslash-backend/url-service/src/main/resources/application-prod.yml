@@ -16,6 +16,8 @@ spring:
         - "https://tinyslash.com"
         - "https://api.tinyslash.com"
         - "https://admin.tinyslash.com"
+        - "https://tinyslash-backend-prod.onrender.com"
+        - "https://*.vercel.app"
       allow-credentials: true
 
 app:

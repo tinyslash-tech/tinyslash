@@ -1,0 +1,35 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: tinyslash-url-service
+  
+  # Default profiles if none selected (safe default: dev)
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # Base MongoDB Config (Specifics in profiles)
+  data:
+    mongodb:
+      auto-index-creation: false
+      options:
+        max-connection-pool-size: 100
+        min-connection-pool-size: 10
+        max-connection-idle-time: 600000
+        connect-timeout: 10000
+
+  # Common JWT Config
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400000 # 24h
+
+# Actuator for Health Checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

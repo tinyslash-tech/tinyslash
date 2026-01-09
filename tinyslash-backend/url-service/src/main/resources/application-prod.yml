@@ -1,0 +1,30 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  data:
+    mongodb:
+      uri: ${PROD_MONGODB_URI}
+      database: pebly-database
+      auto-index-creation: false
+
+  # Prod specific CORS
+  web:
+    cors:
+      allowed-origins:
+        - "https://tinyslash.com"
+        - "https://api.tinyslash.com"
+        - "https://admin.tinyslash.com"
+      allow-credentials: true
+
+app:
+  frontend:
+    url: https://tinyslash.com
+  shorturl:
+    domain: https://tinyslash.com
+
+logging:
+  level:
+    com.urlshortener: INFO
+    org.springframework.data.mongodb.core.MongoTemplate: ERROR

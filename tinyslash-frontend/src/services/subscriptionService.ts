@@ -38,7 +38,13 @@ export interface PricingData {
 }
 
 class SubscriptionService {
-  private baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+  private baseUrl = (() => {
+    let url = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+    if (url.startsWith('http') && !url.endsWith('/api')) {
+      return `${url}/api`;
+    }
+    return url;
+  })();
 
   /**
    * Get user's current plan information
@@ -47,7 +53,7 @@ class SubscriptionService {
     try {
       const response = await fetch(`${this.baseUrl}/v1/subscription/plan/${userId}`);
       const result = await response.json();
-      
+
       if (result.success) {
         return result.data;
       } else {
@@ -66,7 +72,7 @@ class SubscriptionService {
     try {
       const response = await fetch(`${this.baseUrl}/v1/subscription/check/${userId}/${action}`);
       const result = await response.json();
-      
+
       if (result.success) {
         return {
           hasAccess: result.hasAccess,
@@ -93,7 +99,7 @@ class SubscriptionService {
         },
       });
       const result = await response.json();
-      
+
       return result.success;
     } catch (error) {
       console.error('Error starting trial:', error);
@@ -119,7 +125,7 @@ class SubscriptionService {
         }),
       });
       const result = await response.json();
-      
+
       return result.success;
     } catch (error) {
       console.error('Error upgrading plan:', error);
@@ -134,7 +140,7 @@ class SubscriptionService {
     try {
       const response = await fetch(`${this.baseUrl}/v1/subscription/pricing`);
       const result = await response.json();
-      
+
       if (result.success) {
         return result.data;
       } else {
@@ -190,12 +196,12 @@ class SubscriptionService {
             try {
               // Verify payment and upgrade user
               const upgraded = await this.upgradePlan(
-                userId, 
-                planType, 
+                userId,
+                planType,
                 response.razorpay_payment_id,
                 response.razorpay_signature
               );
-              
+
               if (upgraded) {
                 resolve(response);
               } else {

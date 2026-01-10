@@ -1,9 +1,12 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { googleAuthService } from '../services/googleAuth';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+
+console.log('MODULE LOADED: AuthCallback.tsx (v2 - with debug logs)');
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -26,7 +29,7 @@ const AuthCallback: React.FC = () => {
         const error = searchParams.get('error');
 
         if (error) {
-          throw new Error(`OAuth error: ${error}`);
+          throw new Error(`OAuth error: ${error} `);
         }
 
         if (!code) {
@@ -53,7 +56,7 @@ const AuthCallback: React.FC = () => {
             // Update auth context with the user data from backend
             const userData = {
               id: authResponse.user.id,
-              name: `${authResponse.user.firstName} ${authResponse.user.lastName}`,
+              name: `${authResponse.user.firstName} ${authResponse.user.lastName} `,
               email: authResponse.user.email,
               plan: authResponse.user.subscriptionPlan || 'free',
               avatar: authResponse.user.profilePicture,

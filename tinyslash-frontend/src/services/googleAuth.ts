@@ -16,6 +16,8 @@ interface GoogleUserInfo {
   verified_email: boolean;
 }
 
+console.log('MODULE LOADED: googleAuth.ts');
+
 class GoogleAuthService {
   private clientId: string;
   private redirectUri: string;

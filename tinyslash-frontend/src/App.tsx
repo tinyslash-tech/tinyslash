@@ -41,8 +41,10 @@ import JobDetail from './pages/JobDetail';
 import Apply from './pages/Apply';
 import './App.css';
 
-const AppContent: React.FC = () => {
+console.log('MODULE LOADED: App.tsx');
 
+const AppContent: React.FC = () => {
+  console.log('RENDERING: AppContent');
   return (
     <>
       <Router>

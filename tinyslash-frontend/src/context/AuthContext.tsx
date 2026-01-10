@@ -66,15 +66,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('=== setUserWithAuth called ===');
     console.log('New user:', newUser ? newUser.email : 'null');
     console.log('Auth token:', authToken ? 'provided' : 'not provided');
-    
+
     setUser(newUser);
     setIsAuthenticated(!!newUser);
-    
+
     if (newUser) {
       try {
         localStorage.setItem('user', JSON.stringify(newUser));
         console.log('User saved to localStorage');
-        
+
         if (authToken) {
           setToken(authToken);
           localStorage.setItem('token', authToken);
@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     console.log('=== AuthContext useEffect - Checking stored auth ===');
-    
+
     // Listen for auth events from API interceptor
     const handleAuthLogout = () => {
       console.log('Received auth-logout event, clearing user state');
@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleTokenRefresh = (event: CustomEvent) => {
       console.log('Received auth-token-refreshed event, updating user state');
       const { token: newToken, user: userData } = event.detail;
-      
+
       const user: User = {
         id: userData.id,
         name: `${userData.firstName} ${userData.lastName}`.trim() || userData.email.split('@')[0],
@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: true,
         authProvider: userData.authProvider === 'GOOGLE' ? 'google' : 'email'
       };
-      
+
       setUser(user);
       setToken(newToken);
       setIsAuthenticated(true);
@@ -138,12 +138,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     window.addEventListener('auth-logout', handleAuthLogout);
     window.addEventListener('auth-token-refreshed', handleTokenRefresh as EventListener);
-    
+
     // Handle user updates (e.g., after successful payment)
     const handleUserUpdate = (event: CustomEvent) => {
       const { user: updatedUser } = event.detail;
       console.log('User update event received:', updatedUser);
-      
+
       if (updatedUser && user) {
         const newUser: User = {
           ...user,
@@ -151,36 +151,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           subscriptionPlan: updatedUser.subscriptionPlan,
           subscriptionExpiry: updatedUser.subscriptionExpiry
         };
-        
+
         // Update localStorage with new user data
         localStorage.setItem('user', JSON.stringify(newUser));
-        
+
         setUser(newUser);
         console.log('User context updated with new subscription:', newUser.plan);
-        
+
         // Force refresh of subscription context
         window.dispatchEvent(new CustomEvent('subscription-updated'));
       }
     };
-    
+
     window.addEventListener('auth-user-updated', handleUserUpdate as EventListener);
-    
+
     const initializeAuth = async () => {
       try {
         // Check if user is logged in from localStorage or Google OAuth
         const savedUser = localStorage.getItem('user');
         const savedToken = localStorage.getItem('token');
         const googleUserInfo = googleAuthService.getStoredUserInfo();
-        
+
         console.log('Saved user:', savedUser ? 'exists' : 'null');
         console.log('Saved token:', savedToken ? 'exists' : 'null');
         console.log('Google user info:', googleUserInfo ? 'exists' : 'null');
-        
+
         if (savedUser && savedToken) {
           try {
             // Try to validate token with backend
             const data = await api.validateToken(savedToken);
-            
+
             if (data.success && data.user) {
               console.log('Token validated successfully, restoring user:', data.user.email);
               const user: User = {
@@ -198,24 +198,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 isAuthenticated: true,
                 authProvider: data.user.authProvider === 'GOOGLE' ? 'google' : 'email'
               };
-              
+
               setUser(user);
               setToken(savedToken);
               setIsAuthenticated(true);
-              
+
               // Set up token expiry tracking
               localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
-              
+
               // Start session management
               startSessionManagement();
-              
+
               console.log('Authentication restored successfully');
             } else {
               throw new Error('Token validation failed');
             }
           } catch (error) {
             console.error('Token validation failed, attempting token refresh:', error);
-            
+
             // Try to refresh the token instead of falling back
             try {
               console.log('Attempting automatic token refresh...');
@@ -227,12 +227,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   'Content-Type': 'application/json',
                 },
               });
-              
+
               const refreshData = await refreshResponse.json();
-              
+
               if (refreshData.success && refreshData.token && refreshData.user) {
                 console.log('Token refreshed successfully during initialization');
-                
+
                 const user: User = {
                   id: refreshData.user.id,
                   name: `${refreshData.user.firstName} ${refreshData.user.lastName}`.trim() || refreshData.user.email.split('@')[0],
@@ -248,11 +248,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   isAuthenticated: true,
                   authProvider: refreshData.user.authProvider === 'GOOGLE' ? 'google' : 'email'
                 };
-                
+
                 // Update stored auth data
                 localStorage.setItem('token', refreshData.token);
                 localStorage.setItem('user', JSON.stringify(user));
-                
+
                 setUser(user);
                 setToken(refreshData.token);
                 setIsAuthenticated(true);
@@ -290,7 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initializeAuth();
-    
+
     // Cleanup event listeners
     return () => {
       window.removeEventListener('auth-logout', handleAuthLogout);
@@ -303,7 +303,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('=== Google Auth attempt ===');
       console.log('Google user info:', googleUserInfo);
-      
+
       const response = await api.googleAuth({
         email: googleUserInfo.email,
         googleId: googleUserInfo.id,
@@ -311,9 +311,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastName: googleUserInfo.family_name || googleUserInfo.name.split(' ').slice(1).join(' ') || '',
         profilePicture: googleUserInfo.picture
       });
-      
+
       console.log('Google auth response:', response);
-      
+
       if (response.success && response.user && response.token) {
         const user: User = {
           id: response.user.id,
@@ -330,7 +330,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAuthenticated: true,
           authProvider: 'google'
         };
-        
+
         console.log('Setting Google user with token:', user.email);
         setUserWithAuth(user, response.token);
       } else {
@@ -339,10 +339,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error: any) {
       console.error('Google auth error details:', error);
-      
+
       // Clear Google auth state
       googleAuthService.logout();
-      
+
       // Throw a user-friendly error
       if (error.message.includes('503') || error.code === 'NETWORK_ERROR') {
         throw new Error('Server is currently unavailable. Please try again later.');
@@ -357,11 +357,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('=== Login attempt ===');
       console.log('Email:', email);
       console.log('API URL:', process.env.REACT_APP_API_URL);
-      
+
       const response = await api.login({ email, password });
-      
+
       console.log('Login response:', response);
-      
+
       if (response.success && response.user && response.token) {
         const user: User = {
           id: response.user.id,
@@ -377,10 +377,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAuthenticated: true,
           authProvider: 'email'
         };
-        
+
         console.log('Setting user with token:', user.email);
         setUserWithAuth(user, response.token);
-        
+
         // Set up token expiry tracking and session management
         localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
         startSessionManagement();
@@ -390,7 +390,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error: any) {
       console.error('Login error details:', error);
-      
+
       // Handle different types of errors
       if (error.code === 'NETWORK_ERROR' || error.message.includes('503')) {
         throw new Error('Server is currently unavailable. Please try again later.');
@@ -411,14 +411,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const nameParts = name.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
-      
-      const response = await api.signup({ 
-        email, 
-        password, 
-        firstName, 
-        lastName 
+
+      const response = await api.signup({
+        email,
+        password,
+        firstName,
+        lastName
       });
-      
+
       if (response.success && response.user) {
         const user: User = {
           id: response.user.id,
@@ -434,9 +434,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAuthenticated: true,
           authProvider: 'email'
         };
-        
+
         setUserWithAuth(user, response.token);
-        
+
         // Set up token expiry tracking and session management
         localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
         startSessionManagement();
@@ -451,32 +451,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async () => {
     try {
-      // Check configuration before initiating auth
-      const backendConfig = await googleAuthService.checkBackendConfig();
-      
-      if (!backendConfig.success) {
-        throw new Error('Unable to connect to authentication server. Please try again later.');
-      }
-      
-      if (!backendConfig.clientIdConfigured) {
-        throw new Error('Google OAuth is not properly configured on the server. Please contact support.');
-      }
-      
-      if (!backendConfig.clientSecretConfigured) {
-        throw new Error('Google OAuth is not properly configured on the server. Please contact support.');
-      }
-      
-      // Initiate Google OAuth flow
+      console.log('Initiating Google OAuth flow directly...');
+      // Initiate Google OAuth flow directly without checking backend config
+      // The backend config check endpoint /v1/auth/google/config does not exist
       googleAuthService.initiateAuth();
     } catch (error) {
-      console.error('Google OAuth configuration error:', error);
+      console.error('Google OAuth init error:', error);
       throw error;
     }
   };
 
   const logout = () => {
     setUserWithAuth(null);
-    
+
     // Also logout from Google if authenticated via Google
     if (user?.authProvider === 'google') {
       googleAuthService.logout();
@@ -491,16 +478,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Session management functions - TEMPORARILY DISABLED DUE TO BACKEND ISSUES
   const startSessionManagement = () => {
     console.log('⚠️ Session management temporarily disabled due to backend connectivity issues');
-    
+
     // Clear any existing intervals
     if (window.authIntervals) {
       window.authIntervals.forEach(clearInterval);
       window.authIntervals = [];
     }
-    
+
     // TODO: Re-enable when backend is stable
     // For now, we'll rely on manual token validation only
-    
+
     /* DISABLED - CAUSING TIMEOUTS
     // Proactive token refresh every 30 minutes
     const refreshInterval = setInterval(async () => {
@@ -537,17 +524,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
+    <AuthContext.Provider value={{
+      user,
       token,
-      setUser: setUserWithAuth, 
-      login, 
-      signup, 
-      loginWithGoogle, 
-      logout, 
+      setUser: setUserWithAuth,
+      login,
+      signup,
+      loginWithGoogle,
+      logout,
       isAuthenticated,
-      isLoading, 
-      redirectAfterAuth 
+      isLoading,
+      redirectAfterAuth
     }}>
       {children}
     </AuthContext.Provider>

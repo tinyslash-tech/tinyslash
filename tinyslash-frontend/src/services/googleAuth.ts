@@ -38,17 +38,7 @@ class GoogleAuthService {
     }
   }
 
-  // Check backend configuration
-  async checkBackendConfig(): Promise<any> {
-    try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
-      const response = await fetch(`${apiUrl}/v1/auth/google/config`);
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to check backend config:', error);
-      return { success: false, error: 'Unable to connect to backend' };
-    }
-  }
+
 
   // Generate Google OAuth URL
   getAuthUrl(): string {

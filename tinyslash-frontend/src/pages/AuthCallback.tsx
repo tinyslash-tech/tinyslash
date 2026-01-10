@@ -107,7 +107,7 @@ const AuthCallback: React.FC = () => {
           } else if (errorMessage.includes('Failed to exchange code')) {
             errorMessage = 'Failed to verify with Google. Please check your internet connection and try again.';
           } else if (errorMessage.includes('Authentication failed')) {
-            errorMessage = 'Google authentication failed. Please ensure you have the correct permissions and try again.';
+            errorMessage = `Google authentication failed: ${errorMessage.replace('Authentication failed: ', '')}`;
           } else if (errorMessage.includes('Network')) {
             errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
           }
@@ -135,7 +135,7 @@ const AuthCallback: React.FC = () => {
         } else if (errorMessage.includes('Failed to exchange code')) {
           errorMessage = 'Failed to verify with Google. Please check your internet connection and try again.';
         } else if (errorMessage.includes('Authentication failed')) {
-          errorMessage = 'Google authentication failed. Please ensure you have the correct permissions and try again.';
+          errorMessage = `Google authentication failed: ${errorMessage.replace('Authentication failed: ', '')}`;
         } else if (errorMessage.includes('Network')) {
           errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
         }

@@ -1,35 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { 
-  MapPin, 
-  Globe, 
-  TrendingUp, 
-  Users, 
-  Eye,
-  RefreshCw,
-  Filter,
-  Download,
-  Search
-} from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import WorldMapWidget from './WorldMapWidget';
+import { getUserUrls, getUserQrCodes, getUserFiles } from '../../services/api';
 
-interface LocationData {
-  country: string;
-  countryCode: string;
-  city: string;
-  region: string;
-  latitude: number;
-  longitude: number;
-  clicks: number;
-  uniqueVisitors: number;
-  percentage: number;
-  flag: string;
-}
-
-interface LocationAnalyticsProps {
-  timeRange?: '7d' | '30d' | '90d' | '1y';
-}
+// ...
 
 const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d' }) => {
   const { user } = useAuth();
@@ -48,12 +19,12 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
 
     try {
       setLoading(true);
-      
+
       // Load user's data from backend
       const [urlsResponse, qrResponse, filesResponse] = await Promise.all([
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/v1/urls/user/${user.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] })),
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/v1/qr/user/${user.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] })),
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/v1/files/user/${user.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] }))
+        getUserUrls(user.id).catch(() => ({ success: false, data: [] })),
+        getUserQrCodes(user.id).catch(() => ({ success: false, data: [] })),
+        getUserFiles(user.id).catch(() => ({ success: false, data: [] }))
       ]);
 
       const links = urlsResponse.success ? urlsResponse.data : [];
@@ -61,8 +32,8 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
       const files = filesResponse.success ? filesResponse.data : [];
 
       const totalClicks = links.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0) +
-                         qrCodes.reduce((sum: number, qr: any) => sum + (qr.scans || 0), 0) +
-                         files.reduce((sum: number, file: any) => sum + (file.totalDownloads || 0), 0);
+        qrCodes.reduce((sum: number, qr: any) => sum + (qr.scans || 0), 0) +
+        files.reduce((sum: number, file: any) => sum + (file.totalDownloads || 0), 0);
 
       // Generate realistic location data based on actual traffic
       const mockLocationData: LocationData[] = [
@@ -186,7 +157,7 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
 
   const filteredData = locationData.filter(location => {
     const matchesCountry = selectedCountry === 'all' || location.country === selectedCountry;
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       location.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
       location.country.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCountry && matchesSearch;
@@ -294,7 +265,7 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
+
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
@@ -310,25 +281,22 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode('map')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                viewMode === 'map' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'map' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Map View
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               List View
             </button>
             <button
               onClick={() => setViewMode('chart')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                viewMode === 'chart' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'chart' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Chart View
             </button>
@@ -359,7 +327,7 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-6">
                   <div className="text-center">
                     <p className="text-lg font-bold text-gray-900">{location.clicks.toLocaleString()}</p>
@@ -374,7 +342,7 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
                     <p className="text-xs text-gray-600">Share</p>
                   </div>
                   <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${location.percentage}%` }}
                     />
@@ -395,13 +363,13 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
               <BarChart data={filteredData.slice(0, 10)} layout="horizontal">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis 
-                  type="category" 
-                  dataKey="city" 
+                <YAxis
+                  type="category"
+                  dataKey="city"
                   width={80}
                   tick={{ fontSize: 12 }}
                 />
-                <Tooltip 
+                <Tooltip
                   formatter={(value, name) => [value, 'Clicks']}
                   labelFormatter={(label) => `${label}`}
                 />
@@ -445,7 +413,7 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
             const countryClicks = countryData.reduce((sum, loc) => sum + loc.clicks, 0);
             const countryVisitors = countryData.reduce((sum, loc) => sum + loc.uniqueVisitors, 0);
             const countryFlag = countryData[0]?.flag || '🌍';
-            
+
             return (
               <div key={country} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-3">
@@ -455,7 +423,7 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
                   </div>
                   <span className="text-sm text-gray-600">{countryData.length} cities</span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-center">
                     <p className="text-lg font-bold text-blue-600">{countryClicks.toLocaleString()}</p>
@@ -466,10 +434,10 @@ const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d'
                     <p className="text-xs text-gray-600">Visitors</p>
                   </div>
                 </div>
-                
+
                 <div className="mt-3">
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(countryClicks / totalClicks) * 100}%` }}
                     />

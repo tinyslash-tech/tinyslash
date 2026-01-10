@@ -1,15 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Globe, MapPin, Eye, Users, TrendingUp, RefreshCw } from 'lucide-react';
+import { getUserUrls, getUserQrCodes, getUserFiles } from '../../services/api';
 
-interface LocationPoint {
-  country: string;
-  city: string;
-  latitude: number;
-  longitude: number;
-  clicks: number;
-  flag: string;
-}
+// ...
 
 interface WorldMapWidgetProps {
   className?: string;
@@ -31,9 +22,9 @@ const WorldMapWidget: React.FC<WorldMapWidgetProps> = ({ className = '' }) => {
     try {
       // Load user's data from backend
       const [urlsResponse, qrResponse, filesResponse] = await Promise.all([
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/v1/urls/user/${user.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] })),
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/v1/qr/user/${user.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] })),
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/v1/files/user/${user.id}`).then(r => r.json()).catch(() => ({ success: false, data: [] }))
+        getUserUrls(user.id).catch(() => ({ success: false, data: [] })),
+        getUserQrCodes(user.id).catch(() => ({ success: false, data: [] })),
+        getUserFiles(user.id).catch(() => ({ success: false, data: [] }))
       ]);
 
       const links = urlsResponse.success ? urlsResponse.data : [];
@@ -41,8 +32,8 @@ const WorldMapWidget: React.FC<WorldMapWidgetProps> = ({ className = '' }) => {
       const files = filesResponse.success ? filesResponse.data : [];
 
       const totalClicks = links.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0) +
-                         qrCodes.reduce((sum: number, qr: any) => sum + (qr.scans || 0), 0) +
-                         files.reduce((sum: number, file: any) => sum + (file.totalDownloads || 0), 0);
+        qrCodes.reduce((sum: number, qr: any) => sum + (qr.scans || 0), 0) +
+        files.reduce((sum: number, file: any) => sum + (file.totalDownloads || 0), 0);
 
       // Generate location points based on actual data
       const points: LocationPoint[] = [
@@ -126,11 +117,11 @@ const WorldMapWidget: React.FC<WorldMapWidgetProps> = ({ className = '' }) => {
               {/* Simple world map outline */}
               <defs>
                 <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" strokeWidth="0.5" opacity="0.5"/>
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" strokeWidth="0.5" opacity="0.5" />
                 </pattern>
               </defs>
               <rect width="800" height="400" fill="url(#grid)" />
-              
+
               {/* Continents (simplified shapes) */}
               {/* North America */}
               <path d="M 50 80 L 200 60 L 250 120 L 180 180 L 80 160 Z" fill="#10b981" opacity="0.3" />
@@ -150,7 +141,7 @@ const WorldMapWidget: React.FC<WorldMapWidgetProps> = ({ className = '' }) => {
                 const { x, y } = projectToSVG(point.latitude, point.longitude);
                 const size = getPointSize(point.clicks);
                 const color = getPointColor(point.clicks);
-                
+
                 return (
                   <g key={index}>
                     {/* Pulse animation for active points */}

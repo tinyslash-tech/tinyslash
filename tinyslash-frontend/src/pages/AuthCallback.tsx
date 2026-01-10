@@ -12,8 +12,15 @@ const AuthCallback: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing authentication...');
 
+  // Use ref to prevent double execution in Strict Mode
+  const processedRef = React.useRef(false);
+
   useEffect(() => {
     const handleCallback = async () => {
+      // Prevent double execution
+      if (processedRef.current) return;
+      processedRef.current = true;
+
       try {
         const code = searchParams.get('code');
         const error = searchParams.get('error');
@@ -27,17 +34,17 @@ const AuthCallback: React.FC = () => {
         }
 
         setMessage('Exchanging authorization code...');
-        
+
         // Handle the OAuth callback
         const authResponse = await googleAuthService.handleCallback(code);
-        
+
         setMessage('Setting up your account...');
-        
+
         // The response now contains both user info and tokens
         if (authResponse.user && authResponse.token) {
           // Store user info
           googleAuthService.storeUserInfo(authResponse.user);
-          
+
           // Update auth context with the user data from backend
           const userData = {
             id: authResponse.user.id,
@@ -52,23 +59,23 @@ const AuthCallback: React.FC = () => {
             isAuthenticated: true,
             authProvider: 'google' as 'google'
           };
-          
+
           console.log('Setting user data:', userData);
           console.log('Setting token:', authResponse.token ? 'provided' : 'missing');
-          
+
           // Store token first
           if (authResponse.token) {
             localStorage.setItem('token', authResponse.token);
           }
-          
+
           // Set user
           setUser(userData);
 
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
-          
+
           toast.success('Successfully signed in with Google!');
-          
+
           // Redirect immediately after setting user
           console.log('Redirecting to dashboard...');
           navigate('/dashboard', { replace: true });
@@ -80,12 +87,12 @@ const AuthCallback: React.FC = () => {
       } catch (error) {
         console.error('Auth callback error:', error);
         setStatus('error');
-        
+
         let errorMessage = 'Authentication failed';
         if (error instanceof Error) {
           errorMessage = error.message;
         }
-        
+
         // Add more specific error messages
         if (errorMessage.includes('503') || errorMessage.includes('Service unavailable')) {
           errorMessage = 'Server is currently unavailable. Please try again later.';
@@ -96,14 +103,14 @@ const AuthCallback: React.FC = () => {
         } else if (errorMessage.includes('Network')) {
           errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
         }
-        
+
         setMessage(errorMessage);
         toast.error(errorMessage);
-        
+
         // Redirect to home page after error
         setTimeout(() => {
           navigate('/', { replace: true });
-        }, 5000);
+        }, 8000); // Increased timeout to read error
       }
     };
 
@@ -119,13 +126,13 @@ const AuthCallback: React.FC = () => {
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
           )}
-          
+
           {status === 'success' && (
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
           )}
-          
+
           {status === 'error' && (
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-red-600" />

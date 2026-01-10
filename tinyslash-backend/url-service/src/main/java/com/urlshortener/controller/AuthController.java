@@ -648,7 +648,11 @@ public class AuthController {
     private String googleClientSecret;
 
     private String exchangeCodeForAccessToken(String code, String redirectUri) throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
+        // Configure timeout
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(100000); // 100 seconds
+        factory.setReadTimeout(100000); // 100 seconds
+        RestTemplate restTemplate = new RestTemplate(factory);
 
         // Prepare request body
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -697,7 +701,11 @@ public class AuthController {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> getUserInfoFromGoogle(String accessToken) throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
+        // Configure timeout
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(100000); // 100 seconds
+        factory.setReadTimeout(100000); // 100 seconds
+        RestTemplate restTemplate = new RestTemplate(factory);
 
         // Prepare headers
         HttpHeaders headers = new HttpHeaders();

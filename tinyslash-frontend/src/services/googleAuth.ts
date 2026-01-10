@@ -25,12 +25,12 @@ class GoogleAuthService {
     this.clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
     this.redirectUri = process.env.REACT_APP_GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/callback';
     this.scope = 'openid email profile';
-    
+
     // Debug logging
     console.log('GoogleAuthService initialized with:');
     console.log('Client ID:', this.clientId ? `${this.clientId.substring(0, 20)}...` : 'NOT SET');
     console.log('Redirect URI:', this.redirectUri);
-    
+
     if (!this.clientId) {
       console.warn('Google OAuth Client ID not found. Please set REACT_APP_GOOGLE_CLIENT_ID in your .env file and restart your development server.');
     }
@@ -71,26 +71,29 @@ class GoogleAuthService {
 
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
     const endpoint = `${apiUrl}/v1/auth/google/callback`;
-    
+
     console.log('Calling endpoint:', endpoint);
 
     try {
+      // Create controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           code: code,
-          redirectUri: this.redirectUri 
-        })
+          redirectUri: this.redirectUri
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
       const responseData = await response.json();
-      console.log('Response data:', responseData);
 
       if (!response.ok) {
         throw new Error(responseData.message || `HTTP ${response.status}: Failed to exchange code for token`);
@@ -101,8 +104,13 @@ class GoogleAuthService {
       }
 
       return responseData;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Token exchange error:', error);
+
+      if (error.name === 'AbortError') {
+        throw new Error('Authentication timed out. The server took too long to respond. Please try again.');
+      }
+
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Unable to connect to authentication server. Please check your internet connection and try again.');
       }
@@ -113,7 +121,7 @@ class GoogleAuthService {
   // Get user info from Google
   async getUserInfo(accessToken: string): Promise<GoogleUserInfo> {
     const userInfoEndpoint = 'https://www.googleapis.com/oauth2/v2/userinfo';
-    
+
     const response = await fetch(userInfoEndpoint, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -138,12 +146,12 @@ class GoogleAuthService {
     try {
       // Exchange code for tokens and get user info from backend
       const authResponse = await this.exchangeCodeForToken(code);
-      
+
       // Store tokens in localStorage (in production, use secure storage)
       if (authResponse.access_token) {
         localStorage.setItem('google_access_token', authResponse.access_token);
       }
-      
+
       return authResponse;
     } catch (error) {
       console.error('OAuth callback error:', error);

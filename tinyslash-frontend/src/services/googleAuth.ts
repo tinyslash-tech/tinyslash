@@ -61,7 +61,13 @@ class GoogleAuthService {
     console.log('Redirect URI:', this.redirectUri);
     console.log('API URL:', process.env.REACT_APP_API_URL);
 
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+    let apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+    // Ensure API URL ends with /api
+    if (!apiUrl.endsWith('/api')) {
+      apiUrl = `${apiUrl}/api`;
+    }
+
     const endpoint = `${apiUrl}/v1/auth/google/callback`;
 
     console.log('Calling endpoint:', endpoint);

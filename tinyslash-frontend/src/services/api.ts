@@ -2,9 +2,18 @@ import axios from 'axios';
 
 // Use relative URLs in production to prevent backend URL exposure
 // Vercel rewrites will proxy these to the backend
-const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
-const ANALYTICS_BASE_URL = process.env.REACT_APP_ANALYTICS_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
-const FILE_BASE_URL = process.env.REACT_APP_FILE_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
+// Use relative URLs in production to prevent backend URL exposure
+// Vercel rewrites will proxy these to the backend
+let apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
+
+// Ensure API URL ends with /api (unless it is a relative path like '/api')
+if (apiUrl.startsWith('http') && !apiUrl.endsWith('/api')) {
+  apiUrl = `${apiUrl}/api`;
+}
+
+const API_BASE_URL = apiUrl;
+const ANALYTICS_BASE_URL = apiUrl;
+const FILE_BASE_URL = apiUrl;
 
 // Create axios instances
 const apiClient = axios.create({
@@ -52,11 +61,11 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
-    
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Debug logging for invite requests
     if (config.url?.includes('/invite')) {
       console.log('🔍 API Request Debug:', {
@@ -68,7 +77,7 @@ apiClient.interceptors.request.use(
         data: config.data
       });
     }
-    
+
     return config;
   },
   (error) => {
@@ -88,9 +97,9 @@ apiClient.interceptors.response.use(
         error.config._errorLogged = true;
       }
     }
-    
+
     const originalRequest = error.config;
-    
+
     // Handle 401/403 - Token refresh
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Don't retry refresh endpoint or if already retried
@@ -107,46 +116,46 @@ apiClient.interceptors.response.use(
         const newToken = localStorage.getItem('token');
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         originalRequest._retry = true;
-        
+
         console.log('Token refreshed successfully, retrying original request');
         return apiClient(originalRequest);
       } else {
         clearAuthData();
         return Promise.reject(error);
       }
-    } 
-    
+    }
+
     // Handle 503 - Service Unavailable with retry limit to prevent infinite loops
     else if (error.response?.status === 503) {
       // Initialize retry count if not exists
       if (!originalRequest._retryCount) {
         originalRequest._retryCount = 0;
       }
-      
+
       // Maximum 2 retries (3 total attempts) to prevent infinite loop
       if (originalRequest._retryCount < 2) {
         originalRequest._retryCount++;
         const attemptNumber = originalRequest._retryCount + 1;
         console.log(`🔄 Retrying request after 503 error (attempt ${attemptNumber}/3)...`);
-        
+
         // Exponential backoff: 2s, 4s
         const delay = 2000 * originalRequest._retryCount;
         await new Promise(resolve => setTimeout(resolve, delay));
-        
+
         return apiClient(originalRequest);
       } else {
         console.error('❌ Max retries (3) reached for 503 error - giving up');
         error.message = 'Server is currently unavailable after multiple attempts. Please try again later.';
       }
-    } 
-    
+    }
+
     // Handle network errors
     else if (!error.response) {
       console.error('Network error - no response from server');
       error.code = 'NETWORK_ERROR';
       error.message = 'Unable to connect to server. Please check your internet connection.';
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -166,36 +175,36 @@ const attemptTokenRefresh = async (): Promise<boolean> => {
     if (!token) return false;
 
     console.log('Attempting token refresh...');
-    
+
     // Create a new axios instance to avoid interceptor loops
     const refreshClient = axios.create({
       baseURL: API_BASE_URL,
       timeout: 15000, // Longer timeout for refresh
     });
-    
+
     const refreshResponse = await refreshClient.post('/v1/auth/refresh', {}, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     if (refreshResponse.data.success && refreshResponse.data.token) {
       const newToken = refreshResponse.data.token;
       const userData = refreshResponse.data.user;
-      
+
       // Update stored auth data with expiry tracking
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString()); // 24 hours from now
-      
+
       console.log('Token refreshed successfully');
-      
+
       // Dispatch event to notify app about successful token refresh
-      window.dispatchEvent(new CustomEvent('auth-token-refreshed', { 
-        detail: { token: newToken, user: userData } 
+      window.dispatchEvent(new CustomEvent('auth-token-refreshed', {
+        detail: { token: newToken, user: userData }
       }));
-      
+
       return true;
     }
-    
+
     return false;
   } catch (refreshError) {
     console.error('Token refresh failed:', refreshError);
@@ -292,7 +301,7 @@ export const shortenUrl = async (data: ShortenUrlRequest): Promise<ShortenUrlRes
 export const uploadFile = async (file: File, options: UploadFileRequest): Promise<ShortenUrlResponse> => {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   // Add options to form data
   Object.entries(options).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -393,10 +402,10 @@ export const uploadFileToBackend = async (file: File, options: {
 }): Promise<any> => {
   try {
     console.log('uploadFileToBackend called with:', { fileName: file.name, fileSize: file.size, options });
-    
+
     const formData = new FormData();
     formData.append('file', file);
-    
+
     Object.entries(options).forEach(([key, value]) => {
       if (value !== undefined) {
         formData.append(key, value.toString());
@@ -406,13 +415,13 @@ export const uploadFileToBackend = async (file: File, options: {
     console.log('Making API request to:', `${apiClient.defaults.baseURL}/v1/files/upload`);
     console.log('apiClient.defaults.baseURL:', apiClient.defaults.baseURL);
     console.log('Full URL will be:', apiClient.defaults.baseURL + '/v1/files/upload');
-    
+
     const response = await apiClient.post('/v1/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     console.log('API response:', response.data);
     return response.data;
   } catch (error: any) {
@@ -557,9 +566,9 @@ export const inviteUserToTeam = async (teamId: string, data: {
       data,
       url: `/v1/teams/${teamId}/invite`
     });
-    
+
     const response = await apiClient.post(`/v1/teams/${teamId}/invite`, data);
-    
+
     console.log('✅ Invite API Response:', response.data);
     return response.data;
   } catch (error: any) {
@@ -569,7 +578,7 @@ export const inviteUserToTeam = async (teamId: string, data: {
       data: error.response?.data,
       message: error.message
     });
-    
+
     // Re-throw with more specific error information
     if (error.response?.data?.message) {
       throw new Error(error.response.data.message);
@@ -670,16 +679,16 @@ export const uploadTeamFile = async (teamId: string, file: File, options: {
 }): Promise<any> => {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   if (options.title) formData.append('title', options.title);
   if (options.description) formData.append('description', options.description);
   if (options.password) formData.append('password', options.password);
   if (options.expirationDays) formData.append('expirationDays', options.expirationDays.toString());
   if (options.isPublic !== undefined) formData.append('isPublic', options.isPublic.toString());
-  
+
   formData.append('scopeType', 'TEAM');
   formData.append('scopeId', teamId);
-  
+
   const response = await apiClient.post('/v1/files/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -748,7 +757,7 @@ export const refreshAuthToken = async (): Promise<any> => {
       'Authorization': `Bearer ${token}`
     }
   });
-  
+
   return response.data;
 };
 
@@ -756,17 +765,17 @@ export const refreshAuthToken = async (): Promise<any> => {
 export const shouldRefreshToken = (): boolean => {
   const tokenExpiry = localStorage.getItem('tokenExpiry');
   if (!tokenExpiry) return false;
-  
+
   const expiryTime = parseInt(tokenExpiry);
   const twoHoursFromNow = Date.now() + (2 * 60 * 60 * 1000); // 2 hours in ms
-  
+
   return expiryTime < twoHoursFromNow;
 };
 
 // Proactive token refresh - call this periodically
 export const proactiveTokenRefresh = async (): Promise<boolean> => {
   if (!shouldRefreshToken()) return true;
-  
+
   try {
     console.log('Proactively refreshing token...');
     const result = await attemptTokenRefresh();
@@ -782,11 +791,11 @@ export const sessionHeartbeat = async (): Promise<boolean> => {
   try {
     const token = localStorage.getItem('token');
     if (!token) return false;
-    
+
     const response = await apiClient.get('/v1/auth/heartbeat', {
       timeout: 5000 // Quick timeout for heartbeat
     });
-    
+
     return response.data.success;
   } catch (error) {
     console.error('Session heartbeat failed:', error);
@@ -803,38 +812,38 @@ export default {
   uploadFile,
   getAnalytics,
   recordClick,
-  
+
   // Authentication
   login,
   signup,
   googleAuth,
   getProfile,
-  
+
   // New URL functions
   createShortUrl,
   getUserUrls,
   updateUrl,
   deleteUrl,
-  
+
   // File functions
   uploadFileToBackend,
   getUserFiles,
   updateFile,
   deleteFile,
-  
+
   // QR Code functions
   createQrCode,
   getUserQrCodes,
   updateQrCode,
   deleteQrCode,
-  
+
   // Analytics functions
   getUrlAnalytics,
   getUserAnalytics,
   getRealtimeAnalytics,
   recordUrlClick,
   recordQrScan,
-  
+
   // Team functions
   createTeam,
   getUserTeams,
@@ -847,7 +856,7 @@ export default {
   removeTeamMember,
   updateTeamMemberRole,
   getTeamInvites,
-  
+
   // Team-scoped content functions
   createTeamShortUrl,
   getTeamUrls,

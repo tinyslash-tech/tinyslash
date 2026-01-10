@@ -1,7 +1,17 @@
 // File Service for MongoDB Integration
 // This service handles file uploads and management with the MongoDB backend
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://urlshortner-mrrl.onrender.com/api/v1';
+const getApiBaseUrl = () => {
+  let url = process.env.REACT_APP_API_URL || 'https://urlshortner-mrrl.onrender.com/api/v1';
+  // Check if it already has /api/v1 or just /api
+  if (url.endsWith('/api/v1')) return url;
+  if (url.endsWith('/api')) return `${url}/v1`;
+
+  // If it's just the domain, add /api/v1
+  return `${url}/api/v1`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface FileUploadRequest {
   file: File;
@@ -88,7 +98,7 @@ class FileService {
       const formData = new FormData();
       formData.append('file', request.file);
       formData.append('userId', this.getUserId());
-      
+
       if (request.title) formData.append('title', request.title);
       if (request.description) formData.append('description', request.description);
       if (request.customShortCode) formData.append('customShortCode', request.customShortCode);
@@ -123,11 +133,11 @@ class FileService {
   async uploadMultipleFiles(files: File[], description?: string, isPublic: boolean = true): Promise<FileUploadResponse> {
     try {
       const formData = new FormData();
-      
+
       files.forEach(file => {
         formData.append('files', file);
       });
-      
+
       if (description) formData.append('description', description);
       formData.append('isPublic', isPublic.toString());
 

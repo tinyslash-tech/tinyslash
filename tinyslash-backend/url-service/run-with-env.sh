@@ -1,22 +1,19 @@
 #!/bin/bash
 
-# Load environment variables from .env file in project root
-if [ -f "../../.env" ]; then
-    echo "Loading environment variables from .env file..."
-    export $(grep -v '^#' ../../.env | xargs)
-else
-    echo "Warning: .env file not found, using default values"
-fi
+# Explicitly set the MongoDB URI for Development (Read from .env)
+# This ensures application-dev.yml can pick it up as ${DEV_MONGODB_URI}
+export DEV_MONGODB_URI=$(grep "^MONGODB_URI=" ../../.env | cut -d '=' -f2-)
 
-# Set default values if not provided
-export MONGODB_URI="${MONGODB_URI:-mongodb://localhost:27017/pebly-database}"
-export MONGODB_DATABASE="${MONGODB_DATABASE:-pebly-database}"
-export FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"
-export GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-your-google-client-id}"
-export GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-your-google-client-secret}"
+# Also set the standard MONGODB_URI just in case
+export MONGODB_URI="$DEV_MONGODB_URI"
 
-echo "Using MongoDB URI: $MONGODB_URI"
-echo "Using MongoDB Database: $MONGODB_DATABASE"
+# Load Google Credentials from ../../.env (handling potential quoting issues manually)
+export GOOGLE_CLIENT_ID=$(grep "^GOOGLE_CLIENT_ID=" ../../.env | cut -d '=' -f2-)
+export GOOGLE_CLIENT_SECRET=$(grep "^GOOGLE_CLIENT_SECRET=" ../../.env | cut -d '=' -f2-)
+
+echo "✅ Environment configured."
+echo "Using MongoDB URI: $DEV_MONGODB_URI"
+echo "Using Google Client ID: $GOOGLE_CLIENT_ID"
 
 # Run the application
 mvn spring-boot:run

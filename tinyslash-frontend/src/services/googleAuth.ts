@@ -68,10 +68,11 @@ class GoogleAuthService {
 
     try {
       // Create controller for timeout
+      // Increased to 90s to handle Render Free Tier "Cold Starts"
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-      console.log('Fetch request started with 15s timeout...');
+      console.log('Fetch request started with 90s timeout...');
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {

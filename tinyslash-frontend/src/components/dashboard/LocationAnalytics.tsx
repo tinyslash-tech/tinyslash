@@ -1,6 +1,34 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import {
+  MapPin,
+  Globe,
+  Users,
+  Eye,
+  RefreshCw,
+  Download,
+  Search
+} from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import WorldMapWidget from './WorldMapWidget';
 import { getUserUrls, getUserQrCodes, getUserFiles } from '../../services/api';
 
-// ...
+interface LocationData {
+  country: string;
+  countryCode: string;
+  city: string;
+  region: string;
+  latitude: number;
+  longitude: number;
+  clicks: number;
+  uniqueVisitors: number;
+  percentage: number;
+  flag: string;
+}
+
+interface LocationAnalyticsProps {
+  timeRange?: '7d' | '30d' | '90d' | '1y';
+}
 
 const LocationAnalytics: React.FC<LocationAnalyticsProps> = ({ timeRange = '30d' }) => {
   const { user } = useAuth();

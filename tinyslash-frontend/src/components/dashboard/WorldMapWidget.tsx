@@ -1,6 +1,16 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { Globe, RefreshCw } from 'lucide-react';
 import { getUserUrls, getUserQrCodes, getUserFiles } from '../../services/api';
 
-// ...
+interface LocationPoint {
+  country: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  clicks: number;
+  flag: string;
+}
 
 interface WorldMapWidgetProps {
   className?: string;

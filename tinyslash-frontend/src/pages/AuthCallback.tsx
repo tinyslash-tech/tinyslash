@@ -33,59 +33,92 @@ const AuthCallback: React.FC = () => {
           throw new Error('No authorization code received');
         }
 
-        setMessage('Exchanging authorization code...');
+        console.log('Starting auth code exchange...');
+        try {
+          console.log('Calling googleAuthService.handleCallback with code:', code.substring(0, 10) + '...');
+          setMessage('Exchanging authorization code...');
 
-        // Handle the OAuth callback
-        const authResponse = await googleAuthService.handleCallback(code);
+          // Handle the OAuth callback
+          const authResponse = await googleAuthService.handleCallback(code);
+          console.log('Auth response received:', authResponse);
 
-        setMessage('Setting up your account...');
+          setMessage('Setting up your account...');
 
-        // The response now contains both user info and tokens
-        if (authResponse.user && authResponse.token) {
-          // Store user info
-          googleAuthService.storeUserInfo(authResponse.user);
+          // The response now contains both user info and tokens
+          if (authResponse.user && authResponse.token) {
+            console.log('Valid user and token found');
+            // Store user info
+            googleAuthService.storeUserInfo(authResponse.user);
 
-          // Update auth context with the user data from backend
-          const userData = {
-            id: authResponse.user.id,
-            name: `${authResponse.user.firstName} ${authResponse.user.lastName}`,
-            email: authResponse.user.email,
-            plan: authResponse.user.subscriptionPlan || 'free',
-            avatar: authResponse.user.profilePicture,
-            picture: authResponse.user.profilePicture,
-            createdAt: authResponse.user.createdAt || new Date().toISOString(),
-            timezone: 'Asia/Kolkata',
-            language: 'en',
-            isAuthenticated: true,
-            authProvider: 'google' as 'google'
-          };
+            // Update auth context with the user data from backend
+            const userData = {
+              id: authResponse.user.id,
+              name: `${authResponse.user.firstName} ${authResponse.user.lastName}`,
+              email: authResponse.user.email,
+              plan: authResponse.user.subscriptionPlan || 'free',
+              avatar: authResponse.user.profilePicture,
+              picture: authResponse.user.profilePicture,
+              createdAt: authResponse.user.createdAt || new Date().toISOString(),
+              timezone: 'Asia/Kolkata',
+              language: 'en',
+              isAuthenticated: true,
+              authProvider: 'google' as 'google'
+            };
 
-          console.log('Setting user data:', userData);
-          console.log('Setting token:', authResponse.token ? 'provided' : 'missing');
+            console.log('Setting user data:', userData);
+            console.log('Setting token:', authResponse.token ? 'provided' : 'missing');
 
-          // Store token first
-          if (authResponse.token) {
-            localStorage.setItem('token', authResponse.token);
+            // Store token first
+            if (authResponse.token) {
+              localStorage.setItem('token', authResponse.token);
+            }
+
+            // Set user
+            setUser(userData);
+
+            setStatus('success');
+            setMessage('Authentication successful! Redirecting...');
+
+            toast.success('Successfully signed in with Google!');
+
+            // Redirect immediately after setting user
+            console.log('Redirecting to dashboard...');
+            navigate('/dashboard', { replace: true });
+
+          } else {
+            throw new Error('Invalid response from authentication server - missing user or token');
           }
 
-          // Set user
-          setUser(userData);
+        } catch (error) {
+          console.error('Auth callback error:', error);
+          setStatus('error');
 
-          setStatus('success');
-          setMessage('Authentication successful! Redirecting...');
+          let errorMessage = 'Authentication failed';
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
 
-          toast.success('Successfully signed in with Google!');
+          // Add more specific error messages
+          if (errorMessage.includes('503') || errorMessage.includes('Service unavailable')) {
+            errorMessage = 'Server is currently unavailable. Please try again later.';
+          } else if (errorMessage.includes('Failed to exchange code')) {
+            errorMessage = 'Failed to verify with Google. Please check your internet connection and try again.';
+          } else if (errorMessage.includes('Authentication failed')) {
+            errorMessage = 'Google authentication failed. Please ensure you have the correct permissions and try again.';
+          } else if (errorMessage.includes('Network')) {
+            errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
+          }
 
-          // Redirect immediately after setting user
-          console.log('Redirecting to dashboard...');
-          navigate('/dashboard', { replace: true });
+          setMessage(errorMessage);
+          toast.error(errorMessage);
 
-        } else {
-          throw new Error('Invalid response from authentication server - missing user or token');
+          // Redirect to home page after error
+          setTimeout(() => {
+            navigate('/', { replace: true });
+          }, 8000); // Increased timeout to read error
         }
-
-      } catch (error) {
-        console.error('Auth callback error:', error);
+      } catch (error) { // This catch block was missing in the original code, causing the syntax error.
+        console.error('Initial auth callback error:', error);
         setStatus('error');
 
         let errorMessage = 'Authentication failed';

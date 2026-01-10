@@ -79,6 +79,7 @@ class GoogleAuthService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
+      console.log('Fetch request started with 15s timeout...');
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -90,6 +91,7 @@ class GoogleAuthService {
         }),
         signal: controller.signal
       });
+      console.log('Fetch request completed, clearing timeout');
       clearTimeout(timeoutId);
 
       console.log('Response status:', response.status);

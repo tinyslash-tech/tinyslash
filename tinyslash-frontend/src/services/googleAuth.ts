@@ -25,13 +25,17 @@ class GoogleAuthService {
 
   constructor() {
     this.clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
-    this.redirectUri = process.env.REACT_APP_GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/callback';
+
+    // Dynamic Redirect URI based on current origin
+    // This ensures dev redirects to dev, and prod redirects to prod
+    this.redirectUri = `${window.location.origin}/auth/callback`;
+
     this.scope = 'openid email profile';
 
     // Debug logging
     console.log('GoogleAuthService initialized with:');
     console.log('Client ID:', this.clientId ? `${this.clientId.substring(0, 20)}...` : 'NOT SET');
-    console.log('Redirect URI:', this.redirectUri);
+    console.log('Redirect URI (Dynamic):', this.redirectUri);
 
     if (!this.clientId) {
       console.warn('Google OAuth Client ID not found. Please set REACT_APP_GOOGLE_CLIENT_ID in your .env file and restart your development server.');
@@ -59,14 +63,33 @@ class GoogleAuthService {
     console.log('=== Exchanging code for token ===');
     console.log('Code length:', code.length);
     console.log('Redirect URI:', this.redirectUri);
-    console.log('API URL:', process.env.REACT_APP_API_URL);
 
-    let apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+    // Dynamic API URL resolution (Copied logic from api.ts to ensure consistency)
+    const getApiUrl = () => {
+      const hostname = window.location.hostname;
 
-    // Ensure API URL ends with /api
-    if (!apiUrl.endsWith('/api')) {
-      apiUrl = `${apiUrl}/api`;
-    }
+      if (hostname === 'dev.tinyslash.com') {
+        return 'https://tinyslash-backend-dev.onrender.com/api';
+      } else if (hostname === 'tinyslash.com' || hostname === 'www.tinyslash.com') {
+        return 'https://tinyslash-backend-prod.onrender.com/api';
+      } else if (hostname === 'admin.tinyslash.com') {
+        return 'https://tinyslash-backend-prod.onrender.com/api';
+      } else if (hostname.endsWith('.vercel.app')) {
+        if (hostname.includes('dev') || hostname.includes('preview')) {
+          return 'https://tinyslash-backend-dev.onrender.com/api';
+        }
+        return 'https://tinyslash-backend-prod.onrender.com/api';
+      }
+
+      let envUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
+      if (envUrl.startsWith('http') && !envUrl.endsWith('/api')) {
+        envUrl = `${envUrl}/api`;
+      }
+      return envUrl;
+    };
+
+    const apiUrl = getApiUrl();
+    console.log('API URL (Dynamic):', apiUrl);
 
     const endpoint = `${apiUrl}/v1/auth/google/callback`;
 

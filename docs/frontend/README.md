@@ -1,8 +1,8 @@
-# BitaURL - Frontend Documentation
+# Tinyslash - Frontend Documentation
 
 ## 🎯 Overview
 
-The BitaURL frontend is a modern React application built with TypeScript, providing a responsive and intuitive user interface for URL management, analytics, and team collaboration. The application follows modern React patterns and best practices for maintainability and scalability.
+The Tinyslash frontend is a modern React application built with TypeScript, providing a responsive and intuitive user interface for URL management, analytics, and team collaboration. The application follows modern React patterns and best practices for maintainability and scalability.
 
 ## 🏗️ Architecture
 
@@ -768,7 +768,7 @@ export default defineConfig({
 ### Environment Configuration
 ```bash
 # .env.local
-REACT_APP_API_URL=https://api.bitaurl.com
+REACT_APP_API_URL=https://api.tinyslash.com
 REACT_APP_RAZORPAY_KEY=rzp_live_xxxxx
 REACT_APP_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
 REACT_APP_SENTRY_DSN=https://xxxxx@sentry.io/xxxxx

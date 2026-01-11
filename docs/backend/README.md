@@ -1,8 +1,8 @@
-# BitaURL - Backend Documentation
+# Tinyslash - Backend Documentation
 
 ## 🎯 Overview
 
-The BitaURL backend is a robust Spring Boot application designed for high-performance URL shortening, comprehensive analytics, and enterprise-grade features. Built with Java 17 and Spring Boot 3.x, it provides a scalable, secure, and maintainable foundation for the BitaURL platform.
+The Tinyslash backend is a robust Spring Boot application designed for high-performance URL shortening, comprehensive analytics, and enterprise-grade features. Built with Java 17 and Spring Boot 3.x, it provides a scalable, secure, and maintainable foundation for the Tinyslash platform.
 
 ## 🏗️ Architecture
 
@@ -814,7 +814,7 @@ app:
       provider: sendgrid
       sendgrid:
         api-key: ${SENDGRID_API_KEY}
-        from-email: ${FROM_EMAIL:noreply@bitaurl.com}
+        from-email: ${FROM_EMAIL:noreply@tinyslash.com}
 ```
 
 ### Production Configuration

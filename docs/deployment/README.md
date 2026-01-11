@@ -1,8 +1,8 @@
-# BitaURL - Deployment Documentation
+# Tinyslash - Deployment Documentation
 
 ## 🎯 Deployment Overview
 
-BitaURL follows a modern cloud-native deployment strategy with containerized applications, automated CI/CD pipelines, and infrastructure as code. The platform is designed for high availability, scalability, and zero-downtime deployments across multiple environments.
+Tinyslash follows a modern cloud-native deployment strategy with containerized applications, automated CI/CD pipelines, and infrastructure as code. The platform is designed for high availability, scalability, and zero-downtime deployments across multiple environments.
 
 ## 🏗️ Infrastructure Architecture
 
@@ -498,7 +498,7 @@ ENVIRONMENT=${1:-staging}
 IMAGE_TAG=${2:-latest}
 SERVICE_NAME="bitaurl-backend"
 
-echo "🚀 Deploying BitaURL Backend to $ENVIRONMENT"
+echo "🚀 Deploying Tinyslash Backend to $ENVIRONMENT"
 
 # Validate environment
 if [[ ! "$ENVIRONMENT" =~ ^(staging|production)$ ]]; then
@@ -557,7 +557,7 @@ echo "✅ Deployment completed successfully!"
 
 # Send notification
 curl -X POST -H 'Content-type: application/json' \
-    --data "{\"text\":\"✅ BitaURL Backend deployed to $ENVIRONMENT successfully!\"}" \
+    --data "{\"text\":\"✅ Tinyslash Backend deployed to $ENVIRONMENT successfully!\"}" \
     $SLACK_WEBHOOK_URL
 ```
 
@@ -626,7 +626,7 @@ AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_S3_BUCKET=bitaurl-files-prod
 AWS_S3_REGION=us-east-1
-AWS_CLOUDFRONT_DOMAIN=cdn.bitaurl.com
+AWS_CLOUDFRONT_DOMAIN=cdn.tinyslash.com
 
 # Payment
 RAZORPAY_KEY_ID=rzp_live_your_key_id
@@ -635,7 +635,7 @@ RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
 
 # Email
 SENDGRID_API_KEY=your_sendgrid_api_key
-FROM_EMAIL=noreply@bitaurl.com
+FROM_EMAIL=noreply@tinyslash.com
 
 # Monitoring
 SENTRY_DSN=https://your_sentry_dsn@sentry.io/project_id
@@ -646,7 +646,7 @@ RATE_LIMIT_REQUESTS_PER_MINUTE=100
 RATE_LIMIT_BURST_CAPACITY=200
 
 # CORS
-ALLOWED_ORIGINS=https://bitaurl.com,https://admin.bitaurl.com
+ALLOWED_ORIGINS=https://tinyslash.com,https://admin.tinyslash.com
 ```
 
 #### Staging Environment
@@ -685,14 +685,14 @@ RAZORPAY_KEY_SECRET=test_razorpay_secret
 
 # Email
 SENDGRID_API_KEY=staging_sendgrid_api_key
-FROM_EMAIL=staging@bitaurl.com
+FROM_EMAIL=staging@tinyslash.com
 
 # Rate Limiting
 RATE_LIMIT_REQUESTS_PER_MINUTE=1000
 RATE_LIMIT_BURST_CAPACITY=2000
 
 # CORS
-ALLOWED_ORIGINS=https://staging.bitaurl.com,https://staging-admin.bitaurl.com
+ALLOWED_ORIGINS=https://staging.tinyslash.com,https://staging-admin.tinyslash.com
 ```
 
 ### Kubernetes Configuration (Future)
@@ -844,7 +844,7 @@ alerting:
 ```json
 {
   "dashboard": {
-    "title": "BitaURL Application Metrics",
+    "title": "Tinyslash Application Metrics",
     "panels": [
       {
         "title": "Request Rate",
@@ -1194,9 +1194,9 @@ public class HealthController {
 # scripts/uptime-monitor.sh
 
 ENDPOINTS=(
-    "https://api.bitaurl.com/api/v1/health"
-    "https://bitaurl.com"
-    "https://admin.bitaurl.com"
+    "https://api.tinyslash.com/api/v1/health"
+    "https://tinyslash.com"
+    "https://admin.tinyslash.com"
 )
 
 SLACK_WEBHOOK_URL="your_slack_webhook_url"

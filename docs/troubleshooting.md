@@ -1,8 +1,8 @@
-# BitaURL - Troubleshooting Guide
+# Tinyslash - Troubleshooting Guide
 
 ## 🎯 Overview
 
-This guide helps you diagnose and resolve common issues when developing, deploying, or using BitaURL. Issues are organized by component and include step-by-step solutions.
+This guide helps you diagnose and resolve common issues when developing, deploying, or using Tinyslash. Issues are organized by component and include step-by-step solutions.
 
 ## 🔧 General Troubleshooting Steps
 
@@ -525,7 +525,7 @@ db.users.updateOne(
 
 // Create admin user if doesn't exist
 db.users.insertOne({
-  email: "admin@bitaurl.com",
+  email: "admin@tinyslash.com",
   name: "Admin User",
   passwordHash: "$2b$10$...", // Use proper hash
   role: "SUPER_ADMIN",
@@ -1024,7 +1024,7 @@ docker-compose version >> debug-logs/system-info.txt
 ### Support Channels
 - **GitHub Issues**: For bugs and feature requests
 - **Discord**: Real-time community support
-- **Email**: support@bitaurl.com for critical issues
+- **Email**: support@tinyslash.com for critical issues
 - **Documentation**: Check other docs for detailed guides
 
 ### Before Asking for Help

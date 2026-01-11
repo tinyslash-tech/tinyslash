@@ -1,8 +1,8 @@
-# BitaURL - Getting Started Guide
+# Tinyslash - Getting Started Guide
 
 ## 🎯 Quick Start Overview
 
-This guide will help you set up the BitaURL development environment and get the application running locally. BitaURL consists of three main components: the backend API (Spring Boot), frontend web application (React), and admin panel (React).
+This guide will help you set up the Tinyslash development environment and get the application running locally. Tinyslash consists of three main components: the backend API (Spring Boot), frontend web application (React), and admin panel (React).
 
 ## 📋 Prerequisites
 
@@ -22,7 +22,7 @@ This guide will help you set up the BitaURL development environment and get the 
 
 ## 🚀 Quick Setup (Docker Compose)
 
-The fastest way to get BitaURL running locally is using Docker Compose:
+The fastest way to get Tinyslash running locally is using Docker Compose:
 
 ```bash
 # Clone the repository
@@ -221,7 +221,7 @@ mongosh mongodb://localhost:27017/bitaurl
 
 // Create admin user
 db.users.insertOne({
-  email: "admin@bitaurl.com",
+  email: "admin@tinyslash.com",
   name: "Admin User",
   passwordHash: "$2b$10$rZ8Q8Q8Q8Q8Q8Q8Q8Q8Q8O", // password: admin123
   role: "SUPER_ADMIN",
@@ -251,7 +251,7 @@ Expected response:
 ```json
 {
   "status": "UP",
-  "timestamp": "2024-01-30T10:15:30Z",
+  "timestamp": "2025-01-30T10:15:30Z",
   "components": {
     "database": {"status": "UP"},
     "cache": {"status": "UP"}
@@ -261,12 +261,12 @@ Expected response:
 
 ### 2. Frontend Access
 - Open `http://localhost:3000` in your browser
-- You should see the BitaURL homepage
+- You should see the Tinyslash homepage
 - Try creating an account or logging in
 
 ### 3. Admin Panel Access
 - Open `http://localhost:3001` in your browser
-- Login with admin credentials: `admin@bitaurl.com` / `admin123`
+- Login with admin credentials: `admin@tinyslash.com` / `admin123`
 - You should see the admin dashboard
 
 ### 4. API Testing
@@ -511,10 +511,10 @@ mongosh
 - **GitHub Issues**: Report bugs and request features
 - **Discussions**: Ask questions and share ideas
 - **Discord**: Join our developer community
-- **Email**: developers@bitaurl.com
+- **Email**: developers@tinyslash.com
 
 ### Development Resources
-- **Postman Collection**: [Download API Collection](https://api.bitaurl.com/postman/collection.json)
+- **Postman Collection**: [Download API Collection](https://api.tinyslash.com/postman/collection.json)
 - **Sample Data**: Use `scripts/load-sample-data.sh`
 - **Database Schema**: See [Database Documentation](database/README.md)
 

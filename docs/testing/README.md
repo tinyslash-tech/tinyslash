@@ -1,8 +1,8 @@
-# BitaURL - Testing Documentation
+# Tinyslash - Testing Documentation
 
 ## 🎯 Testing Strategy Overview
 
-BitaURL implements a comprehensive testing strategy following the testing pyramid approach, ensuring high code quality, reliability, and maintainability. Our testing framework covers unit tests, integration tests, end-to-end tests, performance tests, and security tests across all application layers.
+Tinyslash implements a comprehensive testing strategy following the testing pyramid approach, ensuring high code quality, reliability, and maintainability. Our testing framework covers unit tests, integration tests, end-to-end tests, performance tests, and security tests across all application layers.
 
 ## 🏗️ Testing Architecture
 
@@ -43,7 +43,7 @@ public class TestConfig {
     @Bean
     @Primary
     public Clock testClock() {
-        return Clock.fixed(Instant.parse("2024-01-30T10:15:30Z"), ZoneOffset.UTC);
+        return Clock.fixed(Instant.parse("2025-01-30T10:15:30Z"), ZoneOffset.UTC);
     }
     
     @Bean
@@ -488,7 +488,7 @@ class DatabaseIntegrationTest {
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="BitaURL Load Test">
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Tinyslash Load Test">
       <elementProp name="TestPlan.arguments" elementType="Arguments" guiclass="ArgumentsPanel">
         <collectionProp name="Arguments.arguments"/>
       </elementProp>
@@ -524,7 +524,7 @@ class DatabaseIntegrationTest {
               </elementProp>
             </collectionProp>
           </elementProp>
-          <stringProp name="HTTPSampler.domain">api.bitaurl.com</stringProp>
+          <stringProp name="HTTPSampler.domain">api.tinyslash.com</stringProp>
           <stringProp name="HTTPSampler.port">443</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/v1/urls</stringProp>
@@ -636,7 +636,7 @@ describe('UrlShortener Component', () => {
     const mockResponse = {
       id: 'url123',
       shortCode: 'abc123',
-      shortUrl: 'https://bitaurl.com/abc123',
+      shortUrl: 'https://tinyslash.com/abc123',
       originalUrl: 'https://example.com',
       title: 'Test URL'
     };
@@ -661,7 +661,7 @@ describe('UrlShortener Component', () => {
     });
 
     // Check if result is displayed
-    expect(screen.getByText('https://bitaurl.com/abc123')).toBeInTheDocument();
+    expect(screen.getByText('https://tinyslash.com/abc123')).toBeInTheDocument();
   });
 
   it('should show validation error for invalid URL', async () => {
@@ -893,8 +893,8 @@ describe('Dashboard Page', () => {
         }
       ],
       clicksOverTime: [
-        { date: '2024-01-29', clicks: 45 },
-        { date: '2024-01-30', clicks: 67 }
+        { date: '2025-01-29', clicks: 45 },
+        { date: '2025-01-30', clicks: 67 }
       ]
     };
 
@@ -998,7 +998,7 @@ describe('URL Shortening Flow', () => {
       .should('contain', 'URL created successfully');
     
     cy.get('[data-cy=short-url-result]')
-      .should('contain', 'bitaurl.com/')
+      .should('contain', 'tinyslash.com/')
       .and('be.visible');
 
     // Verify URL appears in the list
@@ -1040,7 +1040,7 @@ describe('URL Shortening Flow', () => {
     // Verify clipboard content (if supported by browser)
     cy.window().then((win) => {
       win.navigator.clipboard.readText().then((text) => {
-        expect(text).to.include('bitaurl.com/');
+        expect(text).to.include('tinyslash.com/');
       });
     });
   });
@@ -1252,7 +1252,7 @@ class SecurityTest {
 
 set -e
 
-echo "🧪 Running BitaURL Test Suite"
+echo "🧪 Running Tinyslash Test Suite"
 
 # Backend tests
 echo "📦 Running backend tests..."

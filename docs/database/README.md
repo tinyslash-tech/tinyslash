@@ -1,8 +1,8 @@
-# BitaURL - Database Documentation
+# Tinyslash - Database Documentation
 
 ## 🎯 Overview
 
-BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalability, and excellent performance characteristics for document-based data. The database design follows modern NoSQL patterns with careful attention to indexing, relationships, and data consistency.
+Tinyslash uses MongoDB as its primary database, chosen for its flexibility, scalability, and excellent performance characteristics for document-based data. The database design follows modern NoSQL patterns with careful attention to indexing, relationships, and data consistency.
 
 ## 🏗️ Database Architecture
 
@@ -82,8 +82,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   subscription: {
     planId: "pro_monthly",
     status: "active", // active, canceled, past_due
-    currentPeriodStart: ISODate("2024-01-01T00:00:00Z"),
-    currentPeriodEnd: ISODate("2024-02-01T00:00:00Z"),
+    currentPeriodStart: ISODate("2025-01-01T00:00:00Z"),
+    currentPeriodEnd: ISODate("2025-02-01T00:00:00Z"),
     cancelAtPeriodEnd: false,
     trialEnd: null,
     customerId: "cus_razorpay_id"
@@ -100,9 +100,9 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   },
   
   // Timestamps
-  createdAt: ISODate("2024-01-01T00:00:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
-  lastLoginAt: ISODate("2024-01-30T09:30:00Z"),
+  createdAt: ISODate("2025-01-01T00:00:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
+  lastLoginAt: ISODate("2025-01-30T09:30:00Z"),
   
   // Soft Delete
   deletedAt: null
@@ -134,7 +134,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   // Behavior Settings
   settings: {
     password: null, // Password protection
-    expiresAt: ISODate("2024-12-31T23:59:59Z"), // Expiration date
+    expiresAt: ISODate("2025-12-31T23:59:59Z"), // Expiration date
     clickLimit: null, // Maximum clicks allowed
     geoTargeting: {
       enabled: false,
@@ -165,19 +165,19 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   analytics: {
     totalClicks: 1250,
     uniqueClicks: 890,
-    lastClickAt: ISODate("2024-01-30T10:00:00Z"),
+    lastClickAt: ISODate("2025-01-30T10:00:00Z"),
     topCountries: ["US", "UK", "CA"],
     topReferrers: ["google.com", "facebook.com", "twitter.com"],
     clicksByDay: [
-      { date: "2024-01-29", clicks: 45 },
-      { date: "2024-01-30", clicks: 67 }
+      { date: "2025-01-29", clicks: 45 },
+      { date: "2025-01-30", clicks: 67 }
     ]
   },
   
   // QR Code Information
   qrCode: {
     id: ObjectId("..."), // Reference to qr_codes collection
-    imageUrl: "https://cdn.bitaurl.com/qr/abc123.png",
+    imageUrl: "https://cdn.tinyslash.com/qr/abc123.png",
     style: {
       foregroundColor: "#000000",
       backgroundColor: "#FFFFFF",
@@ -186,8 +186,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   },
   
   // Timestamps
-  createdAt: ISODate("2024-01-15T14:30:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
+  createdAt: ISODate("2025-01-15T14:30:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
   
   // Soft Delete
   deletedAt: null
@@ -248,7 +248,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   events: [
     {
       type: "click",
-      timestamp: ISODate("2024-01-30T10:15:30Z"),
+      timestamp: ISODate("2025-01-30T10:15:30Z"),
       metadata: {}
     }
   ],
@@ -258,7 +258,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   botType: null, // googlebot, bingbot, etc.
   
   // Timestamp
-  timestamp: ISODate("2024-01-30T10:15:30Z"),
+  timestamp: ISODate("2025-01-30T10:15:30Z"),
   
   // Session Information
   sessionId: "sess_abc123",
@@ -294,7 +294,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
     {
       userId: ObjectId("..."),
       role: "admin", // owner, admin, member, viewer
-      joinedAt: ISODate("2024-01-15T10:00:00Z"),
+      joinedAt: ISODate("2025-01-15T10:00:00Z"),
       invitedBy: ObjectId("..."),
       permissions: ["urls:create", "urls:edit", "analytics:view"]
     }
@@ -307,8 +307,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
       role: "member",
       token: "inv_token_123",
       invitedBy: ObjectId("..."),
-      invitedAt: ISODate("2024-01-30T09:00:00Z"),
-      expiresAt: ISODate("2024-02-06T09:00:00Z"),
+      invitedAt: ISODate("2025-01-30T09:00:00Z"),
+      expiresAt: ISODate("2025-02-06T09:00:00Z"),
       status: "pending" // pending, accepted, expired
     }
   ],
@@ -330,8 +330,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   },
   
   // Timestamps
-  createdAt: ISODate("2024-01-01T00:00:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
+  createdAt: ISODate("2025-01-01T00:00:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
   
   // Soft Delete
   deletedAt: null
@@ -349,7 +349,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   userId: ObjectId("..."), // Reference to users collection
   
   // QR Code Data
-  data: "https://bitaurl.com/abc123", // The encoded URL
+  data: "https://tinyslash.com/abc123", // The encoded URL
   format: "PNG", // PNG, SVG, PDF
   size: 200, // Size in pixels
   
@@ -372,7 +372,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   
   // File Information
   file: {
-    url: "https://cdn.bitaurl.com/qr/abc123.png",
+    url: "https://cdn.tinyslash.com/qr/abc123.png",
     size: 15420, // File size in bytes
     mimeType: "image/png"
   },
@@ -381,16 +381,16 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   analytics: {
     totalScans: 89,
     uniqueScans: 67,
-    lastScanAt: ISODate("2024-01-30T09:45:00Z"),
+    lastScanAt: ISODate("2025-01-30T09:45:00Z"),
     scansByDay: [
-      { date: "2024-01-29", scans: 12 },
-      { date: "2024-01-30", scans: 8 }
+      { date: "2025-01-29", scans: 12 },
+      { date: "2025-01-30", scans: 8 }
     ]
   },
   
   // Timestamps
-  createdAt: ISODate("2024-01-15T14:30:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
+  createdAt: ISODate("2025-01-15T14:30:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
   
   // Soft Delete
   deletedAt: null
@@ -417,16 +417,16 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   storage: {
     provider: "s3", // s3, gcs, azure
     bucket: "bitaurl-files",
-    key: "files/2024/01/file_abc123.pdf",
-    url: "https://cdn.bitaurl.com/files/abc123",
-    cdnUrl: "https://cdn.bitaurl.com/files/abc123"
+    key: "files/2025/01/file_abc123.pdf",
+    url: "https://cdn.tinyslash.com/files/abc123",
+    cdnUrl: "https://cdn.tinyslash.com/files/abc123"
   },
   
   // Access Control
   access: {
     isPublic: false,
     password: null, // Password protection
-    expiresAt: ISODate("2024-12-31T23:59:59Z"),
+    expiresAt: ISODate("2025-12-31T23:59:59Z"),
     downloadLimit: 100, // Maximum downloads
     allowedDomains: ["company.com"], // Domain restrictions
     ipWhitelist: ["192.168.1.0/24"] // IP restrictions
@@ -435,17 +435,17 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   // Short URL Information
   shortUrl: {
     shortCode: "file_abc123",
-    fullUrl: "https://bitaurl.com/f/abc123"
+    fullUrl: "https://tinyslash.com/f/abc123"
   },
   
   // Analytics
   analytics: {
     totalDownloads: 45,
     uniqueDownloads: 32,
-    lastDownloadAt: ISODate("2024-01-30T08:30:00Z"),
+    lastDownloadAt: ISODate("2025-01-30T08:30:00Z"),
     downloadsByDay: [
-      { date: "2024-01-29", downloads: 8 },
-      { date: "2024-01-30", downloads: 5 }
+      { date: "2025-01-29", downloads: 8 },
+      { date: "2025-01-30", downloads: 5 }
     ],
     topCountries: ["US", "UK", "CA"]
   },
@@ -455,12 +455,12 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
     title: "Q4 Sales Presentation",
     description: "Quarterly sales results and projections",
     tags: ["sales", "q4", "presentation"],
-    thumbnail: "https://cdn.bitaurl.com/thumbs/abc123.jpg"
+    thumbnail: "https://cdn.tinyslash.com/thumbs/abc123.jpg"
   },
   
   // Timestamps
-  createdAt: ISODate("2024-01-15T16:20:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
+  createdAt: ISODate("2025-01-15T16:20:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
   
   // Soft Delete
   deletedAt: null
@@ -487,13 +487,13 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
     status: "verified", // pending, verified, failed
     method: "dns", // dns, file, email
     token: "verify_token_123",
-    verifiedAt: ISODate("2024-01-16T10:30:00Z"),
-    lastCheckedAt: ISODate("2024-01-30T10:00:00Z"),
+    verifiedAt: ISODate("2025-01-16T10:30:00Z"),
+    lastCheckedAt: ISODate("2025-01-30T10:00:00Z"),
     dnsRecords: [
       {
         type: "CNAME",
         name: "short",
-        value: "cname.bitaurl.com",
+        value: "cname.tinyslash.com",
         status: "verified"
       }
     ]
@@ -503,8 +503,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   ssl: {
     status: "active", // pending, active, expired, failed
     provider: "letsencrypt",
-    issuedAt: ISODate("2024-01-16T11:00:00Z"),
-    expiresAt: ISODate("2024-04-16T11:00:00Z"),
+    issuedAt: ISODate("2025-01-16T11:00:00Z"),
+    expiresAt: ISODate("2025-04-16T11:00:00Z"),
     autoRenew: true,
     certificate: {
       serialNumber: "abc123...",
@@ -532,8 +532,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   },
   
   // Timestamps
-  createdAt: ISODate("2024-01-15T09:00:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
+  createdAt: ISODate("2025-01-15T09:00:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
   
   // Soft Delete
   deletedAt: null
@@ -547,7 +547,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   _id: ObjectId("..."),
   
   // Ticket Information
-  ticketNumber: "TICKET-2024-001234",
+  ticketNumber: "TICKET-2025-001234",
   subject: "Custom domain verification issue",
   category: "technical", // payment, technical, account, general
   priority: "high", // low, medium, high, urgent
@@ -562,14 +562,14 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   // Assignment
   assignedTo: ObjectId("..."), // Reference to admin users
   assignedBy: ObjectId("..."),
-  assignedAt: ISODate("2024-01-30T09:30:00Z"),
+  assignedAt: ISODate("2025-01-30T09:30:00Z"),
   
   // Content
   message: "I'm having trouble verifying my custom domain...",
   attachments: [
     {
       fileName: "screenshot.png",
-      fileUrl: "https://cdn.bitaurl.com/attachments/abc123.png",
+      fileUrl: "https://cdn.tinyslash.com/attachments/abc123.png",
       fileSize: 245760
     }
   ],
@@ -582,7 +582,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
       sender: "agent", // user, agent, system
       senderName: "Sarah Wilson",
       senderId: ObjectId("..."),
-      timestamp: ISODate("2024-01-30T10:00:00Z"),
+      timestamp: ISODate("2025-01-30T10:00:00Z"),
       attachments: [],
       isInternal: false // Internal notes not visible to user
     }
@@ -603,7 +603,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   sla: {
     responseTime: 7200, // seconds
     resolutionTime: null,
-    firstResponseAt: ISODate("2024-01-30T10:00:00Z"),
+    firstResponseAt: ISODate("2025-01-30T10:00:00Z"),
     resolvedAt: null,
     escalatedAt: null
   },
@@ -620,8 +620,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   },
   
   // Timestamps
-  createdAt: ISODate("2024-01-30T09:15:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
+  createdAt: ISODate("2025-01-30T09:15:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
   
   // Soft Delete
   deletedAt: null
@@ -637,7 +637,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   // Payment Information
   paymentId: "pay_razorpay_123", // External payment ID
   orderId: "order_123",
-  invoiceId: "inv_2024_001234",
+  invoiceId: "inv_2025_001234",
   
   // User Information
   userId: ObjectId("..."), // Reference to users collection
@@ -660,8 +660,8 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
     planId: "pro_monthly",
     planName: "Pro Monthly",
     billingCycle: "monthly",
-    currentPeriodStart: ISODate("2024-01-01T00:00:00Z"),
-    currentPeriodEnd: ISODate("2024-02-01T00:00:00Z")
+    currentPeriodStart: ISODate("2025-01-01T00:00:00Z"),
+    currentPeriodEnd: ISODate("2025-02-01T00:00:00Z")
   },
   
   // Payment Method Details
@@ -704,7 +704,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
       amount: 1000,
       reason: "Customer request",
       status: "processed",
-      processedAt: ISODate("2024-01-25T14:30:00Z"),
+      processedAt: ISODate("2025-01-25T14:30:00Z"),
       processedBy: ObjectId("...") // Admin user ID
     }
   ],
@@ -713,15 +713,15 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   webhookEvents: [
     {
       event: "payment.captured",
-      receivedAt: ISODate("2024-01-30T10:15:30Z"),
+      receivedAt: ISODate("2025-01-30T10:15:30Z"),
       processed: true
     }
   ],
   
   // Timestamps
-  createdAt: ISODate("2024-01-30T10:15:00Z"),
-  updatedAt: ISODate("2024-01-30T10:15:30Z"),
-  paidAt: ISODate("2024-01-30T10:15:30Z"),
+  createdAt: ISODate("2025-01-30T10:15:00Z"),
+  updatedAt: ISODate("2025-01-30T10:15:30Z"),
+  paidAt: ISODate("2025-01-30T10:15:30Z"),
   
   // Soft Delete
   deletedAt: null
@@ -742,7 +742,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   // Actor Information
   actorType: "user", // user, admin, system
   actorId: ObjectId("..."),
-  actorEmail: "admin@bitaurl.com",
+  actorEmail: "admin@tinyslash.com",
   actorName: "Admin User",
   actorRole: "ADMIN",
   
@@ -790,7 +790,7 @@ BitaURL uses MongoDB as its primary database, chosen for its flexibility, scalab
   },
   
   // Timestamp
-  timestamp: ISODate("2024-01-30T10:15:30Z"),
+  timestamp: ISODate("2025-01-30T10:15:30Z"),
   
   // Additional Metadata
   tags: ["user_management", "suspension"],
@@ -948,8 +948,8 @@ db.analytics.aggregate([
     $match: {
       urlId: ObjectId("url_id"),
       timestamp: {
-        $gte: ISODate("2024-01-01T00:00:00Z"),
-        $lte: ISODate("2024-01-31T23:59:59Z")
+        $gte: ISODate("2025-01-01T00:00:00Z"),
+        $lte: ISODate("2025-01-31T23:59:59Z")
       }
     }
   },
@@ -1046,8 +1046,8 @@ db.payments.aggregate([
     $match: {
       status: "captured",
       createdAt: {
-        $gte: ISODate("2024-01-01T00:00:00Z"),
-        $lte: ISODate("2024-12-31T23:59:59Z")
+        $gte: ISODate("2025-01-01T00:00:00Z"),
+        $lte: ISODate("2025-12-31T23:59:59Z")
       }
     }
   },
@@ -1097,7 +1097,7 @@ db.users.aggregate([
           $match: {
             $expr: { $eq: ["$userId", "$$userId"] },
             timestamp: {
-              $gte: ISODate("2024-01-01T00:00:00Z")
+              $gte: ISODate("2025-01-01T00:00:00Z")
             }
           }
         },

@@ -1,8 +1,8 @@
-# BitaURL - Security Documentation
+# Tinyslash - Security Documentation
 
 ## 🎯 Security Overview
 
-BitaURL implements enterprise-grade security measures to protect user data, ensure platform integrity, and maintain compliance with industry standards. Our security framework follows the principle of defense in depth, implementing multiple layers of protection across all system components.
+Tinyslash implements enterprise-grade security measures to protect user data, ensure platform integrity, and maintain compliance with industry standards. Our security framework follows the principle of defense in depth, implementing multiple layers of protection across all system components.
 
 ## 🏛️ Security Architecture
 
@@ -87,7 +87,7 @@ public class SmsService {
         Message message = Message.creator(
             new PhoneNumber(phoneNumber),
             new PhoneNumber(twilioConfig.getFromNumber()),
-            "Your BitaURL verification code is: " + code + ". Valid for 5 minutes."
+            "Your Tinyslash verification code is: " + code + ". Valid for 5 minutes."
         ).create();
         
         auditService.logSecurityEvent("mfa.sms.sent", phoneNumber, message.getSid());
@@ -107,7 +107,7 @@ public class SmsService {
 @Component
 public class JwtUtil {
     
-    private static final String ISSUER = "bitaurl.com";
+    private static final String ISSUER = "tinyslash.com";
     private static final String AUDIENCE = "bitaurl-api";
     
     @Value("${app.jwt.secret}")
@@ -1150,11 +1150,11 @@ public class SecurityHeadersConfig {
                 .preload(true)
             )
             .contentSecurityPolicy("default-src 'self'; " +
-                                 "script-src 'self' 'unsafe-inline' https://cdn.bitaurl.com; " +
+                                 "script-src 'self' 'unsafe-inline' https://cdn.tinyslash.com; " +
                                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                                  "font-src 'self' https://fonts.gstatic.com; " +
                                  "img-src 'self' data: https:; " +
-                                 "connect-src 'self' https://api.bitaurl.com")
+                                 "connect-src 'self' https://api.tinyslash.com")
             .and()
             .referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             .addHeaderWriter(new StaticHeadersWriter("X-XSS-Protection", "1; mode=block"))
@@ -1178,7 +1178,7 @@ public class CorsConfig {
         
         // Allowed origins (whitelist)
         configuration.setAllowedOriginPatterns(Arrays.asList(
-            "https://*.bitaurl.com",
+            "https://*.tinyslash.com",
             "https://localhost:3000", // Development
             "https://localhost:3001"  // Admin panel development
         ));

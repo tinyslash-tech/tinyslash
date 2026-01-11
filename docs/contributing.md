@@ -1,8 +1,8 @@
-# Contributing to BitaURL
+# Contributing to Tinyslash
 
 ## 🎯 Welcome Contributors!
 
-Thank you for your interest in contributing to BitaURL! We welcome contributions from developers of all skill levels. Whether you're fixing bugs, adding features, improving documentation, or helping with testing, your contributions make BitaURL better for everyone.
+Thank you for your interest in contributing to Tinyslash! We welcome contributions from developers of all skill levels. Whether you're fixing bugs, adding features, improving documentation, or helping with testing, your contributions make Tinyslash better for everyone.
 
 ## 🤝 Code of Conduct
 
@@ -17,7 +17,7 @@ We are committed to making participation in our project a harassment-free experi
 - **Be patient** - Remember that everyone is learning
 
 ### Enforcement
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers at conduct@bitaurl.com.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers at conduct@tinyslash.com.
 
 ## 🚀 Getting Started
 
@@ -439,14 +439,14 @@ Active contributors may be invited to become maintainers based on:
 
 ### Reporting Issues
 - **Bugs**: Use GitHub Issues with bug report template
-- **Security**: Email security@bitaurl.com (do not use public issues)
+- **Security**: Email security@tinyslash.com (do not use public issues)
 - **Feature Requests**: Use GitHub Issues with feature request template
 
 ### Contact
-- **General**: hello@bitaurl.com
-- **Development**: developers@bitaurl.com
-- **Security**: security@bitaurl.com
-- **Conduct**: conduct@bitaurl.com
+- **General**: hello@tinyslash.com
+- **Development**: developers@tinyslash.com
+- **Security**: security@tinyslash.com
+- **Conduct**: conduct@tinyslash.com
 
 ---
 

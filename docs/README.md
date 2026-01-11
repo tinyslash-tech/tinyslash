@@ -1,4 +1,4 @@
-# BitaURL - Enterprise URL Shortening Platform
+# Tinyslash - Enterprise URL Shortening Platform
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/bitaurl/bitaurl)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -7,7 +7,7 @@
 
 ## 🚀 Overview
 
-BitaURL is a comprehensive, enterprise-grade URL shortening and link management platform designed for modern businesses. Built with scalability, security, and performance at its core, BitaURL provides advanced analytics, team collaboration, custom domains, and comprehensive administrative controls.
+Tinyslash is a comprehensive, enterprise-grade URL shortening and link management platform designed for modern businesses. Built with scalability, security, and performance at its core, Tinyslash provides advanced analytics, team collaboration, custom domains, and comprehensive administrative controls.
 
 ### 🎯 Key Features
 
@@ -157,14 +157,14 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 
 ## 🆘 Support
 
-- **Documentation**: [docs.bitaurl.com](https://docs.bitaurl.com)
-- **API Reference**: [api.bitaurl.com](https://api.bitaurl.com)
-- **Support Email**: support@bitaurl.com
+- **Documentation**: [docs.tinyslash.com](https://docs.tinyslash.com)
+- **API Reference**: [api.tinyslash.com](https://api.tinyslash.com)
+- **Support Email**: support@tinyslash.com
 - **Community**: [Discord](https://discord.gg/bitaurl)
 
 ## 🏢 Enterprise
 
-For enterprise licensing, custom deployments, and dedicated support, contact us at enterprise@bitaurl.com.
+For enterprise licensing, custom deployments, and dedicated support, contact us at enterprise@tinyslash.com.
 
 ---
 

@@ -1,6 +1,7 @@
 package com.urlshortener.service;
 
 import com.urlshortener.model.User;
+import com.urlshortener.model.PlanPolicy;
 import com.urlshortener.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,84 +33,47 @@ public class SubscriptionService {
 
     // Plan constants
     public static final String FREE_PLAN = "FREE";
+    public static final String STARTER_MONTHLY = "STARTER_MONTHLY";
+    public static final String STARTER_YEARLY = "STARTER_YEARLY";
     public static final String PRO_MONTHLY = "PRO_MONTHLY";
     public static final String PRO_YEARLY = "PRO_YEARLY";
     public static final String BUSINESS_MONTHLY = "BUSINESS_MONTHLY";
     public static final String BUSINESS_YEARLY = "BUSINESS_YEARLY";
 
-    // Usage limits - New Structure
-    // Free Plan: 75 URLs, 30 QR codes, 5 files per month
-    public static final int FREE_MONTHLY_URLS = 75;
-    public static final int FREE_MONTHLY_QR_CODES = 30;
-    public static final int FREE_MONTHLY_FILES = 5;
-
-    // Pro Plan: Unlimited URLs/QR, 50 files per month
-    public static final int PRO_MONTHLY_FILES = 50;
-
-    // Business Plan: Unlimited URLs/QR, 200 files per month
-    public static final int BUSINESS_MONTHLY_FILES = 200;
-
-    // File size limits
+    // File size limits (Still kept here or could move to Policy if added there)
     public static final long FREE_FILE_SIZE_MB = 5;
+    public static final long STARTER_FILE_SIZE_MB = 20; // Example for Starter
     public static final long PRO_FILE_SIZE_MB = 100;
     public static final long BUSINESS_FILE_SIZE_MB = 500;
 
     /**
-     * Check if user has premium access (Pro or Business)
+     * Check if user has premium access
+     * Now checks if plan is NOT Free
      */
     public boolean hasPremiumAccess(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty()) {
-            System.out.println("⚠️ User not found: " + userId);
+        if (userOpt.isEmpty())
             return false;
-        }
 
         User user = userOpt.get();
-        String plan = user.getSubscriptionPlan();
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
 
-        System.out.println("🔍 Checking premium access for user: " + userId);
-        System.out.println("  - Plan: " + plan);
-        System.out.println("  - Expiry: " + user.getSubscriptionExpiry());
+        return policy != PlanPolicy.FREE && isSubscriptionActive(user);
+    }
 
-        // Normalize plan name (handle case variations)
-        String normalizedPlan = plan != null ? plan.toUpperCase().replace(" ", "_") : "FREE";
+    private boolean isSubscriptionActive(User user) {
+        if (PlanPolicy.fromString(user.getSubscriptionPlan()) == PlanPolicy.FREE)
+            return true;
 
-        // Check if premium subscription is active
-        boolean isPremiumPlan = PRO_MONTHLY.equals(normalizedPlan) ||
-                PRO_YEARLY.equals(normalizedPlan) ||
-                BUSINESS_MONTHLY.equals(normalizedPlan) ||
-                BUSINESS_YEARLY.equals(normalizedPlan) ||
-                "PRO".equals(normalizedPlan) ||
-                "BUSINESS".equals(normalizedPlan);
+        // If expiry is null, assume active (e.g. lifetime or new)
+        if (user.getSubscriptionExpiry() == null)
+            return true;
 
-        if (isPremiumPlan) {
-            // If expiry is null, assume it's valid (newly upgraded users)
-            if (user.getSubscriptionExpiry() == null) {
-                System.out.println("✅ Premium plan with no expiry (newly upgraded) - granting access");
-                return true;
-            }
-
-            // Check if not expired
-            if (user.getSubscriptionExpiry().isAfter(LocalDateTime.now())) {
-                System.out.println("✅ Premium plan active - granting access");
-                return true;
-            } else {
-                System.out.println("❌ Premium plan expired - denying access");
-            }
-        } else {
-            System.out.println("❌ Not a premium plan: " + normalizedPlan);
-        }
-
-        // Check if user is in trial period
-        boolean inTrial = isInTrialPeriod(user);
-        if (inTrial) {
-            System.out.println("✅ User in trial period - granting access");
-        }
-        return inTrial;
+        return user.getSubscriptionExpiry().isAfter(LocalDateTime.now());
     }
 
     /**
-     * Check if user has business plan access
+     * Check if user has specific business access
      */
     public boolean hasBusinessAccess(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
@@ -117,11 +81,9 @@ public class SubscriptionService {
             return false;
 
         User user = userOpt.get();
-        String plan = user.getSubscriptionPlan();
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
 
-        return (BUSINESS_MONTHLY.equals(plan) || BUSINESS_YEARLY.equals(plan)) &&
-                user.getSubscriptionExpiry() != null &&
-                user.getSubscriptionExpiry().isAfter(LocalDateTime.now());
+        return (policy == PlanPolicy.BUSINESS || policy == PlanPolicy.BUSINESS_TRIAL) && isSubscriptionActive(user);
     }
 
     /**
@@ -144,20 +106,20 @@ public class SubscriptionService {
             return false;
 
         User user = userOpt.get();
-
-        // Reset counters if needed
         resetMonthlyUsageIfNeeded(user);
 
-        // Check limits based on plan
-        String plan = user.getSubscriptionPlan();
-
-        // Pro and Business plans have unlimited URLs
-        if (hasPremiumAccess(userId) || isInTrialPeriod(user)) {
+        // Trial override
+        if (isInTrialPeriod(user))
             return true;
-        } else {
-            // Free plan: check monthly limit (75 URLs per month)
-            return user.getMonthlyUrlsCreated() < FREE_MONTHLY_URLS;
+
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+
+        // If expired paid plan, treat as FREE
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user)) {
+            policy = PlanPolicy.FREE;
         }
+
+        return user.getMonthlyUrlsCreated() < policy.getUrlsPerMonth();
     }
 
     /**
@@ -165,26 +127,20 @@ public class SubscriptionService {
      */
     public boolean canCreateQrCode(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty()) {
-            logger.debug("User not found for QR creation check, allowing as anonymous");
-            return true;
-        }
+        if (userOpt.isEmpty())
+            return true; // Default allow for anonymous if handled upstream
 
         User user = userOpt.get();
-
-        // Reset counters if needed
         resetMonthlyUsageIfNeeded(user);
 
-        // Check limits based on plan
-        String plan = user.getSubscriptionPlan();
-
-        // Pro and Business plans have unlimited QR codes
-        if (hasPremiumAccess(userId) || isInTrialPeriod(user)) {
+        if (isInTrialPeriod(user))
             return true;
-        } else {
-            // Free plan: check monthly limit (30 QR codes per month)
-            return user.getMonthlyQrCodesCreated() < FREE_MONTHLY_QR_CODES;
-        }
+
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
+
+        return user.getMonthlyQrCodesCreated() < policy.getQrCodesPerMonth();
     }
 
     /**
@@ -196,77 +152,83 @@ public class SubscriptionService {
             return false;
 
         User user = userOpt.get();
-
-        // Reset counters if needed
         resetMonthlyUsageIfNeeded(user);
 
-        // Check limits based on plan
-        String plan = user.getSubscriptionPlan();
+        if (isInTrialPeriod(user))
+            return true;
 
-        if (hasBusinessAccess(userId)) {
-            // Business plan: 200 files per month
-            return user.getMonthlyFilesUploaded() < BUSINESS_MONTHLY_FILES;
-        } else if (hasPremiumAccess(userId) || isInTrialPeriod(user)) {
-            // Pro plan: 50 files per month
-            return user.getMonthlyFilesUploaded() < PRO_MONTHLY_FILES;
-        } else {
-            // Free plan: 5 files per month
-            return user.getMonthlyFilesUploaded() < FREE_MONTHLY_FILES;
-        }
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
+
+        return user.getMonthlyFilesUploaded() < policy.getFilesPerMonth();
     }
 
-    /**
-     * Check if user can use custom alias
-     */
+    // Feature checks delegated to Policy
     public boolean canUseCustomAlias(String userId) {
-        return hasPremiumAccess(userId);
+        return checkFeature(userId, "customAlias");
     }
 
-    /**
-     * Check if user can use password protection
-     */
     public boolean canUsePasswordProtection(String userId) {
-        return hasPremiumAccess(userId);
+        return checkFeature(userId, "passwordProtection");
     }
 
-    /**
-     * Check if user can set expiration dates
-     */
     public boolean canSetExpiration(String userId) {
-        return hasPremiumAccess(userId);
+        return checkFeature(userId, "linkExpiration");
     }
 
-    /**
-     * Check if user can use custom domains
-     */
     public boolean canUseCustomDomain(String userId) {
-        return hasPremiumAccess(userId);
+        return checkFeature(userId, "customDomain");
     }
 
-    /**
-     * Check if user can access detailed analytics
-     */
     public boolean canAccessDetailedAnalytics(String userId) {
-        return hasPremiumAccess(userId);
+        return checkFeature(userId, "analytics");
     }
 
-    /**
-     * Check if user can customize QR codes (colors, logos)
-     */
     public boolean canCustomizeQrCodes(String userId) {
-        return hasPremiumAccess(userId);
+        return checkFeature(userId, "customQRColors");
+    }
+
+    private boolean checkFeature(String userId, String featureName) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty())
+            return false;
+
+        User user = userOpt.get();
+        if (isInTrialPeriod(user))
+            return true;
+
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
+
+        return policy.hasFeature(featureName);
     }
 
     /**
      * Get maximum file size for user
      */
     public long getMaxFileSizeMB(String userId) {
-        if (hasBusinessAccess(userId)) {
-            return BUSINESS_FILE_SIZE_MB; // 500MB for Business
-        } else if (hasPremiumAccess(userId)) {
-            return PRO_FILE_SIZE_MB; // 100MB for Pro
-        } else {
-            return FREE_FILE_SIZE_MB; // 5MB for Free
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty())
+            return FREE_FILE_SIZE_MB;
+
+        User user = userOpt.get();
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
+
+        switch (policy) {
+            case BUSINESS:
+            case BUSINESS_TRIAL:
+                return BUSINESS_FILE_SIZE_MB;
+            case PRO:
+                return PRO_FILE_SIZE_MB;
+            case STARTER:
+                return STARTER_FILE_SIZE_MB;
+            default:
+                return FREE_FILE_SIZE_MB;
         }
     }
 
@@ -288,48 +250,35 @@ public class SubscriptionService {
         user.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(user);
-        logger.info("Incremented URL usage for user: {}", userId);
     }
 
-    /**
-     * Increment QR code usage for user
-     */
+    // ... (Increment methods for QR and Files remain similar, just calling save)
+
     public void incrementQrCodeUsage(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty())
             return;
-
         User user = userOpt.get();
         resetDailyUsageIfNeeded(user);
         resetMonthlyUsageIfNeeded(user);
-
         user.setDailyQrCodesCreated(user.getDailyQrCodesCreated() + 1);
         user.setMonthlyQrCodesCreated(user.getMonthlyQrCodesCreated() + 1);
         user.setTotalQrCodes(user.getTotalQrCodes() + 1);
         user.setUpdatedAt(LocalDateTime.now());
-
         userRepository.save(user);
-        logger.info("Incremented QR code usage for user: {}", userId);
     }
 
-    /**
-     * Increment file upload usage for user
-     */
     public void incrementFileUsage(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty())
             return;
-
         User user = userOpt.get();
         resetDailyUsageIfNeeded(user);
         resetMonthlyUsageIfNeeded(user);
-
         user.setDailyFilesUploaded(user.getDailyFilesUploaded() + 1);
         user.setMonthlyFilesUploaded(user.getMonthlyFilesUploaded() + 1);
         user.setUpdatedAt(LocalDateTime.now());
-
         userRepository.save(user);
-        logger.info("Incremented file usage for user: {}", userId);
     }
 
     /**
@@ -345,7 +294,6 @@ public class SubscriptionService {
             user.setDailyFilesUploaded(0);
             user.setLastUsageReset(now);
             userRepository.save(user);
-            logger.info("Reset daily usage for user: {}", user.getId());
         }
     }
 
@@ -362,7 +310,6 @@ public class SubscriptionService {
             user.setMonthlyFilesUploaded(0);
             user.setLastMonthlyReset(now);
             userRepository.save(user);
-            logger.info("Reset monthly usage for user: {}", user.getId());
         }
     }
 
@@ -381,12 +328,11 @@ public class SubscriptionService {
 
         // Set expiry date based on plan
         LocalDateTime expiry = null;
-        if (PRO_MONTHLY.equals(planType) || BUSINESS_MONTHLY.equals(planType)) {
+        if (planType.contains("MONTHLY")) {
             expiry = LocalDateTime.now().plusMonths(1);
-        } else if (PRO_YEARLY.equals(planType) || BUSINESS_YEARLY.equals(planType)) {
+        } else if (planType.contains("YEARLY")) {
             expiry = LocalDateTime.now().plusYears(1);
         }
-        // No lifetime plans in new structure
 
         user.setSubscriptionExpiry(expiry);
         user.setUpdatedAt(LocalDateTime.now());
@@ -405,7 +351,6 @@ public class SubscriptionService {
 
         User user = userOpt.get();
 
-        // Check if user is eligible for trial
         if (user.isHasUsedTrial() || !isEligibleForTrial(user)) {
             return false;
         }
@@ -417,7 +362,6 @@ public class SubscriptionService {
         user.setUpdatedAt(now);
 
         userRepository.save(user);
-        logger.info("Started trial for user: {}", userId);
         return true;
     }
 
@@ -425,102 +369,32 @@ public class SubscriptionService {
      * Check if user is eligible for trial
      */
     public boolean isEligibleForTrial(User user) {
-        // Eligible if: 7 consecutive login days OR 20+ links shared
         return user.getConsecutiveLoginDays() >= 7 || user.getTotalLinksShared() >= 20;
     }
 
     /**
-     * Get remaining daily URLs for user
+     * Get remaining daily limits (Delegated to monthly limits mostly because we
+     * don't strict daily limits in Policy yet)
+     * But keeping structure for frontend compatibility
      */
     public int getRemainingDailyUrls(String userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty())
-            return 0;
-
-        User user = userOpt.get();
-        resetDailyUsageIfNeeded(user);
-
-        String plan = user.getSubscriptionPlan();
-        int monthlyLimit;
-
-        // Pro and Business plans have unlimited URLs
-        if ((PRO_MONTHLY.equals(plan) || PRO_YEARLY.equals(plan) ||
-                BUSINESS_MONTHLY.equals(plan) || BUSINESS_YEARLY.equals(plan)) &&
-                user.getSubscriptionExpiry() != null &&
-                user.getSubscriptionExpiry().isAfter(LocalDateTime.now())) {
-            return -1; // Unlimited
-        } else if (isInTrialPeriod(user)) {
-            return -1; // Unlimited during trial
-        } else {
-            monthlyLimit = FREE_MONTHLY_URLS;
-        }
-
-        return Math.max(0, monthlyLimit - user.getMonthlyUrlsCreated());
+        // Current policy focuses on monthly. Retaining daily reset logic but
+        // effectively unlimited daily if monthly ok?
+        // Policy doesn't actually have daily limits defined, only monthly.
+        // So we will return remaining monthly for consistency or a high number.
+        return getRemainingMonthlyUrls(userId);
     }
 
-    /**
-     * Get remaining daily QR codes for user
-     */
     public int getRemainingDailyQrCodes(String userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty())
-            return 0;
-
-        User user = userOpt.get();
-        resetDailyUsageIfNeeded(user);
-
-        String plan = user.getSubscriptionPlan();
-        int monthlyLimit;
-
-        // Pro and Business plans have unlimited QR codes
-        if ((PRO_MONTHLY.equals(plan) || PRO_YEARLY.equals(plan) ||
-                BUSINESS_MONTHLY.equals(plan) || BUSINESS_YEARLY.equals(plan)) &&
-                user.getSubscriptionExpiry() != null &&
-                user.getSubscriptionExpiry().isAfter(LocalDateTime.now())) {
-            return -1; // Unlimited
-        } else if (isInTrialPeriod(user)) {
-            return -1; // Unlimited during trial
-        } else {
-            monthlyLimit = FREE_MONTHLY_QR_CODES;
-        }
-
-        return Math.max(0, monthlyLimit - user.getMonthlyQrCodesCreated());
+        return getRemainingMonthlyQrCodes(userId);
     }
 
-    /**
-     * Get remaining daily files for user
-     */
     public int getRemainingDailyFiles(String userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty())
-            return 0;
-
-        User user = userOpt.get();
-        resetDailyUsageIfNeeded(user);
-
-        String plan = user.getSubscriptionPlan();
-        int monthlyLimit;
-
-        // Check plan type and set appropriate file limits
-        if ((PRO_MONTHLY.equals(plan) || PRO_YEARLY.equals(plan)) &&
-                user.getSubscriptionExpiry() != null &&
-                user.getSubscriptionExpiry().isAfter(LocalDateTime.now())) {
-            monthlyLimit = PRO_MONTHLY_FILES; // 50 files per month
-        } else if ((BUSINESS_MONTHLY.equals(plan) || BUSINESS_YEARLY.equals(plan)) &&
-                user.getSubscriptionExpiry() != null &&
-                user.getSubscriptionExpiry().isAfter(LocalDateTime.now())) {
-            monthlyLimit = BUSINESS_MONTHLY_FILES; // 200 files per month
-        } else if (isInTrialPeriod(user)) {
-            monthlyLimit = PRO_MONTHLY_FILES; // Trial gets Pro limits
-        } else {
-            monthlyLimit = FREE_MONTHLY_FILES; // 5 files per month
-        }
-
-        return Math.max(0, monthlyLimit - user.getMonthlyFilesUploaded());
+        return getRemainingMonthlyFiles(userId);
     }
 
     /**
-     * Get remaining monthly URLs for free user
+     * Get remaining monthly limits based on Policy
      */
     public int getRemainingMonthlyUrls(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
@@ -530,44 +404,56 @@ public class SubscriptionService {
         User user = userOpt.get();
         resetMonthlyUsageIfNeeded(user);
 
-        if (hasPremiumAccess(userId))
-            return -1; // Unlimited for premium
+        if (isInTrialPeriod(user))
+            return Integer.MAX_VALUE;
 
-        return Math.max(0, FREE_MONTHLY_URLS - user.getMonthlyUrlsCreated());
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
+
+        int limit = policy.getUrlsPerMonth();
+        if (limit == Integer.MAX_VALUE)
+            return Integer.MAX_VALUE;
+
+        return Math.max(0, limit - user.getMonthlyUrlsCreated());
     }
 
-    /**
-     * Get remaining monthly QR codes for free user
-     */
     public int getRemainingMonthlyQrCodes(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty())
             return 0;
-
         User user = userOpt.get();
         resetMonthlyUsageIfNeeded(user);
+        if (isInTrialPeriod(user))
+            return Integer.MAX_VALUE;
 
-        if (hasPremiumAccess(userId))
-            return -1; // Unlimited for premium
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
 
-        return Math.max(0, FREE_MONTHLY_QR_CODES - user.getMonthlyQrCodesCreated());
+        int limit = policy.getQrCodesPerMonth();
+        if (limit == Integer.MAX_VALUE)
+            return Integer.MAX_VALUE;
+        return Math.max(0, limit - user.getMonthlyQrCodesCreated());
     }
 
-    /**
-     * Get remaining monthly files for free user
-     */
     public int getRemainingMonthlyFiles(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty())
             return 0;
-
         User user = userOpt.get();
         resetMonthlyUsageIfNeeded(user);
+        if (isInTrialPeriod(user))
+            return Integer.MAX_VALUE;
 
-        if (hasPremiumAccess(userId))
-            return -1; // Unlimited for premium
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
 
-        return Math.max(0, FREE_MONTHLY_FILES - user.getMonthlyFilesUploaded());
+        int limit = policy.getFilesPerMonth();
+        if (limit == Integer.MAX_VALUE)
+            return Integer.MAX_VALUE;
+        return Math.max(0, limit - user.getMonthlyFilesUploaded());
     }
 
     /**
@@ -587,6 +473,7 @@ public class SubscriptionService {
         info.setInTrial(isInTrialPeriod(user));
         info.setTrialEligible(!user.isHasUsedTrial() && isEligibleForTrial(user));
         info.setSubscriptionExpiry(user.getSubscriptionExpiry());
+
         info.setRemainingDailyUrls(getRemainingDailyUrls(userId));
         info.setRemainingDailyQrCodes(getRemainingDailyQrCodes(userId));
         info.setRemainingDailyFiles(getRemainingDailyFiles(userId));
@@ -600,51 +487,29 @@ public class SubscriptionService {
 
     /**
      * Check for expired subscriptions daily
-     * Runs every day at midnight
      */
     @Scheduled(cron = "0 0 0 * * ?") // Daily at midnight
-    // @Scheduled(fixedRate = 60000) // For testing: runs every minute
     public void checkSubscriptionExpiries() {
         logger.info("Running daily subscription expiration check...");
-
         List<User> allUsers = userRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
         int expiredCount = 0;
 
         for (User user : allUsers) {
-            // Skip free users
-            if (FREE_PLAN.equals(user.getSubscriptionPlan())) {
+            if (FREE_PLAN.equals(user.getSubscriptionPlan()))
                 continue;
-            }
 
-            // Check if subscription has expired
             if (user.getSubscriptionExpiry() != null && user.getSubscriptionExpiry().isBefore(now)) {
-                logger.info("Found expired subscription for user: {} (Plan: {}, Expiry: {})",
-                        user.getId(), user.getSubscriptionPlan(), user.getSubscriptionExpiry());
-
-                // Downgrade to FREE
                 user.setSubscriptionPlan(FREE_PLAN);
                 user.setSubscriptionId(null);
                 user.setSubscriptionExpiry(null);
                 user.setUpdatedAt(now);
-
                 userRepository.save(user);
                 expiredCount++;
-
-                logger.info("Downgraded user {} to FREE plan", user.getId());
             }
-        }
-
-        if (expiredCount > 0) {
-            logger.info("Processed {} expired subscriptions", expiredCount);
-        } else {
-            logger.info("No expired subscriptions found");
         }
     }
 
-    /**
-     * Inner class for plan information
-     */
     public static class UserPlanInfo {
         private String plan;
         private boolean hasPremiumAccess;
@@ -659,7 +524,6 @@ public class SubscriptionService {
         private int remainingMonthlyFiles;
         private long maxFileSizeMB;
 
-        // Getters and setters
         public String getPlan() {
             return plan;
         }
@@ -757,28 +621,16 @@ public class SubscriptionService {
         }
     }
 
-    /**
-     * Cancel user subscription
-     */
     public boolean cancelSubscription(String userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty())
             return false;
-
         User user = userOpt.get();
-        String currentPlan = user.getSubscriptionPlan();
-
-        // Check if user has an active subscription to cancel
-        if (FREE_PLAN.equals(currentPlan)) {
-            return false; // Nothing to cancel for free users
-        }
-
-        // Mark subscription as cancelled but keep access until expiry
+        if (FREE_PLAN.equals(user.getSubscriptionPlan()))
+            return false;
         user.setSubscriptionCancelled(true);
         user.setUpdatedAt(LocalDateTime.now());
-
         userRepository.save(user);
-        logger.info("Cancelled subscription for user: {}", userId);
         return true;
     }
 }

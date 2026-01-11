@@ -15,14 +15,37 @@ package com.urlshortener.model;
  * - BUSINESS_TRIAL: Same as BUSINESS but with trial period active
  */
 public enum PlanPolicy {
-    FREE("Free", 0, 0, 75, 30, 5, 7, false, false, false, false, false, false, false, false, false, false, false, false,
-            false, false, false),
-    PRO("Pro", 1, 3, 1000, 100, 50, 7, true, true, true, false, true, false, true, true, true, true, true, true, true,
-            true, true),
-    BUSINESS("Business", 3, 10, 10000, 1000, 500, 14, true, true, true, true, true, true, true, true, true, true, true,
-            true, true, true, true),
-    BUSINESS_TRIAL("Business Trial", 3, 10, 10000, 1000, 500, 14, true, true, true, true, true, true, true, true, true,
-            true, true, true, true, true, true);
+    // FREE: 50 Short links, 50 QR codes, 5 File uploads
+    FREE("Free", 0, 0, 50, 50, 5, 0,
+            false, true, false, false, false, false,
+            false, false, false, false,
+            false, false, false, false, false),
+
+    // STARTER (New): 1 Custom Domain, 1000 Short links, Unlimited QR, 100 Files
+    STARTER("Starter", 1, 0, 1000, Integer.MAX_VALUE, 100, 0,
+            true, true, false, false, false, false,
+            true, true, true, true,
+            true, true, false, false, false),
+
+    // PRO: 5 Custom Domains, 5 Team Members, Unlimited URL/QR/Files
+    PRO("Pro", 5, 5, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0,
+            true, true, true, false, true, true,
+            true, true, true, true,
+            true, true, true, true, true),
+
+    // BUSINESS: Unlimited Everything + White Label
+    BUSINESS("Business", Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE,
+            0,
+            true, true, true, true, true, true,
+            true, true, true, true,
+            true, true, true, true, true),
+
+    // BUSINESS TRIAL
+    BUSINESS_TRIAL("Business Trial", Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE,
+            Integer.MAX_VALUE, 14,
+            true, true, true, true, true, true,
+            true, true, true, true,
+            true, true, true, true, true);
 
     private final String displayName;
     private final int domains;
@@ -194,6 +217,9 @@ public enum PlanPolicy {
             String normalizedPlan = planName.toUpperCase().replaceAll("[^A-Z_]", "");
 
             // Map specific plan variants to base plans
+            if (normalizedPlan.startsWith("STARTER")) {
+                return STARTER;
+            }
             if (normalizedPlan.startsWith("PRO_")) {
                 return PRO;
             }

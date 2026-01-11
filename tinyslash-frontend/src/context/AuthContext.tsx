@@ -47,6 +47,56 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Cookie helper functions
+const getRootDomain = () => {
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname;
+
+  // For domains like dev.tinyslash.com, we want .tinyslash.com
+  const parts = hostname.split('.');
+  if (parts.length >= 2) {
+    // Check if it's an IP address (simplified check)
+    if (parts.every(part => !isNaN(parseInt(part)))) {
+      return hostname;
+    }
+    return '.' + parts.slice(-2).join('.');
+  }
+  return hostname;
+};
+
+const setCookie = (name: string, value: string, days: number) => {
+  const domain = getRootDomain();
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = "expires=" + date.toUTCString();
+  const secure = window.location.protocol === 'https:' ? 'Secure;' : '';
+
+  // Set cookie for root domain to share across subdomains
+  document.cookie = `${name}=${value};${expires};domain=${domain};path=/;${secure}SameSite=Lax`;
+  console.log(`Setting cookie: ${name} for domain ${domain}`);
+};
+
+const getCookie = (name: string) => {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
+const removeCookie = (name: string) => {
+  const domain = getRootDomain();
+  // To delete a cookie, we set the expires date to a past date
+  // We need to match the domain path to ensure it's deleted
+  document.cookie = `${name}=; Max-Age=-99999999; domain=${domain}; path=/;`;
+  // Also try to remove it without domain just in case
+  document.cookie = `${name}=; Max-Age=-99999999; path=/;`;
+  console.log(`Removing cookie: ${name}`);
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -77,8 +127,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (authToken) {
           setToken(authToken);
+          // Save to localStorage as backup/legacy
           localStorage.setItem('token', authToken);
-          console.log('Token saved to localStorage');
+          // Save to cookie for cross-subdomain support
+          setCookie('token', authToken, 7); // 7 days expiry
+          console.log('Token saved to localStorage and Cookie');
         }
       } catch (error) {
         console.error('Failed to save to localStorage:', error);
@@ -87,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Clearing authentication data');
       localStorage.removeItem('user');
       localStorage.removeItem('token');
+      removeCookie('token');
       setToken(null);
     }
   };
@@ -100,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      removeCookie('token'); // Ensure cookie is removed
       // Clear any intervals
       if (window.authIntervals) {
         window.authIntervals.forEach(clearInterval);
@@ -134,6 +189,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       setToken(newToken);
       setIsAuthenticated(true);
+
+      // Update cookie and localStorage
+      setCookie('token', newToken, 7);
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(user));
     };
 
     window.addEventListener('auth-logout', handleAuthLogout);
@@ -167,16 +227,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        // Check if user is logged in from localStorage or Google OAuth
+        // Check if user is logged in from localStorage or check for cookie
         const savedUser = localStorage.getItem('user');
-        const savedToken = localStorage.getItem('token');
+        let savedToken = localStorage.getItem('token');
+
+        // Try getting token from cookie if not in localStorage or if we want to priorities cookie
+        const cookieToken = getCookie('token');
+        if (cookieToken) {
+          console.log('Found token in cookie');
+          savedToken = cookieToken;
+        }
+
         const googleUserInfo = googleAuthService.getStoredUserInfo();
 
         console.log('Saved user:', savedUser ? 'exists' : 'null');
         console.log('Saved token:', savedToken ? 'exists' : 'null');
         console.log('Google user info:', googleUserInfo ? 'exists' : 'null');
 
-        if (savedUser && savedToken) {
+        if (savedToken) {
           try {
             // Try to validate token with backend
             const data = await api.validateToken(savedToken);
@@ -202,6 +270,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(user);
               setToken(savedToken);
               setIsAuthenticated(true);
+
+              // Ensure cookie and localstorage are synced
+              setCookie('token', savedToken, 7);
+              localStorage.setItem('token', savedToken);
+              localStorage.setItem('user', JSON.stringify(user));
 
               // Set up token expiry tracking
               localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
@@ -252,6 +325,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Update stored auth data
                 localStorage.setItem('token', refreshData.token);
                 localStorage.setItem('user', JSON.stringify(user));
+                setCookie('token', refreshData.token, 7);
 
                 setUser(user);
                 setToken(refreshData.token);
@@ -264,6 +338,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error('Token refresh failed during initialization, clearing auth:', refreshError);
               localStorage.removeItem('user');
               localStorage.removeItem('token');
+              removeCookie('token');
               setUser(null);
               setToken(null);
               setIsAuthenticated(false);
@@ -281,6 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear any invalid auth state
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        removeCookie('token');
         setUser(null);
         setToken(null);
         setIsAuthenticated(false);

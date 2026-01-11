@@ -1,19 +1,39 @@
 import axios from 'axios';
 
-// Use relative URLs in production to prevent backend URL exposure
-// Vercel rewrites will proxy these to the backend
-// Use relative URLs in production to prevent backend URL exposure
-// Vercel rewrites will proxy these to the backend
-let apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
+// Dynamic API URL resolution based on hostname
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
 
-// Ensure API URL ends with /api (unless it is a relative path like '/api')
-if (apiUrl.startsWith('http') && !apiUrl.endsWith('/api')) {
-  apiUrl = `${apiUrl}/api`;
-}
+  if (hostname === 'dev.tinyslash.com') {
+    return 'https://tinyslash-backend-dev.onrender.com/api';
+  } else if (hostname === 'tinyslash.com' || hostname === 'www.tinyslash.com') {
+    return 'https://tinyslash-backend-prod.onrender.com/api';
+  } else if (hostname === 'admin.tinyslash.com') {
+    return 'https://tinyslash-backend-prod.onrender.com/api';
+  } else if (hostname.endsWith('.vercel.app')) {
+    // Determine based on subdomain if possible, otherwise default to dev for safety or prod if it's the main deployment
+    if (hostname.includes('dev') || hostname.includes('preview')) {
+      return 'https://tinyslash-backend-dev.onrender.com/api';
+    }
+    return 'https://tinyslash-backend-prod.onrender.com/api';
+  }
 
-const API_BASE_URL = apiUrl;
-const ANALYTICS_BASE_URL = apiUrl;
-const FILE_BASE_URL = apiUrl;
+  // Default to environment variable or localhost
+  let envUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
+
+  // Ensure API URL ends with /api (unless it is a relative path like '/api')
+  if (envUrl.startsWith('http') && !envUrl.endsWith('/api')) {
+    envUrl = `${envUrl}/api`;
+  }
+
+  return envUrl;
+};
+
+const API_BASE_URL = getApiUrl();
+const ANALYTICS_BASE_URL = API_BASE_URL;
+const FILE_BASE_URL = API_BASE_URL;
+
+console.log('🔌 API Connected to:', API_BASE_URL);
 
 // Create axios instances
 const apiClient = axios.create({

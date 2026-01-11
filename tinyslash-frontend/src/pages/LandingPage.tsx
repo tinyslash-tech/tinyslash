@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Link as LinkIcon, ArrowRight, BarChart3, FileImage, QrCode, Shield,
   Users, Zap, Globe, Check, Star, ChevronRight,
@@ -76,6 +76,14 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900 font-sans">
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "TinySlash",
+          "url": "https://tinyslash.com"
+        })}
+      </script>
       <SEO
         title="Home"
         description="TinySlash - The ultimate URL shortener and QR code generator for business and individuals. Track clicks, manage links, and grow your audience."
@@ -154,16 +162,18 @@ const LandingPage: React.FC = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="relative z-10 flex flex-col items-center text-center group"
             >
-              <div className="w-24 h-24 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 relative">
-                <div className="absolute -top-3 -right-3 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">1</div>
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                  <LinkIcon size={24} />
+              <Link to="/short-links" className="block group-hover:no-underline">
+                <div className="w-24 h-24 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 relative mx-auto">
+                  <div className="absolute -top-3 -right-3 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">1</div>
+                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                    <LinkIcon size={24} />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Paste & Shorten</h3>
-              <p className="text-gray-500 leading-relaxed">
-                Enter your long URL into our shortener. We'll instantly generate a short, memorable link for you.
-              </p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Paste & Shorten</h3>
+                <p className="text-gray-500 leading-relaxed">
+                  Enter your long URL into our shortener. We'll instantly generate a short, memorable link for you.
+                </p>
+              </Link>
             </motion.div>
 
             {/* Step 2 */}
@@ -174,16 +184,18 @@ const LandingPage: React.FC = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="relative z-10 flex flex-col items-center text-center group"
             >
-              <div className="w-24 h-24 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 relative">
-                <div className="absolute -top-3 -right-3 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">2</div>
-                <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                  <Zap size={24} />
+              <Link to="/qr-codes" className="block group-hover:no-underline">
+                <div className="w-24 h-24 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 relative mx-auto">
+                  <div className="absolute -top-3 -right-3 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">2</div>
+                  <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                    <Zap size={24} />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Customize</h3>
-              <p className="text-gray-500 leading-relaxed">
-                Add a custom alias, set an expiration date, or password-protect your link for extra security.
-              </p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Customize</h3>
+                <p className="text-gray-500 leading-relaxed">
+                  Add a custom alias, set an expiration date, or password-protect your link for extra security.
+                </p>
+              </Link>
             </motion.div>
 
             {/* Step 3 */}
@@ -194,16 +206,18 @@ const LandingPage: React.FC = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="relative z-10 flex flex-col items-center text-center group"
             >
-              <div className="w-24 h-24 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 relative">
-                <div className="absolute -top-3 -right-3 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">3</div>
-                <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
-                  <BarChart3 size={24} />
+              <Link to="/file-to-link" className="block group-hover:no-underline">
+                <div className="w-24 h-24 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 relative mx-auto">
+                  <div className="absolute -top-3 -right-3 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">3</div>
+                  <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
+                    <BarChart3 size={24} />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Share & Track</h3>
-              <p className="text-gray-500 leading-relaxed">
-                Share your link anywhere and track clicks, locations, and devices in real-time.
-              </p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Share & Track</h3>
+                <p className="text-gray-500 leading-relaxed">
+                  Share your link anywhere and track clicks, locations, and devices in real-time.
+                </p>
+              </Link>
             </motion.div>
           </div>
         </div>

@@ -39,6 +39,18 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import Careers from './pages/Careers';
 import JobDetail from './pages/JobDetail';
 import Apply from './pages/Apply';
+
+// New Sitelinks Pages
+import ShortLinks from './pages/ShortLinks';
+import QrCodes from './pages/QrCodes';
+import FileToLink from './pages/FileToLink';
+import FAQ from './pages/FAQ';
+import Contact from './pages/Contact';
+
+import SocialMedia from './pages/solutions/SocialMedia';
+import DigitalMarketing from './pages/solutions/DigitalMarketing';
+import CustomerSupport from './pages/solutions/CustomerSupport';
+
 import './App.css';
 
 console.log('MODULE LOADED: App.tsx');
@@ -214,6 +226,21 @@ const AppContent: React.FC = () => {
             <Route path="/careers" element={<Careers />} />
             <Route path="/careers/apply" element={<Apply />} />
             <Route path="/careers/:jobId" element={<JobDetail />} />
+
+
+
+            {/* Sitelinks Feature Pages */}
+            <Route path="/short-links" element={<ShortLinks />} />
+            <Route path="/qr-codes" element={<QrCodes />} />
+            <Route path="/file-to-link" element={<FileToLink />} />
+            <Route path="/faq" element={<FAQ />} />
+            {/* Overwriting existing /contact route to use new Contact component matching specific SEO requirements */}
+            <Route path="/contact" element={<Contact />} />
+
+            {/* Solutions Pages */}
+            <Route path="/solutions/social-media" element={<SocialMedia />} />
+            <Route path="/solutions/digital-marketing" element={<DigitalMarketing />} />
+            <Route path="/solutions/customer-support" element={<CustomerSupport />} />
 
             {/* Team Invite Route */}
             <Route path="/invite/:inviteToken" element={

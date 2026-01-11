@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 
 interface SEOProps {
   title?: string;
+  fullTitle?: string;
   description?: string;
   name?: string;
   type?: string;
@@ -12,13 +13,14 @@ interface SEOProps {
 
 export const SEO: React.FC<SEOProps> = ({
   title,
+  fullTitle,
   description,
   name = 'TinySlash',
   type = 'website',
   image = '/logo.png', // Default image
   url = window.location.href
 }) => {
-  const siteTitle = title ? `${title} | ${name}` : name;
+  const siteTitle = fullTitle ? fullTitle : (title ? `${title} | ${name}` : name);
   const metaDescription = description || "TinySlash - The most powerful URL shortener and QR code generator for your business.";
 
   return (

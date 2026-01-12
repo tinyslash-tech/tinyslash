@@ -44,11 +44,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string, mfaCode?: string) => {
     try {
+      console.log('Attempting login for:', email);
+      console.log('API URL:', adminApi.defaults.baseURL);
+
       const response = await adminApi.post('/auth/login', {
         email,
         password,
         mfaCode,
       });
+
+      console.log('Login response:', response.status, response.data);
 
       const { token, user: userData, requiresMfa } = response.data.data;
 
@@ -60,6 +65,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       toast.success('Login successful');
     } catch (error: any) {
+      console.error('Login error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          method: error.config?.method
+        }
+      });
+
       if (error.message === 'MFA_REQUIRED') {
         throw error;
       }
@@ -85,10 +101,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = (resource: string, action: string): boolean => {
     if (!user) return false;
-    
+
     return user.permissions.some(
-      permission => 
-        permission.resource === resource && 
+      permission =>
+        permission.resource === resource &&
         permission.action === action
     );
   };

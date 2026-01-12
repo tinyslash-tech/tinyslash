@@ -14,7 +14,18 @@ const LoginPage = ({ onLogin }) => {
     try {
       await onLogin(email, password);
     } catch (err) {
-      setError(err.message || 'Invalid credentials. Please try again.');
+      console.error('Login error:', err);
+      let errorMessage = err.response?.data?.message || err.message || 'Login failed';
+
+      // Add helpful context for common errors
+      if (err.message === 'Network Error') {
+        errorMessage += ' (Check REACT_APP_API_URL or CORS)';
+      }
+      if (err.response?.status === 404) {
+        errorMessage += ' (404: Endpoint not found)';
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -120,6 +131,9 @@ const LoginPage = ({ onLogin }) => {
               <p className="text-xs text-blue-800 dark:text-blue-200">
                 💡 Click any account above to auto-fill credentials and test different permission levels.
               </p>
+            </div>
+            <div className="mt-4 text-center text-xs text-gray-400">
+              Debug API: {process.env.REACT_APP_API_URL || 'Not Set'}
             </div>
           </div>
         </div>

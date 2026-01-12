@@ -6,18 +6,18 @@ const LoginPage = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    setTimeout(() => {
-      const success = onLogin(email, password);
-      if (!success) {
-        setError('Invalid credentials. Try one of the demo accounts below.');
-      }
+    try {
+      await onLogin(email, password);
+    } catch (err) {
+      setError(err.message || 'Invalid credentials. Please try again.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const demoAccounts = [

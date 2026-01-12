@@ -24,7 +24,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 @ConditionalOnProperty(name = "app.admin.enabled", havingValue = "true", matchIfMissing = false)
 public class AdminUserController {
@@ -47,19 +46,19 @@ public class AdminUserController {
             @RequestParam(required = false) String plan,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo) {
-        
+
         try {
             Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
             Pageable pageable = PageRequest.of(page, size, sort);
-            
+
             Page<User> users;
-            
+
             if (search != null && !search.trim().isEmpty()) {
                 users = userService.searchUsers(search, pageable);
             } else {
                 users = userService.findAllUsers(pageable);
             }
-            
+
             // Apply filters if provided
             if (status != null || plan != null || dateFrom != null || dateTo != null) {
                 users = userService.findUsersWithFilters(status, plan, dateFrom, dateTo, pageable);
@@ -75,15 +74,13 @@ public class AdminUserController {
             response.put("hasPrevious", users.hasPrevious());
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", response
-            ));
+                    "success", true,
+                    "data", response));
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "Failed to fetch users: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to fetch users: " + e.getMessage()));
         }
     }
 
@@ -93,13 +90,13 @@ public class AdminUserController {
     public ResponseEntity<?> getUser(@PathVariable String id) {
         try {
             Optional<User> userOpt = userService.findById(id);
-            
+
             if (userOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
             User user = userOpt.get();
-            
+
             // Add additional user data for admin view
             Map<String, Object> userData = new HashMap<>();
             userData.put("id", user.getId());
@@ -110,7 +107,7 @@ public class AdminUserController {
             userData.put("emailVerified", user.isEmailVerified());
             userData.put("createdAt", user.getCreatedAt());
             userData.put("lastLogin", user.getLastLogin());
-            
+
             // Add usage statistics
             Map<String, Object> usage = new HashMap<>();
             usage.put("linksCreated", userService.getUserLinksCount(id));
@@ -121,23 +118,21 @@ public class AdminUserController {
             usage.put("storageUsed", userService.getUserStorageUsed(id));
             usage.put("storageLimit", userService.getUserStorageLimit(user.getPlan()));
             userData.put("usage", usage);
-            
+
             // Add subscription info if exists
             userData.put("subscription", userService.getUserSubscription(id));
-            
+
             // Add teams
             userData.put("teams", userService.getUserTeams(id));
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", userData
-            ));
+                    "success", true,
+                    "data", userData));
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "Failed to fetch user: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to fetch user: " + e.getMessage()));
         }
     }
 
@@ -147,27 +142,24 @@ public class AdminUserController {
     public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request, HttpServletRequest httpRequest) {
         try {
             AdminUser adminUser = (AdminUser) httpRequest.getAttribute("adminUser");
-            
+
             User user = userService.createUserByAdmin(
-                request.getEmail(),
-                request.getName(),
-                request.getPassword(),
-                request.getPlan(),
-                request.getStatus(),
-                request.isEmailVerified()
-            );
+                    request.getEmail(),
+                    request.getName(),
+                    request.getPassword(),
+                    request.getPlan(),
+                    request.getStatus(),
+                    request.isEmailVerified());
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", user,
-                "message", "User created successfully"
-            ));
+                    "success", true,
+                    "data", user,
+                    "message", "User created successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to create user: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to create user: " + e.getMessage()));
         }
     }
 
@@ -179,16 +171,14 @@ public class AdminUserController {
             User user = userService.updateUserByAdmin(id, request);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", user,
-                "message", "User updated successfully"
-            ));
+                    "success", true,
+                    "data", user,
+                    "message", "User updated successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to update user: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to update user: " + e.getMessage()));
         }
     }
 
@@ -200,15 +190,13 @@ public class AdminUserController {
             userService.suspendUser(id, request.getReason());
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "User suspended successfully"
-            ));
+                    "success", true,
+                    "message", "User suspended successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to suspend user: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to suspend user: " + e.getMessage()));
         }
     }
 
@@ -220,15 +208,13 @@ public class AdminUserController {
             userService.reactivateUser(id);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "User reactivated successfully"
-            ));
+                    "success", true,
+                    "message", "User reactivated successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to reactivate user: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to reactivate user: " + e.getMessage()));
         }
     }
 
@@ -240,15 +226,13 @@ public class AdminUserController {
             userService.deleteUser(id);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "User deleted successfully"
-            ));
+                    "success", true,
+                    "message", "User deleted successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to delete user: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to delete user: " + e.getMessage()));
         }
     }
 
@@ -258,24 +242,21 @@ public class AdminUserController {
     public ResponseEntity<?> impersonateUser(@PathVariable String id, HttpServletRequest httpRequest) {
         try {
             AdminUser adminUser = (AdminUser) httpRequest.getAttribute("adminUser");
-            
+
             String impersonationToken = userService.generateImpersonationToken(id, adminUser.getId());
             String impersonationUrl = "/impersonate?token=" + impersonationToken;
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", Map.of(
-                    "token", impersonationToken,
-                    "url", impersonationUrl
-                ),
-                "message", "Impersonation token generated successfully"
-            ));
+                    "success", true,
+                    "data", Map.of(
+                            "token", impersonationToken,
+                            "url", impersonationUrl),
+                    "message", "Impersonation token generated successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to generate impersonation token: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to generate impersonation token: " + e.getMessage()));
         }
     }
 
@@ -287,16 +268,14 @@ public class AdminUserController {
             Map<String, Object> userData = userService.exportUserData(id);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", userData,
-                "message", "User data exported successfully"
-            ));
+                    "success", true,
+                    "data", userData,
+                    "message", "User data exported successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to export user data: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to export user data: " + e.getMessage()));
         }
     }
 
@@ -323,31 +302,27 @@ public class AdminUserController {
                     break;
                 case "export":
                     return ResponseEntity.ok(Map.of(
-                        "success", true,
-                        "data", userService.bulkExportUsers(userIds),
-                        "message", "Users exported successfully"
-                    ));
+                            "success", true,
+                            "data", userService.bulkExportUsers(userIds),
+                            "message", "Users exported successfully"));
                 case "send_email":
                     String template = (String) data.get("template");
                     userService.bulkSendEmail(userIds, template);
                     break;
                 default:
                     return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Invalid bulk action: " + action
-                    ));
+                            "success", false,
+                            "message", "Invalid bulk action: " + action));
             }
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Bulk action completed successfully"
-            ));
+                    "success", true,
+                    "message", "Bulk action completed successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Bulk action failed: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Bulk action failed: " + e.getMessage()));
         }
     }
 
@@ -361,23 +336,53 @@ public class AdminUserController {
         private boolean emailVerified;
 
         // Getters and setters
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
+        public String getEmail() {
+            return email;
+        }
 
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public void setEmail(String email) {
+            this.email = email;
+        }
 
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+        public String getName() {
+            return name;
+        }
 
-        public String getPlan() { return plan; }
-        public void setPlan(String plan) { this.plan = plan; }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
+        public String getPassword() {
+            return password;
+        }
 
-        public boolean isEmailVerified() { return emailVerified; }
-        public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getPlan() {
+            return plan;
+        }
+
+        public void setPlan(String plan) {
+            this.plan = plan;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public boolean isEmailVerified() {
+            return emailVerified;
+        }
+
+        public void setEmailVerified(boolean emailVerified) {
+            this.emailVerified = emailVerified;
+        }
     }
 
     public static class UpdateUserRequest {
@@ -387,24 +392,49 @@ public class AdminUserController {
         private boolean emailVerified;
 
         // Getters and setters
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getName() {
+            return name;
+        }
 
-        public String getPlan() { return plan; }
-        public void setPlan(String plan) { this.plan = plan; }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
+        public String getPlan() {
+            return plan;
+        }
 
-        public boolean isEmailVerified() { return emailVerified; }
-        public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+        public void setPlan(String plan) {
+            this.plan = plan;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public boolean isEmailVerified() {
+            return emailVerified;
+        }
+
+        public void setEmailVerified(boolean emailVerified) {
+            this.emailVerified = emailVerified;
+        }
     }
 
     public static class SuspendUserRequest {
         private String reason;
 
-        public String getReason() { return reason; }
-        public void setReason(String reason) { this.reason = reason; }
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
     }
 
     public static class BulkActionRequest {
@@ -413,13 +443,28 @@ public class AdminUserController {
         private Map<String, Object> data;
 
         // Getters and setters
-        public String getAction() { return action; }
-        public void setAction(String action) { this.action = action; }
+        public String getAction() {
+            return action;
+        }
 
-        public List<String> getUserIds() { return userIds; }
-        public void setUserIds(List<String> userIds) { this.userIds = userIds; }
+        public void setAction(String action) {
+            this.action = action;
+        }
 
-        public Map<String, Object> getData() { return data; }
-        public void setData(Map<String, Object> data) { this.data = data; }
+        public List<String> getUserIds() {
+            return userIds;
+        }
+
+        public void setUserIds(List<String> userIds) {
+            this.userIds = userIds;
+        }
+
+        public Map<String, Object> getData() {
+            return data;
+        }
+
+        public void setData(Map<String, Object> data) {
+            this.data = data;
+        }
     }
 }

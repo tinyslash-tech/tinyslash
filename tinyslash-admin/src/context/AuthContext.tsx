@@ -32,10 +32,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      const response = await adminApi.get('/auth/me');
-      setUser(response.data.data);
-      console.log("Auth Check Response:", response.data);
-      setUser(response.data.data);
+      // Add a timeout race to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Auth check timed out')), 10000);
+      });
+
+      const responsePromise = adminApi.get('/auth/me');
+
+      // @ts-ignore
+      const response = await Promise.race([responsePromise, timeoutPromise]);
+
+      // @ts-ignore
+      if (response && response.data && response.data.data) {
+        // @ts-ignore
+        setUser(response.data.data);
+        // @ts-ignore
+        console.log("Auth Check Response:", response.data);
+      } else {
+        throw new Error("Invalid response format from server");
+      }
     } catch (error: any) {
       console.error('Auth check failed:', error);
       toast.error(`Session Restore Failed: ${error.message || 'Unknown Error'}`);

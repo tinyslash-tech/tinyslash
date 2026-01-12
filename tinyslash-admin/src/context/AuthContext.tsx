@@ -57,6 +57,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { token, user: userData, requiresMfa } = response.data.data;
 
+      alert("DEBUG: User Data Received: " + (userData ? "YES" : "NO")); // Trace
+      if (userData) alert("DEBUG: User Email: " + userData.email); // Trace
+
       if (requiresMfa && !mfaCode) {
         throw new Error('MFA_REQUIRED');
       }

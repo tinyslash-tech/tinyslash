@@ -34,7 +34,7 @@ adminApi.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('admin-token');
-      window.location.href = '/login';
+      window.location.href = '/';
       toast.error('Session expired. Please login again.');
     } else if (error.response?.status === 403) {
       toast.error('Access denied. Insufficient permissions.');

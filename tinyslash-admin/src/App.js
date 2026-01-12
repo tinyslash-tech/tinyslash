@@ -29,6 +29,8 @@ const AppContent = () => {
   const [selectedJobId, setSelectedJobId] = useState(null);
   const { isAuthenticated, user, login, hasPermission } = useAuth();
 
+  alert("DEBUG: AppContent Render. Auth: " + isAuthenticated); // Trace
+
   if (!isAuthenticated) {
     return <LoginPage onLogin={login} />;
   }

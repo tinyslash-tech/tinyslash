@@ -32,9 +32,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      alert("DEBUG: Token found, checking /me"); // Trace
+
       const response = await adminApi.get('/auth/me');
+      alert("DEBUG: /me Success. User: " + response.data.data?.email); // Trace
       setUser(response.data.data);
-    } catch (error) {
+    } catch (error: any) {
+      alert("DEBUG: /me Failed: " + (error.message || "Unknown")); // Trace
       localStorage.removeItem('admin-token');
       console.error('Auth check failed:', error);
     } finally {

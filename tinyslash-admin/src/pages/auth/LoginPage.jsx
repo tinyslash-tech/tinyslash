@@ -8,13 +8,17 @@ const LoginPage = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    alert("1. Submit Started"); // DEBUG TRACE
     setLoading(true);
     setError('');
 
     try {
+      alert("2. Calling Login API"); // DEBUG TRACE
       await onLogin(email, password);
+      alert("3. Login Success - Should Redirect"); // DEBUG TRACE
     } catch (err) {
-      console.error('Login error:', err);
+      alert("4. Error Caught: " + (err.message || "Unknown")); // DEBUG TRACE
+      console.error('Login page error:', err);
       let errorMessage = err.response?.data?.message || err.message || 'Login failed';
 
       // Add helpful context for common errors

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/layout/Layout';
 import LoginPage from './pages/auth/LoginPage';
@@ -128,6 +129,7 @@ const AppContent = () => {
 const App = () => {
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       <AppContent />
     </AuthProvider>
   );

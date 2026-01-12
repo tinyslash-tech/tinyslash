@@ -16,6 +16,7 @@ const LoginPage = ({ onLogin }) => {
       alert("2. Calling Login API"); // DEBUG TRACE
       await onLogin(email, password);
       alert("3. Login Success - Should Redirect"); // DEBUG TRACE
+      window.location.reload(); // FORCE RELOAD to pick up token
     } catch (err) {
       alert("4. Error Caught: " + (err.message || "Unknown")); // DEBUG TRACE
       console.error('Login page error:', err);

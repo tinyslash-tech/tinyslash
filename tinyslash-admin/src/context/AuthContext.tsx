@@ -54,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       console.log('Login response:', response.status, response.data);
+      alert("PAYLOAD: " + JSON.stringify(response.data)); // TRACE PAYLOAD
 
       const { token, user: userData, requiresMfa } = response.data.data;
 

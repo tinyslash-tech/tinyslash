@@ -25,6 +25,7 @@ const LoginPage = ({ onLogin }) => {
         errorMessage += ' (404: Endpoint not found)';
       }
 
+      alert(errorMessage); // Force visible error for debugging
       setError(errorMessage);
     } finally {
       setLoading(false);

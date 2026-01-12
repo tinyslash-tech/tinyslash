@@ -1,10 +1,9 @@
-// Core Admin Types
 export interface AdminUser {
   id: string;
   email: string;
   name: string;
   role: AdminRole;
-  permissions: Permission[];
+  permissions: string[];
   lastLogin?: Date;
   isActive: boolean;
   mfaEnabled: boolean;
@@ -16,7 +15,7 @@ export interface AdminRole {
   id: string;
   name: string;
   displayName: string;
-  permissions: Permission[];
+  permissions: string[];
   description?: string;
 }
 

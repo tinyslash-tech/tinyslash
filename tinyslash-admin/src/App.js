@@ -27,9 +27,15 @@ import SettingsPage from './pages/settings/SettingsPage';
 const AppContent = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedJobId, setSelectedJobId] = useState(null);
-  const { isAuthenticated, user, login, hasPermission } = useAuth();
+  const { isAuthenticated, user, login, hasPermission, isLoading } = useAuth();
 
-  alert("DEBUG: AppContent Render. Auth: " + isAuthenticated); // Trace
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={login} />;

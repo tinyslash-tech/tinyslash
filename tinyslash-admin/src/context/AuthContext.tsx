@@ -51,12 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       console.log('Login response:', response.status, response.data);
-      alert("PAYLOAD: " + JSON.stringify(response.data)); // TRACE PAYLOAD
 
       const { token, user: userData, requiresMfa } = response.data.data;
-
-      alert("DEBUG: User Data Received: " + (userData ? "YES" : "NO")); // Trace
-      if (userData) alert("DEBUG: User Email: " + userData.email); // Trace
 
       if (requiresMfa && !mfaCode) {
         throw new Error('MFA_REQUIRED');
@@ -103,11 +99,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const hasPermission = (resource: string, action: string): boolean => {
     if (!user) return false;
 
-    return user.permissions.some(
-      permission =>
-        permission.resource === resource &&
-        permission.action === action
-    );
+    // Super Admin Bypass
+    if (user.permissions.includes('ALL')) return true;
+
+    // Check specific permission "resource:action" or wildcard "resource:ALL"
+    const requiredPermission = `${resource}:${action}`;
+    const wildcardPermission = `${resource}:ALL`;
+
+    return user.permissions.includes(requiredPermission) || user.permissions.includes(wildcardPermission);
   };
 
   const hasRole = (role: string): boolean => {

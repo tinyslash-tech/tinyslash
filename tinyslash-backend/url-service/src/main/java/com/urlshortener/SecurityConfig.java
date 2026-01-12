@@ -74,7 +74,12 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        configuration.setAllowedOriginPatterns(java.util.Arrays.asList("*"));
+        configuration.setAllowedOriginPatterns(java.util.Arrays.asList(
+                "https://tinyslash.com",
+                "https://admin.tinyslash.com",
+                "https://tinyslash-backend-prod.onrender.com",
+                "https://*.vercel.app",
+                "http://localhost:*"));
         configuration
                 .setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(java.util.Arrays.asList("*"));

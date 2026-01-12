@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-@ConditionalOnProperty(name = "app.admin.enabled", havingValue = "true", matchIfMissing = false)
 public class AdminJwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
@@ -30,9 +29,9 @@ public class AdminJwtAuthenticationFilter extends OncePerRequestFilter {
     private AdminUserService adminUserService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
-                                  FilterChain filterChain) throws ServletException, IOException {
-        
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
+
         // Only apply to admin endpoints
         String requestPath = request.getRequestURI();
         if (!requestPath.startsWith("/api/v1/admin")) {
@@ -62,26 +61,26 @@ public class AdminJwtAuthenticationFilter extends OncePerRequestFilter {
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 var adminUser = adminUserService.findByEmail(email);
-                
-                if (adminUser.isPresent() && adminUser.get().isActive() && 
-                    jwtUtil.validateToken(token, email)) {
-                    
+
+                if (adminUser.isPresent() && adminUser.get().isActive() &&
+                        jwtUtil.validateToken(token, email)) {
+
                     // Create authorities from admin permissions
                     List<SimpleGrantedAuthority> authorities = adminUser.get().getPermissions()
-                        .stream()
-                        .map(permission -> new SimpleGrantedAuthority("ADMIN_" + permission))
-                        .collect(Collectors.toList());
-                    
+                            .stream()
+                            .map(permission -> new SimpleGrantedAuthority("ADMIN_" + permission))
+                            .collect(Collectors.toList());
+
                     // Add role authority
                     authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + adminUser.get().getRole().getName()));
 
-                    UsernamePasswordAuthenticationToken authToken = 
-                        new UsernamePasswordAuthenticationToken(adminUser.get(), null, authorities);
-                    
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            adminUser.get(), null, authorities);
+
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    
+
                     // Store admin user in request for audit logging
                     request.setAttribute("adminUser", adminUser.get());
                 }

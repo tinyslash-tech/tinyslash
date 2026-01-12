@@ -13,33 +13,32 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-@ConditionalOnProperty(name = "app.admin.enabled", havingValue = "true", matchIfMissing = false)
 public interface AdminUserRepository extends MongoRepository<AdminUser, String> {
-    
+
     Optional<AdminUser> findByEmail(String email);
-    
+
     Optional<AdminUser> findByEmailAndIsActive(String email, boolean isActive);
-    
+
     List<AdminUser> findByIsActive(boolean isActive);
-    
+
     @Query("{ 'role.name': ?0 }")
     List<AdminUser> findByRoleName(String roleName);
-    
+
     @Query("{ '$or': [ " +
-           "{ 'name': { '$regex': ?0, '$options': 'i' } }, " +
-           "{ 'email': { '$regex': ?0, '$options': 'i' } } " +
-           "] }")
+            "{ 'name': { '$regex': ?0, '$options': 'i' } }, " +
+            "{ 'email': { '$regex': ?0, '$options': 'i' } } " +
+            "] }")
     Page<AdminUser> findByNameOrEmailContainingIgnoreCase(String searchTerm, Pageable pageable);
-    
+
     @Query("{ 'lastLogin': { '$gte': ?0 } }")
     List<AdminUser> findByLastLoginAfter(LocalDateTime date);
-    
+
     @Query("{ 'createdAt': { '$gte': ?0, '$lte': ?1 } }")
     List<AdminUser> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
-    
+
     long countByIsActive(boolean isActive);
-    
+
     long countByRoleName(String roleName);
-    
+
     boolean existsByEmail(String email);
 }

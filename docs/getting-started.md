@@ -514,7 +514,7 @@ mongosh
 - **Email**: developers@tinyslash.com
 
 ### Development Resources
-- **Postman Collection**: [Download API Collection](https://api.tinyslash.com/postman/collection.json)
+- **Postman Collection**: [Download API Collection](https://tinyslash-backend-prod.onrender.com/postman/collection.json)
 - **Sample Data**: Use `scripts/load-sample-data.sh`
 - **Database Schema**: See [Database Documentation](database/README.md)
 

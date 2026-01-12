@@ -1154,7 +1154,7 @@ public class SecurityHeadersConfig {
                                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                                  "font-src 'self' https://fonts.gstatic.com; " +
                                  "img-src 'self' data: https:; " +
-                                 "connect-src 'self' https://api.tinyslash.com")
+                                 "connect-src 'self' https://tinyslash-backend-prod.onrender.com")
             .and()
             .referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             .addHeaderWriter(new StaticHeadersWriter("X-XSS-Protection", "1; mode=block"))

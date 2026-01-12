@@ -14,7 +14,6 @@ spring:
     cors:
       allowed-origins:
         - "https://tinyslash.com"
-        - "https://api.tinyslash.com"
         - "https://admin.tinyslash.com"
         - "https://tinyslash-backend-prod.onrender.com"
         - "https://*.vercel.app"

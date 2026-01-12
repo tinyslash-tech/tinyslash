@@ -7,7 +7,7 @@ export class AdminWebSocketService {
   private reconnectInterval = 5000;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
 
-  constructor(private baseUrl: string = 'ws://localhost:8080') {}
+  constructor(private baseUrl: string = process.env.REACT_APP_WS_URL || 'ws://localhost:8080') { }
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -62,7 +62,7 @@ export class AdminWebSocketService {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, new Set());
     }
-    
+
     this.listeners.get(eventType)!.add(callback);
 
     // Return unsubscribe function
@@ -107,7 +107,7 @@ export class AdminWebSocketService {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-      
+
       setTimeout(() => {
         this.connect().catch(error => {
           console.error('Reconnection failed:', error);

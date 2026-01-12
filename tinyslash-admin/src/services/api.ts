@@ -3,7 +3,9 @@ import toast from 'react-hot-toast';
 
 // Create axios instance for admin API
 export const adminApi: AxiosInstance = axios.create({
-  baseURL: '/api/v1/admin',
+  baseURL: process.env.REACT_APP_API_URL
+    ? `${process.env.REACT_APP_API_URL}/api/v1/admin`
+    : '/api/v1/admin',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -39,7 +41,7 @@ adminApi.interceptors.response.use(
     } else if (error.response?.status >= 500) {
       toast.error('Server error. Please try again later.');
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -61,7 +63,7 @@ export const adminApiEndpoints = {
     get: (id: string) => adminApi.get(`/users/${id}`),
     create: (data: any) => adminApi.post('/users', data),
     update: (id: string, data: any) => adminApi.put(`/users/${id}`, data),
-    suspend: (id: string, reason: string) => 
+    suspend: (id: string, reason: string) =>
       adminApi.post(`/users/${id}/suspend`, { reason }),
     reactivate: (id: string) => adminApi.post(`/users/${id}/reactivate`),
     delete: (id: string) => adminApi.delete(`/users/${id}`),

@@ -62,6 +62,8 @@ cloudflare:
 
 # Application Configuration
 app:
+  admin:
+    enabled: true
   # Base defaults, overridden by profiles
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}

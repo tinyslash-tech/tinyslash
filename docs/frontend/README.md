@@ -768,7 +768,7 @@ export default defineConfig({
 ### Environment Configuration
 ```bash
 # .env.local
-REACT_APP_API_URL=https://api.tinyslash.com
+REACT_APP_API_URL=https://tinyslash-backend-prod.onrender.com
 REACT_APP_RAZORPAY_KEY=rzp_live_xxxxx
 REACT_APP_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
 REACT_APP_SENTRY_DSN=https://xxxxx@sentry.io/xxxxx

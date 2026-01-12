@@ -1,98 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, MapPin, Briefcase, Users } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { adminApiEndpoints } from '../../services/api';
 import JobForm from './JobForm';
 import toast from 'react-hot-toast';
 
-const CareersPage = ({ onViewApplicants }) => {
-  const { user } = useAuth();
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+import { Job } from '../../types';
+
+interface CareersPageProps {
+  onViewApplicants: (jobId: string) => void;
+}
+
+const CareersPage: React.FC<CareersPageProps> = ({ onViewApplicants }) => {
   const [showForm, setShowForm] = useState(false);
-  const [editingJob, setEditingJob] = useState(null);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const queryClient = useQueryClient();
 
-  // Use the admin API URL from environment similar to other pages
-  // Assuming axios instance is configured or we use direct axios with token
-  // Ensure API_URL points to the correct endpoint
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-  const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+  // Fetch jobs
+  const { data: jobsData, isLoading } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => adminApiEndpoints.jobs.list(),
+  });
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
+  const rawJobs = jobsData?.data;
+  const jobs: Job[] = Array.isArray(rawJobs) ? rawJobs : (rawJobs?.data || []);
 
-  const fetchJobs = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/admin/jobs`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setJobs(response.data);
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-      toast.error('Failed to load jobs');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = async (jobData) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/admin/jobs`, jobData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  const createJobMutation = useMutation({
+    mutationFn: (jobData: Partial<Job>) => adminApiEndpoints.jobs.create(jobData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['jobs']);
       toast.success('Job created successfully');
       setShowForm(false);
-      fetchJobs();
-    } catch (error) {
+    },
+    onError: (error: any) => {
       console.error('Error creating job:', error);
       toast.error('Failed to create job');
-    }
-  };
+    },
+  });
 
-  const handleUpdate = async (jobData) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/admin/jobs/${editingJob.id}`, jobData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  const updateJobMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Job> }) =>
+      adminApiEndpoints.jobs.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['jobs']);
       toast.success('Job updated successfully');
       setEditingJob(null);
       setShowForm(false);
-      fetchJobs();
-    } catch (error) {
+    },
+    onError: (error: any) => {
       console.error('Error updating job:', error);
       toast.error('Failed to update job');
-    }
-  };
+    },
+  });
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this job?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/admin/jobs/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  const deleteJobMutation = useMutation({
+    mutationFn: (id: string) => adminApiEndpoints.jobs.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['jobs']);
       toast.success('Job deleted successfully');
-      fetchJobs();
-    } catch (error) {
+    },
+    onError: (error: any) => {
       console.error('Error deleting job:', error);
       toast.error('Failed to delete job');
-    }
+    },
+  });
+
+  const handleCreate = (jobData: Partial<Job>) => {
+    createJobMutation.mutate(jobData);
+  };
+
+  const handleUpdate = (jobData: Partial<Job>) => {
+    if (!editingJob) return;
+    updateJobMutation.mutate({ id: editingJob.id, data: jobData });
+  };
+
+  const handleDelete = (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this job?')) return;
+    deleteJobMutation.mutate(id);
   };
 
   if (showForm) {
     return (
       <JobForm
-        job={editingJob}
-        onSave={editingJob ? handleUpdate : handleCreate}
+        job={editingJob || undefined}
+        onSave={(data: Partial<Job>) => editingJob ? handleUpdate(data) : handleCreate(data)}
         onCancel={() => {
           setShowForm(false);
           setEditingJob(null);
         }}
+        loading={createJobMutation.isLoading || updateJobMutation.isLoading}
       />
     );
   }
@@ -113,7 +109,7 @@ const CareersPage = ({ onViewApplicants }) => {
         </button>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="text-center py-10">Loading jobs...</div>
       ) : (
         <div className="grid gap-6">
@@ -182,5 +178,4 @@ const CareersPage = ({ onViewApplicants }) => {
     </div>
   );
 };
-
 export default CareersPage;

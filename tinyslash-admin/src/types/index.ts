@@ -9,6 +9,7 @@ export interface AdminUser {
   mfaEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
+  avatar?: string;
 }
 
 export interface AdminRole {
@@ -273,6 +274,19 @@ export interface PagedResponse<T> {
   hasPrevious: boolean;
 }
 
+export interface Job {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
+  description: string;
+  requirements?: string[];
+  postedDate: string;
+  status: 'OPEN' | 'CLOSED' | 'DRAFT';
+  applicantsCount?: number;
+}
+
 export interface FilterOptions {
   search?: string;
   status?: string;
@@ -281,6 +295,14 @@ export interface FilterOptions {
   dateTo?: Date;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  // Extended filters
+  verificationStatus?: string;
+  sslStatus?: string;
+  memberCount?: string;
+  role?: string;
+  department?: string;
+  location?: string;
+  type?: string;
 }
 
 // Theme Types

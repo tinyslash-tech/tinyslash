@@ -1,4 +1,5 @@
 import { SystemHealthUpdate, WebSocketMessage } from '../types';
+import { useEffect, useState } from 'react';
 
 export class AdminWebSocketService {
   private ws: WebSocket | null = null;
@@ -127,7 +128,6 @@ export class AdminWebSocketService {
 export const adminWebSocket = new AdminWebSocketService();
 
 // React hook for WebSocket
-import { useEffect, useState } from 'react';
 
 export const useWebSocket = (eventType: string) => {
   const [data, setData] = useState<any>(null);

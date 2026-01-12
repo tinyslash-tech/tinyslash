@@ -1,202 +1,155 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
-import { EyeIcon, EyeSlashIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../../context/AuthContext';
-import Button from '../../components/common/Button';
-import Card from '../../components/common/Card';
-import toast from 'react-hot-toast';
 
-interface LoginFormData {
-  email: string;
-  password: string;
-  mfaCode?: string;
+interface LoginPageProps {
+  onLogin: (email: string, password: string) => Promise<void>;
 }
 
-const LoginPage: React.FC = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [requiresMfa, setRequiresMfa] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const [email, setEmail] = useState('admin@tinyslash.com');
+  const [password, setPassword] = useState('admin123');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setError,
-  } = useForm<LoginFormData>();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
     try {
-      await login(data.email, data.password, data.mfaCode);
-    } catch (error: any) {
-      if (error.message === 'MFA_REQUIRED') {
-        setRequiresMfa(true);
-        toast.success('Please enter your MFA code');
-      } else {
-        setError('root', {
-          message: error.response?.data?.message || 'Login failed. Please try again.',
-        });
+      await onLogin(email, password);
+    } catch (err: any) {
+      console.error('Login page error:', err);
+      let errorMessage = err.response?.data?.message || err.message || 'Login failed';
+
+      // Add helpful context for common errors
+      if (err.message === 'Network Error') {
+        errorMessage += ' (Check REACT_APP_API_URL or CORS)';
       }
+      if (err.response?.status === 404) {
+        errorMessage += ' (404: Endpoint not found)';
+      }
+
+      setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
+  const demoAccounts = [
+    { email: 'admin@tinyslash.com', password: 'admin123', role: 'Super Admin', color: 'bg-red-100 text-red-800' },
+    { email: 'support@tinyslash.com', password: 'support123', role: 'Support Admin', color: 'bg-blue-100 text-blue-800' },
+    { email: 'billing@tinyslash.com', password: 'billing123', role: 'Billing Manager', color: 'bg-green-100 text-green-800' },
+    { email: 'tech@tinyslash.com', password: 'tech123', role: 'Technical Admin', color: 'bg-purple-100 text-purple-800' },
+    { email: 'moderator@tinyslash.com', password: 'mod123', role: 'Content Moderator', color: 'bg-yellow-100 text-yellow-800' },
+    { email: 'auditor@tinyslash.com', password: 'audit123', role: 'Read-Only Auditor', color: 'bg-gray-100 text-gray-800' }
+  ];
+
+  const adminToken = localStorage.getItem('admin-token');
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="text-center mb-8">
-        <div className="mx-auto w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center mb-4">
-          <span className="text-white font-bold text-2xl">P</span>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl w-full space-y-8">
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
+            <span className="text-white font-bold text-2xl">T</span>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Tinyslash Admin Panel
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Enterprise-Grade Role-Based Access Control
+          </p>
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Tinyslash Admin
-        </h2>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Sign in to your admin account
-        </p>
-      </div>
 
-      <Card>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email address
-            </label>
-            <div className="mt-1">
-              <input
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                })}
-                type="email"
-                autoComplete="email"
-                className="input-field"
-                placeholder="admin@tinyslash.com"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-error-600">{errors.email.message}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Password */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <div className="mt-1 relative">
-              <input
-                {...register('password', {
-                  required: 'Password is required',
-                  minLength: {
-                    value: 8,
-                    message: 'Password must be at least 8 characters',
-                  },
-                })}
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                className="input-field pr-10"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <EyeIcon className="h-5 w-5 text-gray-400" />
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-error-600">{errors.password.message}</p>
-            )}
-          </div>
-
-          {/* MFA Code */}
-          {requiresMfa && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              transition={{ duration: 0.3 }}
-            >
-              <label htmlFor="mfaCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                <div className="flex items-center">
-                  <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                  MFA Code
-                </div>
-              </label>
-              <div className="mt-1">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Login Form */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sign In</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email address
+                </label>
                 <input
-                  {...register('mfaCode', {
-                    required: requiresMfa ? 'MFA code is required' : false,
-                    pattern: {
-                      value: /^\d{6}$/,
-                      message: 'MFA code must be 6 digits',
-                    },
-                  })}
-                  type="text"
-                  maxLength={6}
-                  className="input-field text-center text-lg tracking-widest"
-                  placeholder="000000"
-                  autoComplete="one-time-code"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
                 />
-                {errors.mfaCode && (
-                  <p className="mt-1 text-sm text-error-600">{errors.mfaCode.message}</p>
-                )}
               </div>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Enter the 6-digit code from your authenticator app
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                  <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+          </div>
+
+          {/* Demo Accounts */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🏢 Demo Admin Roles</h3>
+            <div className="space-y-3">
+              {demoAccounts.map((account, index) => (
+                <div
+                  key={index}
+                  className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => {
+                    setEmail(account.email);
+                    setPassword(account.password);
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{account.email}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Password: {account.password}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full ${account.color}`}>
+                      {account.role}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-xs text-blue-800 dark:text-blue-200">
+                💡 Click any account above to auto-fill credentials and test different permission levels.
               </p>
-            </motion.div>
-          )}
-
-          {/* Error Message */}
-          {errors.root && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="rounded-md bg-error-50 dark:bg-error-900/20 p-4"
-            >
-              <p className="text-sm text-error-800 dark:text-error-200">
-                {errors.root.message}
-              </p>
-            </motion.div>
-          )}
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            loading={isLoading}
-            className="w-full"
-          >
-            {requiresMfa ? 'Verify & Sign In' : 'Sign In'}
-          </Button>
-        </form>
-
-        {/* Security Notice */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">
-            <ShieldCheckIcon className="h-4 w-4 mr-1" />
-            Secured with enterprise-grade authentication
+            </div>
+            <div className="mt-4 text-center text-xs text-gray-400">
+              Debug API: {process.env.REACT_APP_API_URL || 'Not Set'}
+            </div>
+            <div className="mt-2 text-center text-xs font-mono">
+              TOKEN STATUS: {adminToken ?
+                <span className="text-green-500 font-bold">FOUND ({adminToken.substring(0, 10)}...)</span> :
+                <span className="text-red-500 font-bold">NOT FOUND</span>}
+            </div>
           </div>
         </div>
-      </Card>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 

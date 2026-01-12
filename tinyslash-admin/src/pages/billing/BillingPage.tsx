@@ -1,77 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   CreditCard,
   TrendingUp,
   AlertCircle,
   Search,
-  Calendar,
   Download,
   DollarSign
 } from 'lucide-react';
+import { adminApiEndpoints } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
-const BillingPage = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    activeSubscriptions: 0,
-    failedPayments: 0
+interface Transaction {
+  id: string;
+  userId: string;
+  paymentId?: string;
+  planType: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+}
+
+const BillingPage: React.FC = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { hasPermission } = useAuth();
+
+  const { data: billingData, isLoading, error } = useQuery({
+    queryKey: ['billing-subscriptions'],
+    queryFn: () => adminApiEndpoints.billing.subscriptions.list(),
   });
 
-  useEffect(() => {
-    fetchBillingData();
-  }, []);
+  const transactions: Transaction[] = React.useMemo(() => {
+    const rawData = billingData?.data;
+    // Helper to extract array whether it's wrapped or not
+    const list = Array.isArray(rawData) ? rawData : (rawData?.data || []);
+    return list.sort((a: Transaction, b: Transaction) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [billingData]);
 
-  const fetchBillingData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/subscription/admin/all`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch billing data');
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        const sortedTransactions = (result.data || []).sort((a, b) =>
-          new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        setTransactions(sortedTransactions);
-        calculateStats(sortedTransactions);
-      } else {
-        throw new Error(result.message || 'Failed to fetch billing data');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateStats = (data) => {
-    // Total Revenue (all time for now, or could filter by month)
-    const totalRevenue = data.reduce((sum, tx) => {
-      // Amount is in paise, convert to rupees
-      return sum + ((tx.amount || 0) / 100);
-    }, 0);
-
-    // Active Subscriptions
-    const active = data.filter(tx => tx.status === 'Active').length;
-
-    setStats({
+  const stats = React.useMemo(() => {
+    const totalRevenue = transactions.reduce((sum, tx) => sum + ((tx.amount || 0) / 100), 0);
+    const active = transactions.filter(tx => tx.status === 'Active').length;
+    return {
       totalRevenue,
       activeSubscriptions: active,
-      failedPayments: 0 // Backend doesn't persist failed payments yet
-    });
-  };
+      failedPayments: 0 // Placeholder
+    };
+  }, [transactions]);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -82,14 +60,14 @@ const BillingPage = () => {
     });
   };
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR'
     }).format(amount);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -102,13 +80,7 @@ const BillingPage = () => {
       <div className="p-6 text-center text-red-600 bg-red-50 rounded-lg">
         <AlertCircle className="w-12 h-12 mx-auto mb-4" />
         <h3 className="text-lg font-medium">Error Loading Billing Data</h3>
-        <p>{error}</p>
-        <button
-          onClick={fetchBillingData}
-          className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-        >
-          Retry
-        </button>
+        <p>{(error as any).message || 'Unknown error'}</p>
       </div>
     );
   }
@@ -199,7 +171,7 @@ const BillingPage = () => {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {transactions.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     <div className="flex flex-col items-center justify-center">
                       <CreditCard className="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" />
                       <p className="text-lg font-medium">No transactions found</p>
@@ -233,8 +205,8 @@ const BillingPage = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tx.status === 'Active'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                         }`}>
                         {tx.status}
                       </span>

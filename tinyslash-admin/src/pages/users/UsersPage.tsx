@@ -89,9 +89,10 @@ const UsersPage: React.FC = () => {
     },
   });
 
-  const users = usersData?.data?.data?.content || [];
-  const totalPages = usersData?.data?.data?.totalPages || 0;
-  const totalItems = usersData?.data?.data?.totalElements || 0;
+  const responseData = usersData?.data;
+  const users = responseData?.data?.content || responseData?.content || [];
+  const totalPages = responseData?.data?.totalPages || responseData?.totalPages || 0;
+  const totalItems = responseData?.data?.totalElements || responseData?.totalElements || 0;
 
   const columns: Column<User>[] = [
     {
@@ -124,8 +125,8 @@ const UsersPage: React.FC = () => {
         <Badge
           variant={
             plan === 'ENTERPRISE' ? 'info' :
-            plan === 'BUSINESS' ? 'success' :
-            plan === 'PRO' ? 'warning' : 'default'
+              plan === 'BUSINESS' ? 'success' :
+                plan === 'PRO' ? 'warning' : 'default'
           }
         >
           {plan}
@@ -140,8 +141,8 @@ const UsersPage: React.FC = () => {
         <Badge
           variant={
             status === 'ACTIVE' ? 'success' :
-            status === 'SUSPENDED' ? 'error' :
-            status === 'PENDING_VERIFICATION' ? 'warning' : 'default'
+              status === 'SUSPENDED' ? 'error' :
+                status === 'PENDING_VERIFICATION' ? 'warning' : 'default'
           }
         >
           {status.replace('_', ' ')}
@@ -210,7 +211,7 @@ const UsersPage: React.FC = () => {
         icon={<EyeIcon className="w-4 h-4" />}
         onClick={() => window.open(`/users/${user.id}`, '_blank')}
       />
-      
+
       {hasPermission('users', 'update') && (
         <Button
           variant="ghost"

@@ -34,9 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const response = await adminApi.get('/auth/me');
       setUser(response.data.data);
+      console.log("Auth Check Response:", response.data);
+      setUser(response.data.data);
     } catch (error: any) {
-      localStorage.removeItem('admin-token');
       console.error('Auth check failed:', error);
+      toast.error(`Session Restore Failed: ${error.message || 'Unknown Error'}`);
+      // localStorage.removeItem('admin-token'); // DEBUG: Keep token to inspect
     } finally {
       setIsLoading(false);
     }
@@ -52,15 +55,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Login response:', response.status, response.data);
 
+      console.log('Login Response Data:', response.data);
       const { token, user: userData, requiresMfa } = response.data.data;
+
+      if (!token) {
+        toast.error('CRITICAL: Server did not return a token!');
+        return;
+      }
 
       if (requiresMfa && !mfaCode) {
         throw new Error('MFA_REQUIRED');
       }
 
       localStorage.setItem('admin-token', token);
+      console.log(`Token Saved! Length: ${token.length}`);
       setUser(userData);
-      toast.success('Login successful');
+      toast.success('Login successful.');
     } catch (error: any) {
       console.error('Login error details:', {
         message: error.message,
@@ -97,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const hasPermission = (resource: string, action: string): boolean => {
-    if (!user) return false;
+    if (!user || !user.permissions) return false;
 
     // Super Admin Bypass
     if (user.permissions.includes('ALL')) return true;

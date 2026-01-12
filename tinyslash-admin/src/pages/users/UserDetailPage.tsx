@@ -14,6 +14,7 @@ import {
   CheckCircleIcon,
   NoSymbolIcon,
   PencilIcon,
+  CursorArrowRaysIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -33,7 +34,7 @@ const UserDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
-  
+
   const [showImpersonateModal, setShowImpersonateModal] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspendReason, setSuspendReason] = useState('');
@@ -168,7 +169,7 @@ const UserDetailPage: React.FC = () => {
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {hasPermission('users', 'impersonate') && user.status === 'ACTIVE' && (
             <Button
@@ -179,7 +180,7 @@ const UserDetailPage: React.FC = () => {
               Impersonate
             </Button>
           )}
-          
+
           {hasPermission('users', 'update') && (
             <Button
               variant="secondary"
@@ -233,8 +234,8 @@ const UserDetailPage: React.FC = () => {
                   <Badge
                     variant={
                       user.plan === 'ENTERPRISE' ? 'info' :
-                      user.plan === 'BUSINESS' ? 'success' :
-                      user.plan === 'PRO' ? 'warning' : 'default'
+                        user.plan === 'BUSINESS' ? 'success' :
+                          user.plan === 'PRO' ? 'warning' : 'default'
                     }
                   >
                     {user.plan}
@@ -242,8 +243,8 @@ const UserDetailPage: React.FC = () => {
                   <Badge
                     variant={
                       user.status === 'ACTIVE' ? 'success' :
-                      user.status === 'SUSPENDED' ? 'error' :
-                      user.status === 'PENDING_VERIFICATION' ? 'warning' : 'default'
+                        user.status === 'SUSPENDED' ? 'error' :
+                          user.status === 'PENDING_VERIFICATION' ? 'warning' : 'default'
                     }
                   >
                     {user.status.replace('_', ' ')}
@@ -278,7 +279,7 @@ const UserDetailPage: React.FC = () => {
                 </div>
               </dl>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                 Subscription
@@ -293,7 +294,7 @@ const UserDetailPage: React.FC = () => {
                 <div>
                   <dt className="text-sm text-gray-500 dark:text-gray-400">Next Billing</dt>
                   <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                    {user.subscription?.currentPeriodEnd 
+                    {user.subscription?.currentPeriodEnd
                       ? new Date(user.subscription.currentPeriodEnd).toLocaleDateString()
                       : 'N/A'
                     }
@@ -329,7 +330,7 @@ const UserDetailPage: React.FC = () => {
                 />
               </div>
             </div>
-            
+
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-gray-500 dark:text-gray-400">Domains</span>
@@ -414,9 +415,9 @@ const UserDetailPage: React.FC = () => {
               </p>
             </div>
           </div>
-          
+
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            You are about to impersonate <strong>{user.name}</strong> ({user.email}). 
+            You are about to impersonate <strong>{user.name}</strong> ({user.email}).
             This will open a new tab with their account session.
           </p>
 

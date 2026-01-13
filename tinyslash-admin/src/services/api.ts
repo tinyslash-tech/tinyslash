@@ -93,28 +93,28 @@ export const adminApiEndpoints = {
 
   // Domain Management
   domains: {
-    list: (params?: any) => adminApi.get('/domains', { params }),
-    get: (id: string) => adminApi.get(`/domains/${id}`),
-    verify: (id: string) => adminApi.post(`/domains/${id}/verify`),
+    list: (params?: any) => adminApi.get('/../domains', { params }),
+    get: (id: string) => adminApi.get(`/../domains/${id}`),
+    verify: (id: string) => adminApi.post(`/../domains/${id}/verify`),
     suspend: (id: string, reason: string) =>
-      adminApi.post(`/domains/${id}/suspend`, { reason }),
-    reactivate: (id: string) => adminApi.post(`/domains/${id}/reactivate`),
-    delete: (id: string) => adminApi.delete(`/domains/${id}`),
-    renewSsl: (id: string) => adminApi.post(`/domains/${id}/renew-ssl`),
+      adminApi.post(`/../domains/${id}/suspend`, { reason }),
+    reactivate: (id: string) => adminApi.post(`/../domains/${id}/reactivate`),
+    delete: (id: string) => adminApi.delete(`/../domains/${id}`),
+    renewSsl: (id: string) => adminApi.post(`/../domains/${id}/renew-ssl`),
     transfer: (id: string, newOwnerId: string) =>
-      adminApi.post(`/domains/${id}/transfer`, { newOwnerId }),
+      adminApi.post(`/../domains/${id}/transfer`, { newOwnerId }),
   },
 
   // Link Management
   links: {
-    list: (params?: any) => adminApi.get('/links', { params }),
-    get: (id: string) => adminApi.get(`/links/${id}`),
+    list: (params?: any) => adminApi.get('/../urls', { params }), // /api/v1/urls
+    get: (id: string) => adminApi.get(`/../urls/${id}`),
     disable: (id: string, reason: string) =>
-      adminApi.post(`/links/${id}/disable`, { reason }),
-    enable: (id: string) => adminApi.post(`/links/${id}/enable`),
-    delete: (id: string) => adminApi.delete(`/links/${id}`),
+      adminApi.post(`/../urls/${id}/disable`, { reason }),
+    enable: (id: string) => adminApi.post(`/../urls/${id}/enable`),
+    delete: (id: string) => adminApi.delete(`/../urls/${id}`),
     bulkAction: (action: string, linkIds: string[], data?: any) =>
-      adminApi.post('/links/bulk', { action, linkIds, data }),
+      adminApi.post('/../urls/bulk', { action, linkIds, data }),
   },
 
   // Billing & Subscriptions
@@ -198,26 +198,26 @@ export const adminApiEndpoints = {
 
   // Careers / Jobs Management
   jobs: {
-    list: (params?: any) => adminApi.get('/jobs', { params }),
-    get: (id: string) => adminApi.get(`/jobs/${id}`),
-    create: (data: any) => adminApi.post('/jobs', data),
-    update: (id: string, data: any) => adminApi.put(`/jobs/${id}`, data),
-    delete: (id: string) => adminApi.delete(`/jobs/${id}`),
-    getApplicants: (id: string) => adminApi.get(`/jobs/${id}/applicants`),
+    list: (params?: any) => adminApi.get('/../../admin/jobs', { params }), // /api/admin/jobs
+    get: (id: string) => adminApi.get(`/../../admin/jobs/${id}`),
+    create: (data: any) => adminApi.post('/../../admin/jobs', data),
+    update: (id: string, data: any) => adminApi.put(`/../../admin/jobs/${id}`, data),
+    delete: (id: string) => adminApi.delete(`/../../admin/jobs/${id}`),
+    getApplicants: (id: string) => adminApi.get(`/../../admin/jobs/${id}/applicants`),
   },
 
   // QR Code Management
   qr: {
-    list: (params?: any) => adminApi.get('/qr', { params }),
-    get: (id: string) => adminApi.get(`/qr/${id}`),
-    delete: (id: string) => adminApi.delete(`/qr/${id}`),
+    list: (params?: any) => adminApi.get('/../qr', { params }), // /api/v1/qr
+    get: (id: string) => adminApi.get(`/../qr/${id}`),
+    delete: (id: string) => adminApi.delete(`/../qr/${id}`),
   },
 
   // File Management
   files: {
-    list: (params?: any) => adminApi.get('/files', { params }),
-    get: (id: string) => adminApi.get(`/files/${id}`),
-    delete: (id: string) => adminApi.delete(`/files/${id}`),
+    list: (params?: any) => adminApi.get('/../files', { params }), // /api/v1/files
+    get: (id: string) => adminApi.get(`/../files/${id}`),
+    delete: (id: string) => adminApi.delete(`/../files/${id}`),
   },
 
   // Admin Management

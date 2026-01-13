@@ -26,6 +26,8 @@ app:
     url: ${DEV_FRONTEND_URL:http://localhost:3000}
   shorturl:
     domain: ${DEV_SHORT_URL_DOMAIN:http://localhost:8080}
+  admin:
+    enabled: true
 
 logging:
   level:

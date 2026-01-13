@@ -24,6 +24,8 @@ app:
     url: https://tinyslash.com
   shorturl:
     domain: https://tinyslash.com
+  admin:
+    enabled: true
 
 logging:
   level:

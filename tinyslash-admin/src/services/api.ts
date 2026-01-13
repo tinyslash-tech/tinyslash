@@ -6,7 +6,7 @@ export const adminApi: AxiosInstance = axios.create({
   baseURL: process.env.REACT_APP_API_URL
     ? `${process.env.REACT_APP_API_URL}/api/v1/admin`
     : '/api/v1/admin',
-  timeout: 30000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },

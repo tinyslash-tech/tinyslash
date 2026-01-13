@@ -157,7 +157,7 @@ export const adminApiEndpoints = {
 
   // Analytics
   analytics: {
-    dashboard: () => adminApi.get('/analytics/dashboard'),
+    dashboard: () => adminApi.get('/../analytics/admin/summary'),
     users: (params?: any) => adminApi.get('/analytics/users', { params }),
     revenue: (params?: any) => adminApi.get('/analytics/revenue', { params }),
     usage: (params?: any) => adminApi.get('/analytics/usage', { params }),

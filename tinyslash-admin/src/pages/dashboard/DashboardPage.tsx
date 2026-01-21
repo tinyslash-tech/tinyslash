@@ -106,7 +106,7 @@ const DashboardPage: React.FC = () => {
         />
         <MetricCard
           title="Active Links"
-          value={metrics.totalLinks || 0}
+          value={metrics.activeLinks || 0}
           change={{
             value: 8.2,
             type: 'increase',
@@ -209,10 +209,10 @@ const DashboardPage: React.FC = () => {
                   </Badge>
                 </motion.div>
               )) || (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <p>No recent activity</p>
-                </div>
-              )}
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <p>No recent activity</p>
+                  </div>
+                )}
             </div>
           </Card>
         </div>

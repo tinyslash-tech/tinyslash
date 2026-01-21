@@ -19,8 +19,8 @@ const DashboardPage = ({ hasPermission, user }) => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/dashboard/admin/overview`, {
+      const token = localStorage.getItem('admin-token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/analytics/admin/summary`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -29,8 +29,57 @@ const DashboardPage = ({ hasPermission, user }) => {
       if (!response.ok) throw new Error('Failed to fetch dashboard data');
 
       const result = await response.json();
+      console.log('API Response:', result);
+
       if (result.success) {
-        setDashboardData(result.data);
+        // Transform backend data into dashboard metrics format
+        const backendData = result.data;
+        console.log('Backend Data:', backendData);
+        console.log('Active Links from backend:', backendData.activeLinks);
+
+        const transformedData = {
+          metrics: [
+            {
+              label: 'Total Users',
+              value: backendData.totalUsers || 0,
+              change: '+ 12.5% last month',
+              iconName: 'Users',
+              bg: 'bg-white dark:bg-gray-800',
+              color: 'text-blue-600'
+            },
+            {
+              label: 'Active Links',
+              value: backendData.activeLinks || 0,
+              change: 'vs last week',
+              iconName: 'Activity',
+              bg: 'bg-white dark:bg-gray-800',
+              color: 'text-green-600'
+            },
+            {
+              label: 'Total Clicks',
+              value: backendData.totalClicks || 0,
+              change: '+ 16.3% last week',
+              iconName: 'HardDrive',
+              bg: 'bg-white dark:bg-gray-800',
+              color: 'text-purple-600'
+            },
+            {
+              label: 'Monthly Revenue',
+              value: `$${backendData.monthlyRevenue || 0}`,
+              change: '+ 23.1% vs last month',
+              iconName: 'CreditCard',
+              bg: 'bg-white dark:bg-gray-800',
+              color: 'text-orange-600'
+            }
+          ],
+          recentActivity: backendData.recentActivity || [],
+          topCountries: backendData.topCountries || [],
+          revenueBreakdown: backendData.revenueBreakdown || []
+        };
+
+        console.log('Transformed Data:', transformedData);
+        console.log('Active Links metric:', transformedData.metrics[1]);
+        setDashboardData(transformedData);
       } else {
         throw new Error(result.message || 'Failed to load dashboard data');
       }

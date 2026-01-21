@@ -22,7 +22,7 @@ import SystemHealthPage from './pages/system/SystemHealthPage';
 import AuditLogsPage from './pages/audit/AuditLogsPage';
 import CareersPage from './pages/careers/CareersPage';
 import JobApplicantsPage from './pages/careers/JobApplicantsPage';
-import EmployeeManagementPage from './pages/employees/EmployeeManagement';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
 import SettingsPage from './pages/settings/SettingsPage';
 
 const AppContent = () => {
@@ -61,6 +61,7 @@ const AppContent = () => {
       audit: { resource: 'audit', action: 'read' },
       careers: { resource: 'jobs', action: 'read' },
       'job-applicants': { resource: 'jobs', action: 'read' },
+      admins: { resource: 'employees', action: 'read' },
       employees: { resource: 'employees', action: 'read' },
       settings: { resource: 'settings', action: 'read' }
     };
@@ -133,9 +134,10 @@ const AppContent = () => {
       case 'audit':
         // @ts-ignore
         return <AuditLogsPage hasPermission={hasPermission} />;
+      case 'admins':
+        return <AdminUsersPage hasPermission={hasPermission} viewType="admins" />;
       case 'employees':
-        // @ts-ignore
-        return <EmployeeManagementPage hasPermission={hasPermission} />;
+        return <AdminUsersPage hasPermission={hasPermission} viewType="employees" />;
       case 'settings':
         return <SettingsPage />;
       default:

@@ -4,6 +4,7 @@ import com.urlshortener.model.ClickAnalytics;
 import com.urlshortener.model.ShortenedUrl;
 import com.urlshortener.repository.ClickAnalyticsRepository;
 import com.urlshortener.repository.ShortenedUrlRepository;
+import com.urlshortener.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
@@ -26,6 +27,9 @@ public class AnalyticsService {
 
     @Autowired(required = false)
     private ShortenedUrlRepository shortenedUrlRepository;
+
+    @Autowired(required = false)
+    private UserRepository userRepository;
 
     @Autowired(required = false)
     private CacheService cacheService;
@@ -281,19 +285,17 @@ public class AnalyticsService {
         Map<String, Object> analytics = new HashMap<>();
 
         // Overall Counters
-        long totalUrls = shortenedUrlRepository.count();
+        long totalUsers = (userRepository != null) ? userRepository.count() : 0;
+        long activeLinks = shortenedUrlRepository.count();
         long totalClicks = clickAnalyticsRepository.count();
-        // Determine active users (users who have created a link in last 30 days)
-        // This is an approximation. A better way would be users with clicks or logins.
-        long activeUsers = shortenedUrlRepository.findAll().stream()
-                .filter(u -> u.getCreatedAt().isAfter(LocalDateTime.now().minusDays(30)))
-                .map(ShortenedUrl::getUserId)
-                .distinct()
-                .count();
 
-        analytics.put("totalUrls", totalUrls);
+        // Calculate monthly revenue (placeholder - would need subscription data)
+        double monthlyRevenue = 0.0;
+
+        analytics.put("totalUsers", totalUsers);
+        analytics.put("activeLinks", activeLinks);
         analytics.put("totalClicks", totalClicks);
-        analytics.put("activeUsers", activeUsers);
+        analytics.put("monthlyRevenue", monthlyRevenue);
 
         // Top Performing Links (Global)
         // Since we don't have a direct repository method for top URLs global,

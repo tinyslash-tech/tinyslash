@@ -93,7 +93,7 @@ export const adminApiEndpoints = {
 
   // Domain Management
   domains: {
-    list: (params?: any) => adminApi.get('/../domains', { params }),
+    list: (params?: any) => adminApi.get('/../domains/admin/all', { params }),
     get: (id: string) => adminApi.get(`/../domains/${id}`),
     verify: (id: string) => adminApi.post(`/../domains/${id}/verify`),
     suspend: (id: string, reason: string) =>

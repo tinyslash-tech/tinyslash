@@ -40,7 +40,17 @@ public class AdminUserService {
         return adminUserRepository.findByNameOrEmailContainingIgnoreCase(searchTerm, pageable);
     }
 
-    public AdminUser createAdminUser(String email, String name, String password, AdminRole role, Set<String> permissions) {
+    public Page<AdminUser> findAllByRoles(java.util.List<String> roles, Pageable pageable) {
+        return adminUserRepository.findByRoleNameIn(roles, pageable);
+    }
+
+    public Page<AdminUser> searchByNameOrEmailAndRoles(String searchTerm, java.util.List<String> roles,
+            Pageable pageable) {
+        return adminUserRepository.findByNameOrEmailContainingIgnoreCaseAndRoleNameIn(searchTerm, roles, pageable);
+    }
+
+    public AdminUser createAdminUser(String email, String name, String password, AdminRole role,
+            Set<String> permissions) {
         if (adminUserRepository.existsByEmail(email)) {
             throw new RuntimeException("Admin user with email already exists");
         }
@@ -59,7 +69,7 @@ public class AdminUserService {
 
     public AdminUser updateAdminUser(String id, AdminUser updatedUser) {
         AdminUser existingUser = adminUserRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Admin user not found"));
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
 
         existingUser.setName(updatedUser.getName());
         existingUser.setRole(updatedUser.getRole());
@@ -72,7 +82,7 @@ public class AdminUserService {
 
     public void updatePassword(String id, String newPassword) {
         AdminUser adminUser = adminUserRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Admin user not found"));
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
 
         adminUser.setPasswordHash(passwordEncoder.encode(newPassword));
         adminUser.setUpdatedAt(LocalDateTime.now());
@@ -82,7 +92,7 @@ public class AdminUserService {
 
     public void toggleMfa(String id) {
         AdminUser adminUser = adminUserRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Admin user not found"));
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
 
         adminUser.setMfaEnabled(!adminUser.isMfaEnabled());
         adminUser.setUpdatedAt(LocalDateTime.now());
@@ -92,7 +102,7 @@ public class AdminUserService {
 
     public void deactivateAdminUser(String id) {
         AdminUser adminUser = adminUserRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Admin user not found"));
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
 
         adminUser.setActive(false);
         adminUser.setUpdatedAt(LocalDateTime.now());

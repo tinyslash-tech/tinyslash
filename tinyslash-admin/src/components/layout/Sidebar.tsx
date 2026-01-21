@@ -23,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage }) => {
     { id: 'users', label: 'Users', icon: Users, resource: 'users', action: 'read' },
     { id: 'teams', label: 'Teams', icon: Globe, resource: 'teams', action: 'read' },
     { id: 'domains', label: 'Domains', icon: Globe, resource: 'domains', action: 'read' },
+    { id: 'admins', label: 'Admins', icon: Shield, resource: 'employees', action: 'read' },
     { id: 'employees', label: 'Employees', icon: Users, resource: 'employees', action: 'read' },
     { id: 'settings', label: 'Settings', icon: Settings, resource: 'settings', action: 'read' },
     { id: 'links', label: 'Links', icon: Link, resource: 'links', action: 'read' },

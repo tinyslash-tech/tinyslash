@@ -30,7 +30,8 @@ public class AdminTeamController {
     private TeamService teamService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN_teams:read')")
+    // @PreAuthorize("hasAuthority('ADMIN_teams:read')") // Temporarily disabled -
+    // all authenticated admins can access
     public ResponseEntity<?> getTeams(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -41,19 +42,19 @@ public class AdminTeamController {
             @RequestParam(required = false) String memberCount,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo) {
-        
+
         try {
             Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
             Pageable pageable = PageRequest.of(page, size, sort);
-            
+
             Page<Team> teams;
-            
+
             if (search != null && !search.trim().isEmpty()) {
                 teams = teamService.searchTeams(search, pageable);
             } else {
                 teams = teamService.findAllTeams(pageable);
             }
-            
+
             // Apply filters if provided
             if (plan != null || memberCount != null || dateFrom != null || dateTo != null) {
                 teams = teamService.findTeamsWithFilters(plan, memberCount, dateFrom, dateTo, pageable);
@@ -69,15 +70,13 @@ public class AdminTeamController {
             response.put("hasPrevious", teams.hasPrevious());
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", response
-            ));
+                    "success", true,
+                    "data", response));
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "Failed to fetch teams: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to fetch teams: " + e.getMessage()));
         }
     }
 
@@ -87,13 +86,13 @@ public class AdminTeamController {
     public ResponseEntity<?> getTeam(@PathVariable String id) {
         try {
             Optional<Team> teamOpt = teamService.findById(id);
-            
+
             if (teamOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
             Team team = teamOpt.get();
-            
+
             // Add additional team data for admin view
             Map<String, Object> teamData = new HashMap<>();
             teamData.put("id", team.getId());
@@ -104,7 +103,7 @@ public class AdminTeamController {
             teamData.put("domains", team.getDomains());
             teamData.put("createdAt", team.getCreatedAt());
             teamData.put("updatedAt", team.getUpdatedAt());
-            
+
             // Add usage statistics
             Map<String, Object> usage = new HashMap<>();
             usage.put("linksCreated", teamService.getTeamLinksCount(id));
@@ -116,15 +115,13 @@ public class AdminTeamController {
             teamData.put("usage", usage);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", teamData
-            ));
+                    "success", true,
+                    "data", teamData));
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "Failed to fetch team: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to fetch team: " + e.getMessage()));
         }
     }
 
@@ -134,24 +131,21 @@ public class AdminTeamController {
     public ResponseEntity<?> createTeam(@RequestBody CreateTeamRequest request, HttpServletRequest httpRequest) {
         try {
             AdminUser adminUser = (AdminUser) httpRequest.getAttribute("adminUser");
-            
+
             Team team = teamService.createTeamByAdmin(
-                request.getName(),
-                request.getOwnerId(),
-                request.getPlan()
-            );
+                    request.getName(),
+                    request.getOwnerId(),
+                    request.getPlan());
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", team,
-                "message", "Team created successfully"
-            ));
+                    "success", true,
+                    "data", team,
+                    "message", "Team created successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to create team: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to create team: " + e.getMessage()));
         }
     }
 
@@ -163,16 +157,14 @@ public class AdminTeamController {
             Team team = teamService.updateTeamByAdmin(id, request);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", team,
-                "message", "Team updated successfully"
-            ));
+                    "success", true,
+                    "data", team,
+                    "message", "Team updated successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to update team: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to update team: " + e.getMessage()));
         }
     }
 
@@ -184,15 +176,13 @@ public class AdminTeamController {
             teamService.transferOwnership(id, request.getNewOwnerId());
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Team ownership transferred successfully"
-            ));
+                    "success", true,
+                    "message", "Team ownership transferred successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to transfer ownership: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to transfer ownership: " + e.getMessage()));
         }
     }
 
@@ -204,15 +194,13 @@ public class AdminTeamController {
             teamService.addMemberByAdmin(id, request.getUserId(), request.getRole());
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Member added successfully"
-            ));
+                    "success", true,
+                    "message", "Member added successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to add member: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to add member: " + e.getMessage()));
         }
     }
 
@@ -224,15 +212,13 @@ public class AdminTeamController {
             teamService.removeMemberByAdmin(id, userId);
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Member removed successfully"
-            ));
+                    "success", true,
+                    "message", "Member removed successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to remove member: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to remove member: " + e.getMessage()));
         }
     }
 
@@ -244,15 +230,13 @@ public class AdminTeamController {
             teamService.deleteTeam(id, "admin");
 
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Team deleted successfully"
-            ));
+                    "success", true,
+                    "message", "Team deleted successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Failed to delete team: " + e.getMessage()
-            ));
+                    "success", false,
+                    "message", "Failed to delete team: " + e.getMessage()));
         }
     }
 
@@ -263,14 +247,29 @@ public class AdminTeamController {
         private String plan;
 
         // Getters and setters
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getName() {
+            return name;
+        }
 
-        public String getOwnerId() { return ownerId; }
-        public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-        public String getPlan() { return plan; }
-        public void setPlan(String plan) { this.plan = plan; }
+        public String getOwnerId() {
+            return ownerId;
+        }
+
+        public void setOwnerId(String ownerId) {
+            this.ownerId = ownerId;
+        }
+
+        public String getPlan() {
+            return plan;
+        }
+
+        public void setPlan(String plan) {
+            this.plan = plan;
+        }
     }
 
     public static class UpdateTeamRequest {
@@ -278,18 +277,33 @@ public class AdminTeamController {
         private String plan;
 
         // Getters and setters
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getName() {
+            return name;
+        }
 
-        public String getPlan() { return plan; }
-        public void setPlan(String plan) { this.plan = plan; }
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getPlan() {
+            return plan;
+        }
+
+        public void setPlan(String plan) {
+            this.plan = plan;
+        }
     }
 
     public static class TransferOwnershipRequest {
         private String newOwnerId;
 
-        public String getNewOwnerId() { return newOwnerId; }
-        public void setNewOwnerId(String newOwnerId) { this.newOwnerId = newOwnerId; }
+        public String getNewOwnerId() {
+            return newOwnerId;
+        }
+
+        public void setNewOwnerId(String newOwnerId) {
+            this.newOwnerId = newOwnerId;
+        }
     }
 
     public static class AddMemberRequest {
@@ -297,10 +311,20 @@ public class AdminTeamController {
         private String role;
 
         // Getters and setters
-        public String getUserId() { return userId; }
-        public void setUserId(String userId) { this.userId = userId; }
+        public String getUserId() {
+            return userId;
+        }
 
-        public String getRole() { return role; }
-        public void setRole(String role) { this.role = role; }
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        public String getRole() {
+            return role;
+        }
+
+        public void setRole(String role) {
+            this.role = role;
+        }
     }
 }

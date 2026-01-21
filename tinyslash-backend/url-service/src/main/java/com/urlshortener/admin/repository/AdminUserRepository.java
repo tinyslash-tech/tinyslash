@@ -24,6 +24,13 @@ public interface AdminUserRepository extends MongoRepository<AdminUser, String> 
     @Query("{ 'role.name': ?0 }")
     List<AdminUser> findByRoleName(String roleName);
 
+    @Query("{ 'role.name': { $in: ?0 } }")
+    Page<AdminUser> findByRoleNameIn(List<String> roleNames, Pageable pageable);
+
+    @Query("{ '$and': [ { '$or': [ { 'name': { '$regex': ?0, '$options': 'i' } }, { 'email': { '$regex': ?0, '$options': 'i' } } ] }, { 'role.name': { $in: ?1 } } ] }")
+    Page<AdminUser> findByNameOrEmailContainingIgnoreCaseAndRoleNameIn(String searchTerm, List<String> roleNames,
+            Pageable pageable);
+
     @Query("{ '$or': [ " +
             "{ 'name': { '$regex': ?0, '$options': 'i' } }, " +
             "{ 'email': { '$regex': ?0, '$options': 'i' } } " +

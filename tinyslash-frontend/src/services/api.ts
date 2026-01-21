@@ -36,7 +36,7 @@ const FILE_BASE_URL = API_BASE_URL;
 console.log('🔌 API Connected to:', API_BASE_URL);
 
 // Create axios instances
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
 });

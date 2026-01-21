@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
 import { useUpgradeModal } from '../context/ModalContext';
 import { subscriptionService, UserPlanInfo } from '../services/subscriptionService';
+import { getMyDomains, addDomain, verifyDomain, deleteDomain } from '../services/domainService'; // Removed CustomDomain from here as it's defined locally
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import CustomDomainOnboarding from './CustomDomainOnboarding';

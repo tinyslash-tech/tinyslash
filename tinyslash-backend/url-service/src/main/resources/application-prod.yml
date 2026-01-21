@@ -9,15 +9,7 @@ spring:
       database: pebly-database
       auto-index-creation: false
 
-  # Prod specific CORS
-  web:
-    cors:
-      allowed-origins:
-        - "https://tinyslash.com"
-        - "https://admin.tinyslash.com"
-        - "https://tinyslash-backend-prod.onrender.com"
-        - "https://*.vercel.app"
-      allow-credentials: true
+  # CORS handling moved to SecurityConfig.java
 
 app:
   frontend:

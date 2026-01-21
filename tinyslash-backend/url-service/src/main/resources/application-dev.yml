@@ -9,17 +9,7 @@ spring:
       database: tinyslash_dev
       auto-index-creation: true
 
-  # Dev specific CORS
-  web:
-    cors:
-      allowed-origins:
-        - "http://localhost:3000"
-        - "http://localhost:3001"
-        - "https://dev.tinyslash.com"
-        - "https://api-dev.tinyslash.com"
-        - "https://tinyslash-backend-dev.onrender.com"
-        - "https://*.vercel.app"
-      allow-credentials: true
+  # CORS handling moved to SecurityConfig.java
 
 app:
   frontend:

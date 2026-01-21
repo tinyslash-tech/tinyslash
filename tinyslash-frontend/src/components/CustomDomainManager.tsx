@@ -236,7 +236,28 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
     }
   };
 
-  const addDomainHandler = async () => {
+  // Removed local addDomain, verifyDomain, deleteDomain to avoid shadowing imports
+
+  // Renaming to avoid conflict if necessary, but since we removed the locals, handlers can use imports directly.
+
+  // Note: The handlers defined earlier (addDomainHandler, verifyDomainHandler, deleteDomainHandler) 
+  // already attempt to use the service functions. 
+  // We just need to make sure they are using the IMPORTED names.
+
+  /* 
+     Previously I had local functions:
+     const addDomain = ...
+     const verifyDomain = ...
+     const deleteDomain = ...
+     
+     These must be DELETED so that `addDomain(...)` calls the import.
+  */
+
+  // Re-implementing handlers correctly using service calls:
+
+  // Handler for adding a domain - uses imported addDomain
+  const handleSubmitAddDomain = async () => {
+    // This logic was in addDomainHandler in previous step
     if (!newDomain.trim()) return;
 
     const domainName = newDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -463,22 +484,20 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
     }
   };
 
-  const verifyDomainHandler = async (domainId: string) => {
-    // Use logic above
-    const domain = domains.find(d => d.id === domainId);
-    if (domain) verifyDomainReliably(domain);
-  };
-
   // Note: verifyDomain function name clashes with import. Renaming handler to verifyDomainHandler is safer or use imported name directly inside function differently.
   // Actually, wait, the `verifyDomain` function inside component (line 563) handles verification. I should rename it or replace its body.
 
-  const handleVerifyClick = (domainId: string) => {
+  // Handler for verification button
+  const handleVerifyDomain = async (domainId: string) => {
     const domain = domains.find(d => d.id === domainId);
-    if (domain) verifyDomainReliably(domain);
+    if (domain) {
+      // Use the reliable verification method which includes client-side DNS check
+      verifyDomainReliably(domain);
+    }
   };
 
 
-  const deleteDomainHandler = async (domainId: string) => {
+  const handleDeleteDomain = async (domainId: string) => {
     const domain = domains.find(d => d.id === domainId);
     if (!domain) return;
 
@@ -492,6 +511,7 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
     }
 
     try {
+      // Use imported deleteDomain
       await deleteDomain(domain.domainName, user?.id || '');
 
       // Remove from local state after successful deletion
@@ -506,21 +526,10 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
 
   const refreshDomainStatus = async (domainId: string) => {
     try {
-      // This function would ideally call a domainService.getDomainStatus(domainId)
-      // For now, we'll simulate a refresh by reloading all domains or calling a specific status endpoint if available.
-      // As per the prompt, no specific service function was provided for this.
-      // If a specific endpoint exists, it would be:
-      // const response = await domainService.getDomainStatus(domainId);
-      // if (response.success) {
-      //   setDomains(prev => prev.map(d => 
-      //     d.id === domainId ? { ...d, ...response.domain } : d
-      //   ));
-      // }
-      // For now, we'll just reload all domains to get the latest status.
+      // Just reload all for now as per previous logic
       loadDomainsFromBackend();
     } catch (error) {
       console.error('Failed to refresh domain status:', error);
-      toast.error('Failed to refresh domain status.');
     }
   };
 

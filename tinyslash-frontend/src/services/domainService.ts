@@ -25,7 +25,7 @@ export interface CustomDomain {
   updatedAt: string;
 }
 
-export const getMyDomains = async (ownerType?: string, ownerId?: string): Promise<{ success: boolean; domains: CustomDomain[]; count: number }> => {
+export const getMyDomains = async (ownerType?: string, ownerId?: string): Promise<{ success: boolean; domains: CustomDomain[]; count: number; message?: string; repositoryStatus?: string }> => {
   const params = new URLSearchParams();
   if (ownerType) params.append('ownerType', ownerType);
   if (ownerId) params.append('ownerId', ownerId);

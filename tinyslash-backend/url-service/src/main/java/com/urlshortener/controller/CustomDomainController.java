@@ -18,7 +18,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/domains")
-@CrossOrigin(origins = "*")
 public class CustomDomainController {
 
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CustomDomainController.class);

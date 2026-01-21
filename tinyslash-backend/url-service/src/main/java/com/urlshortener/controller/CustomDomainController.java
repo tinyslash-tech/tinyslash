@@ -302,7 +302,7 @@ public class CustomDomainController {
 
             // Remove from Cloudflare if verified
             if (customDomain.isVerified()) {
-                cloudflareService.removeDomainFromWorker(domain);
+                cloudflareService.deleteCustomHostname(customDomain);
             }
 
             // Delete from database

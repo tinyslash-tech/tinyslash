@@ -19,6 +19,11 @@ app:
   admin:
     enabled: true
 
+
+cloudflare:
+  saas:
+    fallback-origin: api.tinyslash.com
+
 logging:
   level:
     com.urlshortener: INFO

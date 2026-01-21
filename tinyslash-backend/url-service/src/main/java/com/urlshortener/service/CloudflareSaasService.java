@@ -119,24 +119,23 @@ public class CloudflareSaasService {
             String errorBody = e.getResponseBodyAsString();
             logger.error("❌ Cloudflare API Error (Status {}): {}", e.getStatusCode(), errorBody);
 
-            // Try to parse the error message from JSON body
             String friendlyError = "Cloudflare error: " + e.getStatusCode();
             try {
-                // quick and dirty regex or object mapper if available, but Map is easier if we
-                // could parse the body.
-                // Since errorBody is String, we can't cast to Map directly without
-                // ObjectMapper.
-                // Assuming standard Cloudflare error structure:
-                // {"success":false,"errors":[{"code":1000,"message":"Invalid..."}]}
-                if (errorBody.contains("\"message\":\"")) {
-                    int start = errorBody.indexOf("\"message\":\"") + 11;
-                    int end = errorBody.indexOf("\"", start);
-                    if (end > start) {
-                        friendlyError = errorBody.substring(start, end);
-                    }
+                // Robust regex to find "message": "The specific error"
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\"message\"\\s*:\\s*\"([^\"]+)\"");
+                java.util.regex.Matcher matcher = pattern.matcher(errorBody);
+
+                if (matcher.find()) {
+                    friendlyError = "Cloudflare: " + matcher.group(1);
+                } else {
+                    // If we can't parse it, show the raw body (truncated) so we can debug
+                    friendlyError = "Cloudflare: "
+                            + (errorBody.length() > 100 ? errorBody.substring(0, 100) + "..." : errorBody);
                 }
             } catch (Exception parseEx) {
                 logger.warn("Failed to parse Cloudflare error body", parseEx);
+                // Fallback to raw body
+                friendlyError = "CF Error: " + (errorBody.length() > 50 ? errorBody.substring(0, 50) : errorBody);
             }
 
             domain.setSslError(friendlyError);

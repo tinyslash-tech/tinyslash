@@ -115,6 +115,33 @@ public class CloudflareSaasService {
                 return false;
             }
 
+        } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
+            String errorBody = e.getResponseBodyAsString();
+            logger.error("❌ Cloudflare API Error (Status {}): {}", e.getStatusCode(), errorBody);
+
+            // Try to parse the error message from JSON body
+            String friendlyError = "Cloudflare error: " + e.getStatusCode();
+            try {
+                // quick and dirty regex or object mapper if available, but Map is easier if we
+                // could parse the body.
+                // Since errorBody is String, we can't cast to Map directly without
+                // ObjectMapper.
+                // Assuming standard Cloudflare error structure:
+                // {"success":false,"errors":[{"code":1000,"message":"Invalid..."}]}
+                if (errorBody.contains("\"message\":\"")) {
+                    int start = errorBody.indexOf("\"message\":\"") + 11;
+                    int end = errorBody.indexOf("\"", start);
+                    if (end > start) {
+                        friendlyError = errorBody.substring(start, end);
+                    }
+                }
+            } catch (Exception parseEx) {
+                logger.warn("Failed to parse Cloudflare error body", parseEx);
+            }
+
+            domain.setSslError(friendlyError);
+            domainRepository.save(domain);
+            return false;
         } catch (Exception e) {
             logger.error("❌ Failed to create custom hostname for: {}", domain.getDomainName(), e);
             domain.setSslError("API error: " + e.getMessage());

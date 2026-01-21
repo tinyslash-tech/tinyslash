@@ -21,10 +21,17 @@ const getApiUrl = () => {
   // Default to environment variable or localhost
   let envUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
 
-  // Ensure API URL ends with /api (unless it is a relative path like '/api')
+  // Remove trailing slash if present
+  if (envUrl.endsWith('/')) {
+    envUrl = envUrl.slice(0, -1);
+  }
+
+  // Ensure API URL ends with /api (unless it is a relative path like '/api' which we assume is correct)
   if (envUrl.startsWith('http') && !envUrl.endsWith('/api')) {
     envUrl = `${envUrl}/api`;
   }
+
+  console.log('🔄 getApiUrl resolved to:', envUrl); // Debug log
 
   return envUrl;
 };

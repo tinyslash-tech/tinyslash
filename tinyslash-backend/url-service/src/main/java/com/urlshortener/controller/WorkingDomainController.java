@@ -21,19 +21,19 @@ import java.util.stream.Collectors;
  * Working Domain Controller - Minimal implementation that actually works
  * This replaces the complex DomainController with a simple, functional version
  */
-@RestController
-@RequestMapping("/api/v1/domains")
-@CrossOrigin(origins = "*")
+// @RestController
+// @RequestMapping("/api/v1/domains")
+// @CrossOrigin(origins = "*")
 public class WorkingDomainController {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(WorkingDomainController.class);
-    
+
     @Autowired(required = false)
     private DomainRepository domainRepository;
-    
+
     @Autowired(required = false)
     private UserRepository userRepository;
-    
+
     /**
      * Get domains for current user - WORKING VERSION
      */
@@ -43,31 +43,31 @@ public class WorkingDomainController {
             @RequestParam(required = false) String ownerId,
             Authentication authentication,
             HttpServletRequest request) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             logger.info("=== GET /my domains request ===");
-            
+
             if (authentication == null) {
                 logger.warn("No authentication provided");
                 response.put("success", false);
                 response.put("message", "Authentication required");
                 return ResponseEntity.status(401).body(response);
             }
-            
+
             // Get user ID from authentication (JWT filter now sets this to user ID)
             String currentUserId = authentication.getName();
             logger.info("User ID from auth: {}", currentUserId);
-            
+
             // Default to user's personal domains
             if (ownerType == null) {
                 ownerType = "USER";
                 ownerId = currentUserId;
             }
-            
+
             logger.info("Looking for domains: ownerType={}, ownerId={}", ownerType, ownerId);
-            
+
             if (domainRepository == null) {
                 logger.warn("DomainRepository is null - returning empty list");
                 response.put("success", true);
@@ -76,7 +76,7 @@ public class WorkingDomainController {
                 response.put("repositoryStatus", "not_available");
                 return ResponseEntity.ok(response);
             }
-            
+
             // Try to get domains from repository
             List<Domain> domains;
             try {
@@ -90,32 +90,32 @@ public class WorkingDomainController {
                 response.put("error", e.getMessage());
                 return ResponseEntity.ok(response);
             }
-            
+
             // Convert to simple response format
             List<Map<String, Object>> domainResponses = domains.stream()
-                .map(this::convertDomainToResponse)
-                .collect(Collectors.toList());
-            
+                    .map(this::convertDomainToResponse)
+                    .collect(Collectors.toList());
+
             response.put("success", true);
             response.put("domains", domainResponses);
             response.put("count", domains.size());
             response.put("userId", currentUserId);
             response.put("ownerType", ownerType);
             response.put("ownerId", ownerId);
-            
+
             logger.info("Successfully returning {} domains for user {}", domains.size(), currentUserId);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             logger.error("Unexpected error in getMyDomains", e);
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());
             response.put("error", e.getClass().getSimpleName());
-            
+
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Add a domain - WORKING VERSION
      */
@@ -124,37 +124,37 @@ public class WorkingDomainController {
             @RequestBody Map<String, Object> requestBody,
             Authentication authentication,
             HttpServletRequest request) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             logger.info("=== POST /domains request ===");
-            
+
             if (authentication == null) {
                 response.put("success", false);
                 response.put("message", "Authentication required");
                 return ResponseEntity.status(401).body(response);
             }
-            
+
             // Get user ID from authentication (JWT filter now sets this to user ID)
             String currentUserId = authentication.getName();
             String domainName = (String) requestBody.get("domainName");
             String ownerType = (String) requestBody.getOrDefault("ownerType", "USER");
-            
+
             logger.info("Adding domain: {} for user: {}", domainName, currentUserId);
-            
+
             if (domainName == null || domainName.trim().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Domain name is required");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             if (domainRepository == null) {
                 response.put("success", false);
                 response.put("message", "Domain repository not available");
                 return ResponseEntity.status(500).body(response);
             }
-            
+
             // Check if user has permission (basic check)
             if (userRepository != null) {
                 try {
@@ -163,7 +163,7 @@ public class WorkingDomainController {
                         var user = userOpt.get();
                         String plan = user.getSubscriptionPlan();
                         logger.info("User {} has plan: {}", currentUserId, plan);
-                        
+
                         if (plan == null || plan.equals("FREE")) {
                             response.put("success", false);
                             response.put("message", "Custom domains require a PRO or BUSINESS plan");
@@ -175,10 +175,10 @@ public class WorkingDomainController {
                     logger.warn("Could not check user plan: {}", e.getMessage());
                 }
             }
-            
+
             // Clean domain name
             domainName = domainName.trim().toLowerCase();
-            
+
             // Check if domain already exists
             try {
                 if (domainRepository.existsByDomainName(domainName)) {
@@ -189,38 +189,38 @@ public class WorkingDomainController {
             } catch (Exception e) {
                 logger.warn("Could not check domain existence: {}", e.getMessage());
             }
-            
+
             // Create domain
             String verificationToken = "verify_" + System.currentTimeMillis();
             Domain domain = new Domain(domainName, ownerType, currentUserId, verificationToken);
-            
+
             try {
                 Domain savedDomain = domainRepository.save(domain);
                 logger.info("Domain saved successfully: {}", savedDomain.getId());
-                
+
                 response.put("success", true);
                 response.put("domain", convertDomainToResponse(savedDomain));
                 response.put("message", "Domain reserved successfully");
-                
+
                 return ResponseEntity.ok(response);
-                
+
             } catch (Exception e) {
                 logger.error("Failed to save domain", e);
                 response.put("success", false);
                 response.put("message", "Failed to save domain: " + e.getMessage());
                 return ResponseEntity.status(500).body(response);
             }
-            
+
         } catch (Exception e) {
             logger.error("Unexpected error in addDomain", e);
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());
             response.put("error", e.getClass().getSimpleName());
-            
+
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Get verified domains only
      */
@@ -229,43 +229,43 @@ public class WorkingDomainController {
             @RequestParam(required = false) String ownerType,
             @RequestParam(required = false) String ownerId,
             Authentication authentication) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             if (authentication == null) {
                 response.put("success", false);
                 response.put("message", "Authentication required");
                 return ResponseEntity.status(401).body(response);
             }
-            
+
             String currentUserId = authentication.getName();
-            
+
             if (ownerType == null) {
                 ownerType = "USER";
                 ownerId = currentUserId;
             }
-            
+
             if (domainRepository == null) {
                 response.put("success", true);
                 response.put("domains", List.of());
                 response.put("message", "Domain repository not available");
                 return ResponseEntity.ok(response);
             }
-            
+
             try {
                 List<Domain> domains = domainRepository.findVerifiedDomainsByOwner(ownerId, ownerType);
-                
+
                 List<Map<String, Object>> domainResponses = domains.stream()
-                    .map(this::convertDomainToResponse)
-                    .collect(Collectors.toList());
-                
+                        .map(this::convertDomainToResponse)
+                        .collect(Collectors.toList());
+
                 response.put("success", true);
                 response.put("domains", domainResponses);
                 response.put("count", domains.size());
-                
+
                 return ResponseEntity.ok(response);
-                
+
             } catch (Exception e) {
                 logger.error("Failed to get verified domains", e);
                 response.put("success", true);
@@ -273,55 +273,54 @@ public class WorkingDomainController {
                 response.put("message", "Query failed - returning empty list");
                 return ResponseEntity.ok(response);
             }
-            
+
         } catch (Exception e) {
             logger.error("Unexpected error in getVerifiedDomains", e);
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());
-            
+
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     /**
      * Health check endpoint
      */
     @GetMapping("/health")
     public ResponseEntity<?> healthCheck() {
         Map<String, Object> response = new HashMap<>();
-        
+
         response.put("success", true);
         response.put("service", "WorkingDomainController");
         response.put("status", "healthy");
         response.put("timestamp", LocalDateTime.now().toString());
         response.put("repositoryAvailable", domainRepository != null);
         response.put("userRepositoryAvailable", userRepository != null);
-        
+
         if (domainRepository != null) {
             try {
                 long count = domainRepository.count();
                 response.put("totalDomains", count);
                 response.put("repositoryWorking", true);
-                
+
                 // Additional health checks
                 long reservedCount = domainRepository.countByOwnerAndStatus("", "", "RESERVED");
                 long verifiedCount = domainRepository.countByOwnerAndStatus("", "", "VERIFIED");
-                
+
                 response.put("domainsByStatus", Map.of(
-                    "total", count,
-                    "reserved", reservedCount,
-                    "verified", verifiedCount
-                ));
-                
+                        "total", count,
+                        "reserved", reservedCount,
+                        "verified", verifiedCount));
+
             } catch (Exception e) {
                 response.put("repositoryError", e.getMessage());
                 response.put("repositoryWorking", false);
             }
         }
-        
+
         return ResponseEntity.ok(response);
     }
-    
+
     /**
      * Verify domain endpoint - DNS verification and status update
      */
@@ -330,28 +329,28 @@ public class WorkingDomainController {
             @RequestParam String domainId,
             @RequestBody(required = false) Map<String, Object> requestBody,
             Authentication authentication) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             logger.info("=== POST /verify domain request ===");
             logger.info("Domain ID: {}", domainId);
-            
+
             if (authentication == null) {
                 response.put("success", false);
                 response.put("message", "Authentication required");
                 return ResponseEntity.status(401).body(response);
             }
-            
+
             String currentUserId = authentication.getName();
             logger.info("User ID: {}", currentUserId);
-            
+
             if (domainRepository == null) {
                 response.put("success", false);
                 response.put("message", "Domain repository not available");
                 return ResponseEntity.status(500).body(response);
             }
-            
+
             // Find the domain
             Domain domain = domainRepository.findById(domainId).orElse(null);
             if (domain == null) {
@@ -359,19 +358,20 @@ public class WorkingDomainController {
                 response.put("message", "Domain not found");
                 return ResponseEntity.status(404).body(response);
             }
-            
+
             // Check ownership
             if (!domain.getOwnerId().equals(currentUserId)) {
                 response.put("success", false);
                 response.put("message", "Access denied - not domain owner");
                 return ResponseEntity.status(403).body(response);
             }
-            
+
             logger.info("Verifying domain: {} for user: {}", domain.getDomainName(), currentUserId);
-            
-            // Perform DNS verification (simplified - in production you'd do actual DNS lookup)
+
+            // Perform DNS verification (simplified - in production you'd do actual DNS
+            // lookup)
             boolean dnsVerified = true; // For now, assume DNS is correct since frontend already checked
-            
+
             if (dnsVerified) {
                 // Update domain status
                 domain.setStatus("VERIFIED");
@@ -379,41 +379,41 @@ public class WorkingDomainController {
                 domain.setVerificationError(null);
                 domain.setLastVerificationAttempt(LocalDateTime.now());
                 domain.setUpdatedAt(LocalDateTime.now());
-                
+
                 // Save updated domain
                 Domain savedDomain = domainRepository.save(domain);
                 logger.info("Domain {} verified successfully", domain.getDomainName());
-                
+
                 response.put("success", true);
                 response.put("verified", true);
                 response.put("message", "Domain verified successfully");
                 response.put("domain", convertDomainToResponse(savedDomain));
-                
+
                 return ResponseEntity.ok(response);
-                
+
             } else {
                 // DNS verification failed
                 domain.setVerificationAttempts(domain.getVerificationAttempts() + 1);
                 domain.setVerificationError("DNS verification failed - CNAME record not found or incorrect");
                 domain.setLastVerificationAttempt(LocalDateTime.now());
                 domain.setUpdatedAt(LocalDateTime.now());
-                
+
                 domainRepository.save(domain);
-                
+
                 response.put("success", false);
                 response.put("verified", false);
                 response.put("message", "DNS verification failed");
                 response.put("error", "CNAME record not found or points to wrong target");
-                
+
                 return ResponseEntity.ok(response);
             }
-            
+
         } catch (Exception e) {
             logger.error("Verification failed for domain: {}", domainId, e);
             response.put("success", false);
             response.put("message", "Verification failed: " + e.getMessage());
             response.put("error", e.getClass().getSimpleName());
-            
+
             return ResponseEntity.status(500).body(response);
         }
     }
@@ -424,68 +424,66 @@ public class WorkingDomainController {
     @GetMapping("/db-verify")
     public ResponseEntity<?> verifyDatabase(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             if (authentication == null) {
                 response.put("success", false);
                 response.put("message", "Authentication required");
                 return ResponseEntity.status(401).body(response);
             }
-            
+
             String currentUserId = authentication.getName();
-            
+
             if (domainRepository == null) {
                 response.put("success", false);
                 response.put("message", "Domain repository not available");
                 return ResponseEntity.status(500).body(response);
             }
-            
+
             // Database connectivity tests
             long totalDomains = domainRepository.count();
             List<Domain> userDomains = domainRepository.findByOwnerIdAndOwnerType(currentUserId, "USER");
             List<Domain> allDomains = domainRepository.findAll();
-            
+
             // Sample domain data for verification
             List<Map<String, Object>> sampleDomains = allDomains.stream()
-                .limit(5)
-                .map(domain -> {
-                    Map<String, Object> domainMap = new HashMap<>();
-                    domainMap.put("id", domain.getId());
-                    domainMap.put("domainName", domain.getDomainName());
-                    domainMap.put("ownerId", domain.getOwnerId());
-                    domainMap.put("status", domain.getStatus());
-                    domainMap.put("createdAt", domain.getCreatedAt().toString());
-                    return domainMap;
-                })
-                .collect(Collectors.toList());
-            
+                    .limit(5)
+                    .map(domain -> {
+                        Map<String, Object> domainMap = new HashMap<>();
+                        domainMap.put("id", domain.getId());
+                        domainMap.put("domainName", domain.getDomainName());
+                        domainMap.put("ownerId", domain.getOwnerId());
+                        domainMap.put("status", domain.getStatus());
+                        domainMap.put("createdAt", domain.getCreatedAt().toString());
+                        return domainMap;
+                    })
+                    .collect(Collectors.toList());
+
             response.put("success", true);
             response.put("databaseStats", Map.of(
-                "totalDomains", totalDomains,
-                "userDomains", userDomains.size(),
-                "currentUserId", currentUserId
-            ));
+                    "totalDomains", totalDomains,
+                    "userDomains", userDomains.size(),
+                    "currentUserId", currentUserId));
             response.put("sampleDomains", sampleDomains);
             response.put("repositoryMethods", Map.of(
-                "findByOwnerIdAndOwnerType", "Available",
-                "findVerifiedDomainsByOwner", "Available",
-                "existsByDomainName", "Available",
-                "save", "Available",
-                "count", "Available"
-            ));
-            
+                    "findByOwnerIdAndOwnerType", "Available",
+                    "findVerifiedDomainsByOwner", "Available",
+                    "existsByDomainName", "Available",
+                    "save", "Available",
+                    "count", "Available"));
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             logger.error("Database verification failed", e);
             response.put("success", false);
             response.put("message", "Database verification failed: " + e.getMessage());
             response.put("error", e.getClass().getSimpleName());
-            
+
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     // Helper method to convert Domain to response format
     private Map<String, Object> convertDomainToResponse(Domain domain) {
         Map<String, Object> response = new HashMap<>();

@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/domains")
+@RequestMapping("/api/v1/domains")
 @CrossOrigin(origins = "*")
 public class CustomDomainController {
 
@@ -25,7 +25,7 @@ public class CustomDomainController {
     private DomainRepository domainRepository;
 
     @Autowired
-    private CloudflareService cloudflareService;
+    private CloudflareSaasService cloudflareService;
 
     @Autowired
     private DomainVerificationService verificationService;
@@ -33,23 +33,30 @@ public class CustomDomainController {
     @Value("${app.domain.proxy-target:tinyslash.com}")
     private String proxyTarget;
 
-    @PostMapping("/add")
-    public ResponseEntity<Map<String, Object>> addCustomDomain(@RequestBody Map<String, Object> request) {
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> addCustomDomain(
+            @RequestBody Map<String, Object> request,
+            org.springframework.security.core.Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            String domain = (String) request.get("domain");
-            String userId = (String) request.get("userId");
+            if (authentication == null) {
+                response.put("success", false);
+                response.put("message", "Authentication required");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String userId = authentication.getName();
+            String domain = (String) request.get("domainName");
+
+            if (domain == null || domain.trim().isEmpty()) {
+                // Fallback for older clients sending 'domain'
+                domain = (String) request.get("domain");
+            }
 
             if (domain == null || domain.trim().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Domain is required");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            if (userId == null || userId.trim().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "User ID is required");
                 return ResponseEntity.badRequest().body(response);
             }
 
@@ -85,10 +92,10 @@ public class CustomDomainController {
 
             response.put("success", true);
             response.put("message", "Domain added successfully. Please configure DNS.");
-            response.put("domain", domain);
+            response.put("domain", customDomain); // Return full object!
             response.put("status", "pending");
             response.put("dnsInstructions", dnsInstructions);
-            response.put("verificationUrl", "/api/domains/verify/" + domain);
+            response.put("verificationUrl", "/api/v1/domains/verify?domainId=" + customDomain.getId());
 
             return ResponseEntity.ok(response);
 
@@ -99,25 +106,106 @@ public class CustomDomainController {
         }
     }
 
-    @PostMapping("/verify/{domain}")
-    public ResponseEntity<Map<String, Object>> verifyDomain(@PathVariable String domain) {
+    @GetMapping("/my")
+    public ResponseEntity<Map<String, Object>> getMyDomains(
+            @RequestParam(required = false) String ownerType,
+            @RequestParam(required = false) String ownerId,
+            org.springframework.security.core.Authentication authentication) {
+
         Map<String, Object> response = new HashMap<>();
 
         try {
+            if (authentication == null) {
+                response.put("success", false);
+                response.put("message", "Authentication required");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String currentUserId = authentication.getName();
+
+            // Default to user's personal domains if not specified
+            if (ownerType == null) {
+                ownerType = "USER";
+                ownerId = currentUserId;
+            } else if ("USER".equals(ownerType) && (ownerId == null || ownerId.isEmpty())) {
+                ownerId = currentUserId;
+            }
+            // Add security check: ensure user can only access their own domains or team
+            // domains they belong to
+            if ("USER".equals(ownerType) && !ownerId.equals(currentUserId)) {
+                response.put("success", false);
+                response.put("message", "Unauthorized access to other user's domains");
+                return ResponseEntity.status(403).body(response);
+            }
+
+            List<Domain> domains = domainRepository.findByOwnerIdAndOwnerType(ownerId, ownerType);
+
+            // Using the same simple map logic as before, or could use DTO
+            List<Map<String, Object>> domainList = domains.stream().map(d -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", d.getId());
+                map.put("domainName", d.getDomainName()); // Frontend expects domainName
+                map.put("status", d.getStatus());
+                map.put("sslStatus", d.getSslStatus());
+                map.put("isVerified", d.isVerified());
+                map.put("createdAt", d.getCreatedAt());
+                map.put("verificationToken", d.getVerificationToken());
+                map.put("cnameTarget", d.getCnameTarget());
+                map.put("verificationError", d.getVerificationError());
+                return map;
+            }).collect(Collectors.toList());
+
+            response.put("success", true);
+            response.put("domains", domainList);
+            response.put("count", domainList.size());
+            response.put("userId", currentUserId);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error listing domains: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<Map<String, Object>> verifyDomain(
+            @RequestParam String domainId,
+            org.springframework.security.core.Authentication authentication) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            if (authentication == null) {
+                response.put("success", false);
+                response.put("message", "Authentication required");
+                return ResponseEntity.status(401).body(response);
+            }
+
             // Get domain from database
-            Optional<Domain> domainOpt = domainRepository.findByDomainName(domain);
+            Optional<Domain> domainOpt = domainRepository.findById(domainId);
 
             if (domainOpt.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Domain not found");
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(404).body(response);
             }
 
             Domain customDomain = domainOpt.get();
+            String domainName = customDomain.getDomainName();
+
+            // Check ownership
+            if (!customDomain.getOwnerId().equals(authentication.getName())) {
+                response.put("success", false);
+                response.put("message", "Unauthorized");
+                return ResponseEntity.status(403).body(response);
+            }
+
             customDomain.setLastVerificationAttempt(LocalDateTime.now());
 
             // Step 1: Verify DNS
-            boolean dnsValid = verificationService.verifyDNS(domain);
+            boolean dnsValid = verificationService.verifyDNS(domainName);
 
             if (!dnsValid) {
                 customDomain.setStatus(Domain.DomainStatus.PENDING);
@@ -127,49 +215,50 @@ public class CustomDomainController {
 
                 response.put("success", false);
                 response.put("message", "DNS not configured correctly");
-                response.put("domain", domain);
+                response.put("domain", customDomain);
+                response.put("verified", false); // Frontend looks for this
                 response.put("status", "dns_pending");
-                response.put("expectedTarget", proxyTarget);
 
                 Map<String, Object> troubleshooting = new HashMap<>();
                 troubleshooting.put("step1",
-                        "Add CNAME record: " + verificationService.extractSubdomain(domain) + " → " + proxyTarget);
-                troubleshooting.put("step2", "Wait 5-15 minutes for DNS propagation");
-                troubleshooting.put("step3", "Click verify again");
+                        "Add CNAME record: " + verificationService.extractSubdomain(domainName) + " -> " + proxyTarget);
+                troubleshooting.put("step2", "Wait propagation");
                 response.put("troubleshooting", troubleshooting);
 
                 return ResponseEntity.ok(response);
             }
 
-            // Step 2: Add to Cloudflare Worker (AUTOMATED)
-            System.out.println("🚀 Adding domain to Cloudflare Worker: " + domain);
-            boolean addedToCloudflare = cloudflareService.addDomainToWorker(domain);
+            // Step 2: Add to Cloudflare (SaaS Custom Hostname)
+            System.out.println("🚀 Adding domain to Cloudflare Custom Hostnames: " + domainName);
+            // Use CloudflareSaasService to provision SSL
+            boolean addedToCloudflare = cloudflareService.createCustomHostname(customDomain);
 
             if (addedToCloudflare) {
-                // Success! Domain is verified and active
+                // Success! Domain is verified and status update handled in service, but we
+                // double check
                 customDomain.markAsVerified();
-                customDomain.markSslActive("CLOUDFLARE");
+                // SSL Status is set inside createCustomHostname
                 domainRepository.save(customDomain);
 
-                System.out.println("✅ Domain verified and activated: " + domain);
+                System.out.println("✅ Domain verified and activated: " + domainName);
 
                 response.put("success", true);
-                response.put("message", "Domain verified successfully! Your custom domain is now active.");
-                response.put("domain", domain);
+                response.put("message", "Domain verified successfully! SSL provisioning started.");
+                response.put("domain", customDomain);
+                response.put("verified", true);
                 response.put("status", "verified");
-                response.put("isActive", true);
-                response.put("sslStatus", "active");
+                response.put("sslStatus", customDomain.getSslStatus());
 
             } else {
                 // Cloudflare API failed
                 customDomain.setStatus(Domain.DomainStatus.ERROR);
-                customDomain.setVerificationError("Failed to add domain to Cloudflare");
+                // Error message set in service
                 customDomain.incrementVerificationAttempts();
                 domainRepository.save(customDomain);
 
                 response.put("success", false);
-                response.put("message", "DNS verified but failed to activate domain. Please contact support.");
-                response.put("domain", domain);
+                response.put("message", "DNS verified but failed to provision SSL. " + customDomain.getSslError());
+                response.put("domain", customDomain);
                 response.put("status", "cloudflare_failed");
             }
 
@@ -178,43 +267,15 @@ public class CustomDomainController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Verification failed: " + e.getMessage());
-            response.put("domain", domain);
-            response.put("status", "verification_failed");
             return ResponseEntity.status(500).body(response);
         }
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> listDomains(@RequestParam String userId) {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            List<Domain> domains = domainRepository.findByOwnerIdAndOwnerType(userId, "USER");
-
-            List<Map<String, Object>> domainList = domains.stream().map(domain -> {
-                Map<String, Object> domainMap = new HashMap<>();
-                domainMap.put("domain", domain.getDomainName());
-                domainMap.put("status", domain.getStatus());
-                domainMap.put("sslStatus", domain.getSslStatus());
-                domainMap.put("isVerified", domain.isVerified());
-                domainMap.put("createdAt", domain.getCreatedAt());
-                domainMap.put("lastVerificationAttempt", domain.getLastVerificationAttempt());
-                domainMap.put("verificationError", domain.getVerificationError());
-                domainMap.put("cnameTarget", domain.getCnameTarget());
-                return domainMap;
-            }).collect(Collectors.toList());
-
-            response.put("success", true);
-            response.put("domains", domainList);
-            response.put("count", domainList.size());
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Error listing domains: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
-        }
+    // Deprecated/Legacy method - kept but renamed or could be removed if we are
+    // sure no one uses it
+    // Original /list endpoint logic is now in /my
+    public ResponseEntity<Map<String, Object>> listDomainsLegacy(@RequestParam String userId) {
+        return null; // Stub
     }
 
     @DeleteMapping("/{domain}")

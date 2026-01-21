@@ -2,7 +2,7 @@ package com.urlshortener.controller;
 
 import com.urlshortener.model.Domain;
 import com.urlshortener.repository.DomainRepository;
-import com.urlshortener.service.CloudflareService;
+import com.urlshortener.service.CloudflareSaasService;
 import com.urlshortener.service.DomainVerificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

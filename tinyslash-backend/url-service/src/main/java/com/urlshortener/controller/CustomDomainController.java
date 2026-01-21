@@ -21,11 +21,13 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 public class CustomDomainController {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CustomDomainController.class);
+
     @Autowired
     private DomainRepository domainRepository;
 
     @Autowired
-    private CloudflareSaasService cloudflareService;
+    private com.urlshortener.service.CloudflareSaasService cloudflareService;
 
     @Autowired
     private DomainVerificationService verificationService;
@@ -39,49 +41,72 @@ public class CustomDomainController {
             org.springframework.security.core.Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
 
+        // 1. Log entry
+        logger.info("➡️ [CustomDomainController] Received add domain request");
+        logger.info("   Payload: {}", request);
+
         try {
+            // 2. Check Authentication
             if (authentication == null) {
+                logger.warn("⚠️ [CustomDomainController] Authentication object is null");
                 response.put("success", false);
                 response.put("message", "Authentication required");
                 return ResponseEntity.status(401).body(response);
             }
 
             String userId = authentication.getName();
-            String domain = (String) request.get("domainName");
+            logger.info("   User ID: {}", userId);
+            logger.info("   Authorities: {}", authentication.getAuthorities());
 
+            // 3. Extract Domain
+            String domain = (String) request.get("domainName");
             if (domain == null || domain.trim().isEmpty()) {
-                // Fallback for older clients sending 'domain'
-                domain = (String) request.get("domain");
+                domain = (String) request.get("domain"); // Fallback
             }
 
+            logger.info("   Extracted Domain: '{}'", domain);
+
             if (domain == null || domain.trim().isEmpty()) {
+                logger.warn("⚠️ [CustomDomainController] Domain name is empty/null");
                 response.put("success", false);
                 response.put("message", "Domain is required");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Validate domain format
-            if (!verificationService.isValidDomain(domain)) {
+            // Normalize
+            domain = domain.toLowerCase().trim();
+
+            // 4. Validate Format
+            boolean isValid = verificationService.isValidDomain(domain);
+            logger.info("   Format Evaluation: {}", isValid ? "VALID" : "INVALID");
+
+            if (!isValid) {
                 response.put("success", false);
-                response.put("message", "Invalid domain format");
+                response.put("message", "Invalid domain format. Use format like 'go.example.com'");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Check if domain already exists
-            if (domainRepository.existsByDomainName(domain)) {
+            // 5. Check Duplicates
+            boolean exists = domainRepository.existsByDomainName(domain);
+            logger.info("   Duplicate Check: {}", exists ? "EXISTS" : "NEW");
+
+            if (exists) {
                 response.put("success", false);
-                response.put("message", "Domain already exists");
+                response.put("message", "Domain '" + domain + "' is already registered.");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Create and save domain
+            // 6. Create Entity
             String verificationToken = UUID.randomUUID().toString();
             Domain customDomain = new Domain(domain, "USER", userId, verificationToken);
             customDomain.setStatus(Domain.DomainStatus.PENDING);
             customDomain.setCnameTarget(proxyTarget);
+
+            logger.info("   Saving Entity: {}", customDomain);
+
             domainRepository.save(customDomain);
 
-            System.out.println("✅ Domain added to database: " + domain);
+            logger.info("✅ [CustomDomainController] Domain saved successfully: {}", customDomain.getId());
 
             // Return DNS instructions
             Map<String, Object> dnsInstructions = new HashMap<>();
@@ -91,17 +116,24 @@ public class CustomDomainController {
             dnsInstructions.put("ttl", "Auto or 300");
 
             response.put("success", true);
-            response.put("message", "Domain added successfully. Please configure DNS.");
-            response.put("domain", customDomain); // Return full object!
+            response.put("message", "Domain added successfully");
+            response.put("domain", customDomain);
             response.put("status", "pending");
             response.put("dnsInstructions", dnsInstructions);
             response.put("verificationUrl", "/api/v1/domains/verify?domainId=" + customDomain.getId());
 
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            logger.error("❌ [CustomDomainController] Duplicate key error", e);
             response.put("success", false);
-            response.put("message", "Error adding domain: " + e.getMessage());
+            response.put("message", "Domain already exists (database constraint)");
+            return ResponseEntity.status(409).body(response);
+        } catch (Exception e) {
+            logger.error("❌ [CustomDomainController] Unexpected error", e);
+            response.put("success", false);
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown application error";
+            response.put("message", "Error adding domain: " + errorMsg);
             return ResponseEntity.status(500).body(response);
         }
     }

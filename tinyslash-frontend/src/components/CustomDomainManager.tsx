@@ -511,8 +511,8 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
     }
 
     try {
-      // Use imported deleteDomain
-      await deleteDomain(domain.domainName, user?.id || '');
+      // Use imported deleteDomain with ID
+      await deleteDomain(domain.id, user?.id || '');
 
       // Remove from local state after successful deletion
       setDomains(prev => prev.filter(d => d.id !== domainId));

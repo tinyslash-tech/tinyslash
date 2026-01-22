@@ -200,6 +200,47 @@ public class CustomDomainController {
         }
     }
 
+    @GetMapping("/verified")
+    public ResponseEntity<Map<String, Object>> getVerifiedDomains(
+            org.springframework.security.core.Authentication authentication) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            if (authentication == null) {
+                response.put("success", false);
+                response.put("message", "Authentication required");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String currentUserId = authentication.getName();
+
+            // Fetch only verified domains for the user or their team (future: team support)
+            List<Domain> domains = domainRepository.findByOwnerIdAndOwnerType(currentUserId, "USER");
+
+            List<Map<String, Object>> verifiedList = domains.stream()
+                    .filter(Domain::isVerified)
+                    .map(d -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", d.getId());
+                        map.put("domainName", d.getDomainName());
+                        map.put("status", d.getStatus());
+                        map.put("sslStatus", d.getSslStatus());
+                        return map;
+                    })
+                    .collect(Collectors.toList());
+
+            response.put("success", true);
+            response.put("domains", verifiedList);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error fetching verified domains: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     @PostMapping("/verify")
     public ResponseEntity<Map<String, Object>> verifyDomain(
             @RequestParam String domainId,
@@ -309,13 +350,24 @@ public class CustomDomainController {
         return null; // Stub
     }
 
-    @DeleteMapping("/{domain}")
-    public ResponseEntity<Map<String, Object>> deleteDomain(@PathVariable String domain, @RequestParam String userId) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteDomain(@PathVariable String id,
+            org.springframework.security.core.Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            Optional<Domain> domainOpt = domainRepository.findByDomainName(domain);
+            if (authentication == null) {
+                return ResponseEntity.status(401).build();
+            }
 
+            String userId = authentication.getName();
+
+            // Try to find by ID first
+            Optional<Domain> domainOpt = domainRepository.findById(id);
+
+            // Fallback: If not UUID, maybe it's the old domain name call (backward
+            // compatibility attempt or just fail)
+            // But we strongly prefer ID now.
             if (domainOpt.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Domain not found");
@@ -339,11 +391,11 @@ public class CustomDomainController {
             // Delete from database
             domainRepository.delete(customDomain);
 
-            System.out.println("✅ Domain deleted: " + domain);
+            System.out.println("✅ Domain deleted: " + customDomain.getDomainName());
 
             response.put("success", true);
             response.put("message", "Domain deleted successfully");
-            response.put("domain", domain);
+            response.put("domain", customDomain.getDomainName());
 
             return ResponseEntity.ok(response);
 

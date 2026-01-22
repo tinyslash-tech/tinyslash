@@ -50,11 +50,9 @@ export const verifyDomain = async (domainId: string, payload?: any): Promise<{ s
   return response.data;
 };
 
-export const deleteDomain = async (domainName: string, userId: string): Promise<{ success: boolean; message: string }> => {
-  // Legacy delete endpoint expects params
-  const response = await apiClient.delete(`/v1/domains/${domainName}`, {
-    params: { userId }
-  });
+export const deleteDomain = async (domainId: string, userId?: string): Promise<{ success: boolean; message: string }> => {
+  // Updated to use ID-based deletion
+  const response = await apiClient.delete(`/v1/domains/${domainId}`);
   return response.data;
 };
 

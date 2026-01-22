@@ -47,6 +47,19 @@ public class JobDataInitializer {
                         createCollectionIfNotExist("employees");
                         createCollectionIfNotExist("team_invites");
                         createCollectionIfNotExist("job_applications");
+                        createCollectionIfNotExist("database_sequences"); // Required for 7-char short codes
+
+                        // Seed URL Sequence if not exists (CRITICAL for new 7-char logic)
+                        if (!mongoTemplate.collectionExists("database_sequences") ||
+                                        mongoTemplate.findById("url_sequence",
+                                                        com.urlshortener.model.DatabaseSequence.class) == null) {
+                                System.out.println("Seeding initial URL sequence...");
+                                com.urlshortener.model.DatabaseSequence seq = new com.urlshortener.model.DatabaseSequence();
+                                seq.setId("url_sequence");
+                                seq.setSeq(10000); // Start from 10000 to avoid conflicts or too small numbers
+                                mongoTemplate.save(seq);
+                                System.out.println("Seeded 'url_sequence' starting at 10000.");
+                        }
 
                         // Seed Admin User
                         com.urlshortener.model.User admin;

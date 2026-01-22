@@ -19,7 +19,7 @@
       "destination": "https://api.tinyslash.com/actuator/$1"
     },
     {
-      "source": "/([a-zA-Z0-9]{6})",
+      "source": "/([a-zA-Z0-9]{6,12})",
       "destination": "https://api.tinyslash.com/$1"
     },
     {

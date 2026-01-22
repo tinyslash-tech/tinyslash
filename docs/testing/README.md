@@ -524,7 +524,7 @@ class DatabaseIntegrationTest {
               </elementProp>
             </collectionProp>
           </elementProp>
-          <stringProp name="HTTPSampler.domain">tinyslash-backend-prod.onrender.com</stringProp>
+          <stringProp name="HTTPSampler.domain">api.tinyslash.com</stringProp>
           <stringProp name="HTTPSampler.port">443</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/v1/urls</stringProp>

@@ -7,15 +7,15 @@ const getApiUrl = () => {
   if (hostname === 'dev.tinyslash.com') {
     return 'https://tinyslash-backend-dev.onrender.com/api';
   } else if (hostname === 'tinyslash.com' || hostname === 'www.tinyslash.com') {
-    return 'https://tinyslash-backend-prod.onrender.com/api';
+    return 'https://api.tinyslash.com/api';
   } else if (hostname === 'admin.tinyslash.com') {
-    return 'https://tinyslash-backend-prod.onrender.com/api';
+    return 'https://api.tinyslash.com/api';
   } else if (hostname.endsWith('.vercel.app')) {
     // Determine based on subdomain if possible, otherwise default to dev for safety or prod if it's the main deployment
     if (hostname.includes('dev') || hostname.includes('preview')) {
       return 'https://tinyslash-backend-dev.onrender.com/api';
     }
-    return 'https://tinyslash-backend-prod.onrender.com/api';
+    return 'https://api.tinyslash.com/api';
   }
 
   // Default to environment variable or localhost

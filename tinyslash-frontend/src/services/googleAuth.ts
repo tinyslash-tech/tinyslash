@@ -71,14 +71,14 @@ class GoogleAuthService {
       if (hostname === 'dev.tinyslash.com') {
         return 'https://tinyslash-backend-dev.onrender.com/api';
       } else if (hostname === 'tinyslash.com' || hostname === 'www.tinyslash.com') {
-        return 'https://tinyslash-backend-prod.onrender.com/api';
+        return 'https://api.tinyslash.com/api';
       } else if (hostname === 'admin.tinyslash.com') {
-        return 'https://tinyslash-backend-prod.onrender.com/api';
+        return 'https://api.tinyslash.com/api';
       } else if (hostname.endsWith('.vercel.app')) {
         if (hostname.includes('dev') || hostname.includes('preview')) {
           return 'https://tinyslash-backend-dev.onrender.com/api';
         }
-        return 'https://tinyslash-backend-prod.onrender.com/api';
+        return 'https://api.tinyslash.com/api';
       }
 
       let envUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');

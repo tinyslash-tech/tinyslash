@@ -22,7 +22,7 @@ The user must create a new DNS record in their Cloudflare/DNS provider:
 Type: 
 CNAME
 Name: api
-Target: tinyslash-backend-prod.onrender.com
+Target: api.tinyslash.com
 Proxy Status: DNS Only / Grey Cloud (CRITICAL: Must NOT be proxied)
 2. Render Configuration (User Action Required)
 Go to Render Dashboard -> URL Service -> Settings -> Custom Domains.

@@ -158,7 +158,7 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 ## 🆘 Support
 
 - **Documentation**: [docs.tinyslash.com](https://docs.tinyslash.com)
-- **API Reference**: [API Reference](https://tinyslash-backend-prod.onrender.com)
+- **API Reference**: [API Reference](https://api.tinyslash.com)
 - **Support Email**: support@tinyslash.com
 - **Community**: [Discord](https://discord.gg/bitaurl)
 

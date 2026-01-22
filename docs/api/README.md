@@ -8,7 +8,7 @@ The Tinyslash API provides programmatic access to all platform features includin
 
 | Environment | Base URL |
 |-------------|----------|
-| **Production** | `https://tinyslash-backend-prod.onrender.com/api/v1` |
+| **Production** | `https://api.tinyslash.com/api/v1` |
 | **Development** | `https://tinyslash-backend-dev.onrender.com/api/v1` |
 | **Local** | `http://localhost:8080/api/v1` |
 

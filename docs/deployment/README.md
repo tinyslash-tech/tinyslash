@@ -1194,7 +1194,7 @@ public class HealthController {
 # scripts/uptime-monitor.sh
 
 ENDPOINTS=(
-    "https://tinyslash-backend-prod.onrender.com/api/v1/health"
+    "https://api.tinyslash.com/api/v1/health"
     "https://tinyslash.com"
     "https://admin.tinyslash.com"
 )

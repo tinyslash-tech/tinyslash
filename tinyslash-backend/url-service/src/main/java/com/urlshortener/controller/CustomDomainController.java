@@ -95,33 +95,73 @@ public class CustomDomainController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // 6. Create Entity
+            // 6. Create Entity (EAGER CREATION FLOW)
             String verificationToken = UUID.randomUUID().toString();
             Domain customDomain = new Domain(domain, "USER", userId, verificationToken);
             customDomain.setStatus(Domain.DomainStatus.PENDING);
-            customDomain.setCnameTarget(proxyTarget);
+            customDomain.setCnameTarget(proxyTarget); // tinyslash.com
 
             logger.info("   Saving Entity: {}", customDomain);
-
             domainRepository.save(customDomain);
 
-            logger.info("✅ [CustomDomainController] Domain saved successfully: {}", customDomain.getId());
+            // 7. Call Cloudflare API Immediately (Eager Provisioning)
+            logger.info("🚀 Initiating Cloudflare Custom Hostname Creation...");
+            boolean cfSuccess = cloudflareService.createCustomHostname(customDomain);
 
-            // Return DNS instructions
-            Map<String, Object> dnsInstructions = new HashMap<>();
-            dnsInstructions.put("type", "CNAME");
-            dnsInstructions.put("name", verificationService.extractSubdomain(domain));
-            dnsInstructions.put("target", proxyTarget);
-            dnsInstructions.put("ttl", "Auto or 300");
+            if (cfSuccess) {
+                // Determine valid SSL records available
+                String sslTxtName = customDomain.getSslTxtName();
+                String sslTxtValue = customDomain.getSslTxtValue();
+                String sslCnameTarget = customDomain.getSslCnameTarget();
 
-            response.put("success", true);
-            response.put("message", "Domain added successfully");
-            response.put("domain", customDomain);
-            response.put("status", "pending");
-            response.put("dnsInstructions", dnsInstructions);
-            response.put("verificationUrl", "/api/v1/domains/verify?domainId=" + customDomain.getId());
+                // Return detailed instructions
+                Map<String, Object> dnsInstructions = new HashMap<>();
 
-            return ResponseEntity.ok(response);
+                // 1. Routing Record (CNAME -> tinyslash.com)
+                Map<String, String> routingRecord = new HashMap<>();
+                routingRecord.put("type", "CNAME");
+                routingRecord.put("name", verificationService.extractSubdomain(domain));
+                routingRecord.put("target", proxyTarget);
+                routingRecord.put("ttl", "Auto or 3600");
+                dnsInstructions.put("routing", routingRecord);
+
+                // 2. SSL Verification Record (TXT is Canonical)
+                if (sslTxtName != null && sslTxtValue != null) {
+                    Map<String, String> sslRecord = new HashMap<>();
+                    sslRecord.put("type", "TXT");
+                    sslRecord.put("name", sslTxtName);
+                    sslRecord.put("value", sslTxtValue); // Frontend: Copy this!
+                    dnsInstructions.put("ssl", sslRecord);
+                }
+
+                // 3. Optional Accelerator (DCV CNAME)
+                if (sslCnameTarget != null) {
+                    Map<String, String> dcvRecord = new HashMap<>();
+                    dcvRecord.put("type", "CNAME");
+                    dcvRecord.put("name", sslTxtName); // Usually same name as TXT
+                    dcvRecord.put("target", sslCnameTarget);
+                    dnsInstructions.put("sslAccelerator", dcvRecord);
+                }
+
+                logger.info("✅ [CustomDomainController] Domain provisioned successfully");
+
+                response.put("success", true);
+                response.put("message", "Domain added and provisioning started");
+                response.put("domain", customDomain);
+                response.put("status", "pending_verification");
+                response.put("dnsInstructions", dnsInstructions);
+                response.put("verificationUrl", "/api/v1/domains/verify?domainId=" + customDomain.getId());
+
+                return ResponseEntity.ok(response);
+
+            } else {
+                logger.error("❌ Failed to provision on Cloudflare");
+                response.put("success", false);
+                response.put("message", "Domain added but failed to provision SSL. " + customDomain.getSslError());
+                // Return saved domain even on error so user can retry/delete
+                response.put("domain", customDomain);
+                return ResponseEntity.status(500).body(response);
+            }
 
         } catch (org.springframework.dao.DuplicateKeyException e) {
             logger.error("❌ [CustomDomainController] Duplicate key error", e);

@@ -3,6 +3,7 @@ import { Globe, CheckCircle, Copy, ExternalLink, ArrowRight, Sparkles, Shield, Z
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { addDomain } from '../services/domainService';
 
 interface CustomDomainOnboardingProps {
   isOpen: boolean;
@@ -22,8 +23,9 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
   const [setupType, setSetupType] = useState<'subdomain' | 'root'>('subdomain');
   const [isAdding, setIsAdding] = useState(false);
   const [addedDomain, setAddedDomain] = useState<any>(null);
+  const [dnsInstructions, setDnsInstructions] = useState<any>(null);
 
-  // Universal proxy domain configuration - now using Cloudflare SaaS
+  // Universal proxy domain configuration
   const proxyDomain = process.env.REACT_APP_PROXY_DOMAIN || 'tinyslash.com';
 
   if (!isOpen) return null;
@@ -35,7 +37,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
     }
 
     const cleanDomain = domainName.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
-    
+
     if (!cleanDomain.includes('.')) {
       toast.error('Please enter a valid domain name (e.g., yourdomain.com)');
       return;
@@ -46,30 +48,20 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
 
     try {
       setIsAdding(true);
-      
-      const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
-      
-      const response = await axios.post(`${API_BASE_URL}/v1/domains`, {
-        domainName: fullDomain,
-        ownerType: 'USER'
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (response.data.success) {
-        setAddedDomain(response.data.domain);
+      const response = await addDomain(fullDomain, 'USER');
+
+      if (response.success) {
+        setAddedDomain(response.domain);
+        setDnsInstructions(response.dnsInstructions);
         setStep(2);
         toast.success('Domain reserved successfully!');
-        
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('custom-domain-added', { 
-          detail: response.data.domain 
+
+        window.dispatchEvent(new CustomEvent('custom-domain-added', {
+          detail: response.domain
         }));
       } else {
-        toast.error(response.data.message || 'Failed to add domain');
+        toast.error(response.message || 'Failed to add domain');
       }
     } catch (error: any) {
       console.error('Failed to add domain:', error);
@@ -97,29 +89,10 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
     return domainName;
   };
 
-  const getDNSInstructions = () => {
-    
-    if (setupType === 'subdomain') {
-      return {
-        type: 'CNAME',
-        name: subdomain,
-        value: proxyDomain,
-        example: `${subdomain}.${domainName}/abc123`
-      };
-    } else {
-      return {
-        type: 'CNAME',
-        name: '@',
-        value: proxyDomain,
-        example: `${domainName}/abc123`
-      };
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        
+
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
           <div className="flex items-center justify-between">
@@ -150,15 +123,13 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
               { num: 3, title: 'Verify & Test', active: step >= 3, completed: step > 3 }
             ].map((s, i) => (
               <div key={i} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
-                  s.completed ? 'bg-green-500 text-white' : 
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${s.completed ? 'bg-green-500 text-white' :
                   s.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
+                  }`}>
                   {s.completed ? <CheckCircle className="w-4 h-4" /> : s.num}
                 </div>
-                <span className={`ml-2 text-sm font-medium ${
-                  s.active ? 'text-gray-900' : 'text-gray-500'
-                }`}>
+                <span className={`ml-2 text-sm font-medium ${s.active ? 'text-gray-900' : 'text-gray-500'
+                  }`}>
                   {s.title}
                 </span>
                 {i < 2 && <ArrowRight className="w-4 h-4 text-gray-400 ml-4" />}
@@ -304,141 +275,101 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
           )}
 
           {/* Step 2: Configure DNS */}
-          {step === 2 && addedDomain && (
+          {step === 2 && addedDomain && dnsInstructions && (
             <div className="space-y-6">
               <div className="text-center">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  🔧 Step 2: Configure DNS in Your Domain Provider
+                  🔧 Step 2: Configure DNS Provider
                 </h3>
                 <p className="text-gray-600">
-                  Add the DNS record below to your domain settings
+                  Add these records to your domain's DNS settings to connect securely
                 </p>
               </div>
 
               <div className="max-w-2xl mx-auto space-y-6">
-                {/* DNS Instructions */}
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
-                  <h4 className="font-bold text-green-900 mb-4 flex items-center">
-                    <Globe className="w-5 h-5 mr-2" />
-                    DNS Record to Add
-                  </h4>
-                  
-                  <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4">
-                    <p className="text-blue-800 text-sm font-medium">
-                      📋 <strong>Quick Copy:</strong> Point your domain to <code className="bg-white px-2 py-1 rounded font-mono">{proxyDomain}</code>
-                    </p>
+                {/* 1. Routing Record (CNAME) */}
+                <div className="bg-white border-l-4 border-blue-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-gray-800 flex items-center">
+                      <Globe className="w-5 h-5 mr-2 text-blue-500" />
+                      1. Connect Domain (Routing)
+                    </h4>
+                    <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">Required</span>
                   </div>
-                  
-                  <div className="bg-white rounded-lg border p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Type</label>
-                        <div className="bg-gray-100 px-3 py-2 rounded font-mono text-sm">
-                          {getDNSInstructions().type}
-                        </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
+                      <div className="font-mono text-gray-900 mt-1">{dnsInstructions.routing.type}</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
+                      <div className="flex items-center mt-1">
+                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1">{dnsInstructions.routing.name}</code>
+                        <button onClick={() => copyToClipboard(dnsInstructions.routing.name)} className="ml-2 text-gray-400 hover:text-blue-600">
+                          <Copy className="w-4 h-4" />
+                        </button>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Name/Host</label>
-                        <div className="bg-gray-100 px-3 py-2 rounded font-mono text-sm flex items-center justify-between">
-                          {getDNSInstructions().name}
-                          <button
-                            onClick={() => copyToClipboard(getDNSInstructions().name)}
-                            className="text-blue-600 hover:text-blue-800 ml-2"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">TTL</label>
-                        <div className="bg-gray-100 px-3 py-2 rounded font-mono text-sm">
-                          Auto / 3600
-                        </div>
-                      </div>
-                      <div className="md:col-span-3">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Value/Target</label>
-                        <div className="bg-gray-100 px-3 py-2 rounded font-mono text-sm flex items-center justify-between">
-                          {getDNSInstructions().value}
-                          <button
-                            onClick={() => copyToClipboard(getDNSInstructions().value)}
-                            className="text-blue-600 hover:text-blue-800 ml-2"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase">Target (Value)</label>
+                      <div className="flex items-center mt-1">
+                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1">{dnsInstructions.routing.target}</code>
+                        <button onClick={() => copyToClipboard(dnsInstructions.routing.target || '')} className="ml-2 text-gray-400 hover:text-blue-600">
+                          <Copy className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Provider-specific instructions */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-yellow-900 mb-3 flex items-center">
-                    <Globe className="w-4 h-4 mr-2" />
-                    Quick Setup for Popular Providers
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                    <div className="bg-white rounded p-3 border">
-                      <h5 className="font-medium text-yellow-800 mb-2">🏠 Hostinger</h5>
-                      <ol className="text-yellow-700 space-y-1 text-xs">
-                        <li>• Login → Hosting → Manage</li>
-                        <li>• DNS Zone Editor</li>
-                        <li>• Add Record → Enter values</li>
-                        <li>• Save (5-10 min to apply)</li>
-                      </ol>
+                {/* 2. SSL Verification Record (TXT) */}
+                {dnsInstructions.ssl && (
+                  <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-bold text-gray-800 flex items-center">
+                        <Shield className="w-5 h-5 mr-2 text-green-500" />
+                        2. Verify Ownership (SSL)
+                      </h4>
+                      <span className="text-xs font-mono bg-green-100 text-green-800 px-2 py-1 rounded">Required</span>
                     </div>
-                    <div className="bg-white rounded p-3 border">
-                      <h5 className="font-medium text-yellow-800 mb-2">☁️ Cloudflare</h5>
-                      <ol className="text-yellow-700 space-y-1 text-xs">
-                        <li>• Dashboard → DNS</li>
-                        <li>• Add Record → {getDNSInstructions().type}</li>
-                        <li>• Turn OFF proxy (gray cloud)</li>
-                        <li>• Save (instant)</li>
-                      </ol>
-                    </div>
-                    <div className="bg-white rounded p-3 border">
-                      <h5 className="font-medium text-yellow-800 mb-2">🌐 GoDaddy</h5>
-                      <ol className="text-yellow-700 space-y-1 text-xs">
-                        <li>• My Products → DNS</li>
-                        <li>• Add → {getDNSInstructions().type} Record</li>
-                        <li>• Enter name and value</li>
-                        <li>• Save (up to 1 hour)</li>
-                      </ol>
-                    </div>
-                    <div className="bg-white rounded p-3 border">
-                      <h5 className="font-medium text-yellow-800 mb-2">🔗 Namecheap</h5>
-                      <ol className="text-yellow-700 space-y-1 text-xs">
-                        <li>• Domain List → Manage</li>
-                        <li>• Advanced DNS</li>
-                        <li>• Add New Record</li>
-                        <li>• Save (30 min to apply)</li>
-                      </ol>
-                    </div>
-                  </div>
-                  <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg">
-                    <h5 className="font-semibold text-green-900 mb-2">✅ Universal Setup Summary</h5>
-                    <div className="text-sm text-green-800 space-y-1">
-                      <div><strong>Target Domain:</strong> <code className="bg-white px-2 py-1 rounded">{proxyDomain}</code></div>
-                      <div><strong>Works with:</strong> Hostinger, GoDaddy, Namecheap, Cloudflare, Domain.com, and ALL providers!</div>
-                      <div><strong>Setup Time:</strong> 5-10 minutes for DNS propagation</div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Example result */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
+                        <div className="font-mono text-gray-900 mt-1">{dnsInstructions.ssl.type}</div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
+                        <div className="flex items-center mt-1">
+                          <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={dnsInstructions.ssl.name}>{dnsInstructions.ssl.name.substring(0, 20)}...</code>
+                          <button onClick={() => copyToClipboard(dnsInstructions.ssl.name)} className="ml-2 text-gray-400 hover:text-blue-600">
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase">Value</label>
+                        <div className="flex items-center mt-1">
+                          <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={dnsInstructions.ssl.value}>{dnsInstructions.ssl.value.substring(0, 20)}...</code>
+                          <button onClick={() => copyToClipboard(dnsInstructions.ssl.value)} className="ml-2 text-gray-400 hover:text-blue-600">
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100">
+                  <p className="flex items-center">
                     <Zap className="w-4 h-4 mr-2" />
-                    After DNS Setup, Your Links Will Work Like:
-                  </h4>
-                  <div className="bg-white border rounded p-3 font-mono text-sm">
-                    <div className="text-blue-600">{getDNSInstructions().example}</div>
-                    <div className="text-gray-500 text-xs mt-1">↓ redirects to ↓</div>
-                    <div className="text-green-600">https://your-long-url.com/page</div>
-                  </div>
+                    <strong>Universal Setup:</strong> Works with GoDaddy, Namecheap, Cloudflare, Hostinger, etc.
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-between">
+                  {/* Step Buttons */}
                   <button
                     onClick={() => setStep(1)}
                     className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
@@ -449,7 +380,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                     onClick={() => setStep(3)}
                     className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    I've Added the DNS Record →
+                    I've Added the DNS Records →
                   </button>
                 </div>
               </div>

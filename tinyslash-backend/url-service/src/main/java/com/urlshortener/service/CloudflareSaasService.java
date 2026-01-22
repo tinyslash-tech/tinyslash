@@ -59,9 +59,9 @@ public class CloudflareSaasService {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("hostname", domain.getDomainName());
 
-            // SSL configuration - HTTP validation (easiest for users)
+            // SSL configuration - TXT validation (CANONICAL SOURCE OF TRUTH)
             Map<String, Object> sslConfig = new HashMap<>();
-            sslConfig.put("method", "http"); // HTTP-01 validation (no DNS TXT record needed)
+            sslConfig.put("method", "txt"); // TXT validation is non-negotiable
             sslConfig.put("type", "dv"); // Domain Validation certificate
             sslConfig.put("wildcard", false); // No wildcard for free tier
 
@@ -91,16 +91,50 @@ public class CloudflareSaasService {
                 String customHostnameId = (String) result.get("id");
                 String status = (String) result.get("status");
 
-                // Save Cloudflare custom hostname ID to domain
+                // Save Cloudflare IDs (Essential for SaaS operations)
+                domain.setCloudflareHostnameId(customHostnameId);
+                domain.setCloudflareStatus(status);
+
+                // --- ROBUST PARSING LOGIC (TXT IS CANONICAL) ---
+                Map<String, Object> ssl = (Map<String, Object>) result.get("ssl");
+                if (ssl != null) {
+                    List<Map<String, Object>> validationRecords = (List<Map<String, Object>>) ssl
+                            .get("validation_records");
+
+                    if (validationRecords != null && !validationRecords.isEmpty()) {
+                        // Iterate through records to find TXT (Primary) and CNAME (Optional)
+                        for (Map<String, Object> record : validationRecords) {
+                            String txtName = (String) record.get("txt_name");
+                            String txtValue = (String) record.get("txt_value");
+                            String cnameTarget = (String) record.get("cname_target"); // DCV Delegation
+
+                            // ALWAYS valid source of truth
+                            if (txtName != null && txtValue != null) {
+                                domain.setSslValidationMethod("TXT");
+                                domain.setSslTxtName(txtName);
+                                domain.setSslTxtValue(txtValue);
+                            }
+
+                            // Optional accelerator (DCV)
+                            if (cnameTarget != null) {
+                                domain.setSslCnameTarget(cnameTarget);
+                            }
+                        }
+                    }
+                }
+
+                // Legacy/Fallback Fields
                 domain.setSslProvider("CLOUDFLARE_SAAS");
                 domain.setSslStatus("PENDING");
-                domain.setVerificationToken(customHostnameId); // Store ID for future reference
+                domain.setVerificationToken(customHostnameId); // Keeping for backward compat
+
                 domainRepository.save(domain);
 
                 logger.info("✅ Custom hostname created successfully!");
                 logger.info("   Domain: {}", domain.getDomainName());
-                logger.info("   Hostname ID: {}", customHostnameId);
+                logger.info("   ID: {}", customHostnameId);
                 logger.info("   Status: {}", status);
+                logger.info("   SSL TXT: {} -> {}", domain.getSslTxtName(), domain.getSslTxtValue());
 
                 return true;
             } else {

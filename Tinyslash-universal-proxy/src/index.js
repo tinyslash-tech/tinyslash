@@ -13,10 +13,10 @@ export default {
     const hostname = url.hostname;
     const pathname = url.pathname;
     const search = url.search;
-    
+
     // Initialize analytics
     const analytics = new ProxyAnalytics(env);
-    
+
     // Handle health check requests
     if (pathname === '/health' || pathname === '/_health') {
       const health = await HealthCheck.performHealthCheck(env);
@@ -25,7 +25,7 @@ export default {
         status: health.healthy ? 200 : 503
       });
     }
-    
+
     // Handle debug requests for troubleshooting
     if (pathname === '/debug' || pathname === '/_debug') {
       const debugInfo = {
@@ -35,21 +35,21 @@ export default {
         search,
         method: request.method,
         headers: Object.fromEntries(request.headers.entries()),
-        backendUrl: env.BACKEND_URL || 'https://urlshortner-1-hpyu.onrender.com',
+        backendUrl: env.BACKEND_URL || 'https://api.tinyslash.com',
         proxyVersion: '2.0',
         cloudflareRay: request.headers.get('CF-Ray'),
         country: request.headers.get('CF-IPCountry'),
         userAgent: request.headers.get('User-Agent')
       };
-      
+
       return new Response(JSON.stringify(debugInfo, null, 2), {
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         }
       });
     }
-    
+
     // Handle root path visits to worker domain
     if (hostname.includes('workers.dev') && pathname === '/') {
       return new Response(`
@@ -89,12 +89,12 @@ export default {
         headers: { 'Content-Type': 'text/html' }
       });
     }
-    
+
     // Skip if it's your main domains
     if (hostname.includes('tinyslash.com') || hostname.includes('tinyslash.vercel.app')) {
       return fetch(request);
     }
-    
+
     // Handle worker domain requests - map to customer domains
     let actualHostname = hostname;
     if (hostname.includes('workers.dev')) {
@@ -102,10 +102,10 @@ export default {
       // This is a temporary solution until custom domains are properly configured
       actualHostname = mapWorkerDomainToCustomer(pathname, hostname);
     }
-    
+
     // Your backend URL - can be configured via environment variables
-    const BACKEND_URL = env.BACKEND_URL || 'https://urlshortner-1-hpyu.onrender.com';
-    
+    const BACKEND_URL = env.BACKEND_URL || 'https://api.tinyslash.com';
+
     console.log(`🌐 Universal Proxy: ${hostname}${pathname} → ${BACKEND_URL}${pathname}`);
     console.log(`🔍 Request details:`, {
       hostname,
@@ -114,11 +114,11 @@ export default {
       userAgent: request.headers.get('User-Agent'),
       cfCountry: request.headers.get('CF-IPCountry')
     });
-    
+
     // Check cache first for GET requests
     const cacheKey = `${hostname}${pathname}${search}`;
     const cache = caches.default;
-    
+
     if (request.method === 'GET') {
       const cachedResponse = await cache.match(request);
       if (cachedResponse) {
@@ -126,60 +126,66 @@ export default {
         return cachedResponse;
       }
     }
-    
+
     try {
       // Create request to your backend
       const backendUrl = `${BACKEND_URL}${pathname}${search}`;
-      
+
       // ✅ CRITICAL FIX: Clone ALL incoming headers first (preserves Auth, cookies, etc.)
       const headers = new Headers(request.headers);
-      
+
       // Override only what must change for Render's host validation
       headers.set('Host', new URL(BACKEND_URL).hostname);
-      
+
       // Only remove Origin for non-GET requests to avoid CORS preflight issues
       // GET requests for redirects should keep Origin for proper CORS handling
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         headers.delete('Origin');
       }
-      
+
       // Custom domain headers for backend to recognize original domain
       headers.set('X-Forwarded-Host', hostname);
       headers.set('X-Original-Host', hostname);
       headers.set('X-Forwarded-Proto', 'https');
       headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP') || 'unknown');
       headers.set('X-Real-IP', request.headers.get('CF-Connecting-IP') || 'unknown');
-      
+
       // Cloudflare specific headers for analytics
       headers.set('CF-Ray', request.headers.get('CF-Ray') || 'unknown');
       headers.set('CF-Country', request.headers.get('CF-IPCountry') || 'unknown');
-      
+
       // Proxy metadata
       headers.set('X-Proxy-Version', '2.0');
       headers.set('X-Proxy-Timestamp', new Date().toISOString());
-      
+
       // Optional cleanup of Cloudflare internal headers
       headers.delete('cf-connecting-ip');
       headers.delete('cf-visitor');
-      
+
+      // ✅ FIX: Force backend to return plain text (no compression)
+      // This prevents double-compression issues or "garbage" output when
+      // the worker wraps the body in a new Response but drops Content-Encoding headers.
+      headers.set('Accept-Encoding', 'identity');
+
       // Debug logging (only if enabled)
       if (env.DEBUG === 'true') {
         console.log(`🔍 Proxying: ${hostname}${pathname} → ${backendUrl}`);
         console.log(`📋 Headers: Host=${headers.get('Host')}, X-Forwarded-Host=${headers.get('X-Forwarded-Host')}`);
       }
-      
+
       const backendRequest = new Request(backendUrl, {
         method: request.method,
         headers: headers,
+        redirect: 'manual', // ✅ FIX: Do NOT follow redirects automatically. Return them to the client.
         body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined
       });
-      
+
       // Fetch from backend
       const response = await fetch(backendRequest);
-      
+
       console.log(`📡 Backend Response: ${response.status} ${response.statusText}`);
       console.log(`🔍 Response headers:`, Object.fromEntries(response.headers.entries()));
-      
+
       // Handle redirects (main purpose for short links)
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get('location');
@@ -187,7 +193,7 @@ export default {
           if (env.DEBUG === 'true') {
             console.log(`🔄 Redirecting to: ${location}`);
           }
-          
+
           // Create redirect response with proper headers
           const redirectResponse = new Response(null, {
             status: response.status,
@@ -196,26 +202,26 @@ export default {
               'X-Proxy-Host': hostname,
               'X-Proxy-Version': '2.0',
               'X-Redirect-Time': new Date().toISOString(),
-              'Cache-Control': 'public, max-age=300'
+              'Cache-Control': 'public, max-age=86400' // Cache redirects for 24 hours
             }
           });
-          
+
           // Cache successful 301 redirects only
           if (request.method === 'GET' && response.status === 301) {
             ctx.waitUntil(cache.put(request, redirectResponse.clone()));
           }
-          
+
           // Track redirect analytics
           ctx.waitUntil(analytics.trackRedirect(hostname, location, Date.now() - startTime));
-          
+
           return redirectResponse;
         }
       }
-      
+
       // Handle successful responses
       if (response.ok) {
         const contentType = response.headers.get('content-type') || 'text/html';
-        
+
         // Create new response with enhanced headers
         const newResponse = new Response(response.body, {
           status: response.status,
@@ -227,6 +233,7 @@ export default {
             'Access-Control-Allow-Headers': '*',
             'Access-Control-Allow-Credentials': 'true',
             'Vary': 'Origin',
+            'Vary': 'Origin',
             'Cache-Control': response.headers.get('Cache-Control') || 'public, max-age=300',
             'X-Powered-By': 'TinySlash Universal Proxy v2.0',
             'X-Proxy-Host': hostname,
@@ -234,34 +241,34 @@ export default {
             'X-Response-Time': new Date().toISOString()
           }
         });
-        
+
         // Cache GET responses for performance
         if (request.method === 'GET' && response.status === 200) {
           ctx.waitUntil(cache.put(request, newResponse.clone()));
         }
-        
+
         // Track successful request analytics
         ctx.waitUntil(analytics.trackRequest(request, newResponse, hostname, startTime));
-        
+
         return newResponse;
       }
-      
+
       // Handle error responses from backend
       console.log(`❌ Backend Error: ${response.status} - ${response.statusText}`);
       const errorResponse = createErrorPage(hostname, pathname, response.status, 'Backend Error');
-      
+
       // Track error analytics
       ctx.waitUntil(analytics.trackRequest(request, errorResponse, hostname, startTime));
-      
+
       return errorResponse;
-      
+
     } catch (error) {
       console.error('❌ Proxy Error:', error.message);
       const errorResponse = createErrorPage(hostname, pathname, 500, error.message);
-      
+
       // Track error analytics
       ctx.waitUntil(analytics.trackRequest(request, errorResponse, hostname, startTime));
-      
+
       return errorResponse;
     }
   }
@@ -277,9 +284,9 @@ function createErrorPage(hostname, pathname, statusCode = 404, errorMessage = 'N
     502: 'Backend Unavailable',
     503: 'Service Unavailable'
   };
-  
+
   const title = errorMessages[statusCode] || 'Error';
-  
+
   const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -407,7 +414,7 @@ function createErrorPage(hostname, pathname, statusCode = 404, errorMessage = 'N
     </body>
     </html>
   `;
-  
+
   return new Response(html, {
     status: statusCode,
     headers: {

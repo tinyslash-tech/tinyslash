@@ -4,14 +4,14 @@ compatibility_date = "2024-01-01"
 
 # Environment variables
 [vars]
-BACKEND_URL = "https://urlshortner-1-hpyu.onrender.com"
+BACKEND_URL = "https://api.tinyslash.com"
 PROXY_VERSION = "2.0"
 CACHE_TTL = "300"
 
 # Production environment
 [env.production]
 name = "tinyslash"
-vars = { BACKEND_URL = "https://urlshortner-1-hpyu.onrender.com", PROXY_VERSION = "2.0" }
+vars = { BACKEND_URL = "https://api.tinyslash.com", PROXY_VERSION = "2.0" }
 
 # Development environment
 [env.development]
@@ -22,7 +22,7 @@ vars = { BACKEND_URL = "http://localhost:8080", PROXY_VERSION = "2.0-dev" }
 # Note: Routes will be added after tinyslash.com is active in Cloudflare
 # Uncomment and update after domain is verified:
 # routes = [
-#   { pattern = "tinyslash.com/*", zone_name = "tinyslash.com" }
+#   { pattern = "api.tinyslash.com/*", zone_name = "tinyslash.com" }
 # ]
 
 # Analytics and monitoring

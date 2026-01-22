@@ -34,7 +34,26 @@ export const getMyDomains = async (ownerType?: string, ownerId?: string): Promis
   return response.data;
 };
 
-export const addDomain = async (domainName: string, ownerType: string, ownerId?: string): Promise<{ success: boolean; domain: CustomDomain; message: string }> => {
+export interface DnsInstruction {
+  type: string;
+  name: string;
+  value: string;
+  target?: string;
+  ttl?: string;
+  example?: string;
+}
+
+export const addDomain = async (domainName: string, ownerType: string, ownerId?: string): Promise<{
+  success: boolean;
+  domain: CustomDomain;
+  message: string;
+  dnsInstructions?: {
+    routing: DnsInstruction;
+    ssl?: DnsInstruction;
+    sslAccelerator?: DnsInstruction;
+  };
+  verificationUrl?: string;
+}> => {
   const response = await apiClient.post('/v1/domains', {
     domainName,
     ownerType,

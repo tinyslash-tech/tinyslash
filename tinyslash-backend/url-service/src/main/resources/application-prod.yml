@@ -16,6 +16,7 @@ app:
     url: https://tinyslash.com
   shorturl:
     domain: https://tinyslash.com
+    feistel-key: ${FEISTEL_KEY:98124712984210921} # Needs 64-bit long
   admin:
     enabled: true
 

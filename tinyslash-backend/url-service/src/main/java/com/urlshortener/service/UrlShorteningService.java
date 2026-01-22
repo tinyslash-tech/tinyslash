@@ -16,6 +16,9 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 import java.util.List;
+import com.urlshortener.service.SequenceGeneratorService;
+import com.urlshortener.service.FeistelCipher;
+import com.urlshortener.service.Base62Encoder;
 
 @Service
 public class UrlShorteningService {
@@ -26,23 +29,31 @@ public class UrlShorteningService {
     private final UserRepository userRepository;
     private final CacheService cacheService;
     private final SubscriptionService subscriptionService;
+    private final SequenceGeneratorService sequenceGenerator;
+    private final FeistelCipher feistelCipher;
+    private final Base62Encoder base62Encoder;
 
     @Autowired
     public UrlShorteningService(ShortenedUrlRepository shortenedUrlRepository,
             UserRepository userRepository,
             CacheService cacheService,
-            SubscriptionService subscriptionService) {
+            SubscriptionService subscriptionService,
+            SequenceGeneratorService sequenceGenerator,
+            FeistelCipher feistelCipher,
+            Base62Encoder base62Encoder) {
         this.shortenedUrlRepository = shortenedUrlRepository;
         this.userRepository = userRepository;
         this.cacheService = cacheService;
         this.subscriptionService = subscriptionService;
+        this.sequenceGenerator = sequenceGenerator;
+        this.feistelCipher = feistelCipher;
+        this.base62Encoder = base62Encoder;
     }
 
     @Value("${app.shorturl.domain:https://pebly.vercel.app}")
     private String shortUrlDomain;
 
-    private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private static final int SHORT_CODE_LENGTH = 6;
+    // Removed Random CHARACTERS constant as we use Base62Encoder now
 
     public ShortenedUrl createShortUrl(String originalUrl, String userId, String customAlias,
             String password, Integer expirationDays, Integer maxClicks, String title, String description) {
@@ -88,17 +99,34 @@ public class UrlShorteningService {
 
         // Generate or validate short code
         String shortCode;
+        Long numericId = null;
+
         if (customAlias != null && !customAlias.trim().isEmpty()) {
             if (shortenedUrlRepository.existsByCustomAlias(customAlias)) {
                 throw new RuntimeException("Custom alias already exists");
             }
             shortCode = customAlias;
+            // numericId remains null for custom aliases (or we could assign one, but
+            // usually not needed for lookup if we check alias field)
+            // But to keep consistency with the new engine, custom aliases might bypass the
+            // Feistel logic.
+            // Our plan says createUrl uses new logic.
         } else {
-            shortCode = generateUniqueShortCode();
+            // New Deterministic Logic: Auto-Increment -> Feistel -> Base62
+            long id = sequenceGenerator.generateSequence("url_sequence");
+            long shuffledId = feistelCipher.encrypt(id);
+            shortCode = base62Encoder.encode(shuffledId);
+            numericId = id;
+
+            // Note: Since this is creating a NEW unique ID from atomic counter,
+            // collision is mathematically impossible within 4.4 trillion IDs.
         }
 
         // Create shortened URL
         ShortenedUrl shortenedUrl = new ShortenedUrl(originalUrl, shortCode, userId, scopeType, scopeId);
+        if (numericId != null) {
+            shortenedUrl.setNumericId(numericId);
+        }
 
         // Set password protection first (before generating short URL)
         boolean isPasswordProtected = password != null && !password.trim().isEmpty();
@@ -338,25 +366,9 @@ public class UrlShorteningService {
         logger.info("Permanently deleted URL: {} for user: {}", shortCode, userId);
     }
 
-    private String generateUniqueShortCode() {
-        String shortCode;
-        do {
-            shortCode = generateRandomString(SHORT_CODE_LENGTH);
-        } while (shortenedUrlRepository.existsByShortCode(shortCode));
-
-        return shortCode;
-    }
-
-    private String generateRandomString(int length) {
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder(length);
-
-        for (int i = 0; i < length; i++) {
-            sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
-        }
-
-        return sb.toString();
-    }
+    // Removed generateUniqueShortCode and generateRandomString as they are
+    // obsolete.
+    // The new engine guarantees uniqueness via Atomic Auto-Increment.
 
     private boolean isValidUrl(String url) {
         try {

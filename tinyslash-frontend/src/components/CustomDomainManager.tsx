@@ -791,7 +791,17 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                       <RefreshCw className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => deleteDomain(domain.id)}
+                      onClick={() => {
+                        // Ensure we have ownerId (or current user ID)
+                        const userIdToDelete = ownerId || '';
+                        if (!userIdToDelete) {
+                          toast.error("User ID missing");
+                          return;
+                        }
+                        handleDeleteDomain(domain.domainName);
+                        // Note: handleDeleteDomain wrapper usually handles the API call best, 
+                        // but if calling service directly: deleteDomain(domain.domainName, userIdToDelete)
+                      }}
                       className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded transition-colors"
                       title="Delete domain"
                     >

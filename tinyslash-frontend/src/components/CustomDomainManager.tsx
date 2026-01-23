@@ -31,6 +31,11 @@ interface CustomDomain {
   blacklistReason?: string;
   totalRedirects: number;
   lastUsed?: string;
+  sslValidationMethod?: string;
+  sslTxtName?: string;
+  sslTxtValue?: string;
+  sslCnameTarget?: string;
+  cloudflareStatus?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -832,205 +837,115 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
             </div>
 
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                <h4 className="font-bold text-blue-900 mb-4 flex items-center">
-                  <Globe className="w-5 h-5 mr-2" />
-                  DNS Configuration Required
-                </h4>
+              <div className="text-center mb-4">
+                <p className="text-gray-600">
+                  Configure these DNS records to verify and secure your domain.
+                </p>
+              </div>
 
-                <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4">
-                  <p className="text-blue-800 text-sm font-medium">
-                    📋 <strong>Quick Setup:</strong> Point your domain to <code className="bg-white px-2 py-1 rounded font-mono">{PROXY_DOMAIN}</code>
-                  </p>
+              {/* 1. Routing Record */}
+              <div className="bg-white border-l-4 border-blue-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold text-gray-800 flex items-center">
+                    <Globe className="w-5 h-5 mr-2 text-blue-500" />
+                    1. Connect Domain (Routing)
+                  </h4>
+                  <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">Required</span>
                 </div>
-                {(() => {
-                  const domain = showVerificationModal.domainName;
-                  const parts = domain.split('.');
-                  const isSubdomain = parts.length > 2;
 
-                  if (isSubdomain) {
-                    const subdomain = parts[0];
-                    const rootDomain = parts.slice(1).join('.');
-                    return (
-                      <div className="bg-blue-100 border border-blue-300 rounded p-3 mb-4 text-sm">
-                        <p className="text-blue-900 font-medium">📝 For subdomain setup:</p>
-                        <p className="text-blue-800">
-                          You're setting up <code className="bg-white px-1 rounded">{domain}</code>
-                        </p>
-                        <p className="text-blue-800">
-                          In your DNS provider for <code className="bg-white px-1 rounded">{rootDomain}</code>,
-                          add a CNAME record with name <code className="bg-white px-1 rounded">{subdomain}</code>
-                        </p>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div className="bg-blue-100 border border-blue-300 rounded p-3 mb-4 text-sm">
-                        <p className="text-blue-900 font-medium">📝 For root domain setup:</p>
-                        <p className="text-blue-800">
-                          You're setting up <code className="bg-white px-1 rounded">{domain}</code>
-                        </p>
-                        <p className="text-blue-800">
-                          Use <code className="bg-white px-1 rounded">@</code> as the name (represents root domain)
-                        </p>
-                      </div>
-                    );
-                  }
-                })()}
-
-                <div className="bg-white rounded border p-3">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-600">Type:</span>
-                      <div className="font-mono">CNAME</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">Name:</span>
-                      <div className="font-mono break-all">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
+                    <div className="font-mono text-gray-900 mt-1">CNAME</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
+                    <div className="flex items-center mt-1">
+                      <code className="bg-white px-2 py-1 rounded border text-sm flex-1 break-all">
                         {(() => {
                           const domain = showVerificationModal.domainName;
                           const parts = domain.split('.');
-                          // If it's a subdomain (more than 2 parts), show only the subdomain part
-                          if (parts.length > 2) {
-                            return parts[0]; // e.g., "links" from "links.pdfcircle.com"
-                          }
-                          // If it's a root domain, show @ or the full domain
-                          return '@';
+                          if (parts.length > 2) return parts[0]; // subdomain
+                          return '@'; // root
                         })()}
+                      </code>
+                      <button
+                        onClick={() => {
+                          const domain = showVerificationModal.domainName;
+                          const parts = domain.split('.');
+                          const name = parts.length > 2 ? parts[0] : '@';
+                          copyToClipboard(name);
+                        }}
+                        className="ml-2 text-gray-400 hover:text-blue-600"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase">Target (Value)</label>
+                    <div className="flex items-center mt-1">
+                      <code className="bg-white px-2 py-1 rounded border text-sm flex-1">{PROXY_DOMAIN}</code>
+                      <button onClick={() => copyToClipboard(PROXY_DOMAIN)} className="ml-2 text-gray-400 hover:text-blue-600">
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. SSL Verification Record */}
+              {showVerificationModal.sslTxtName && showVerificationModal.sslTxtValue && (
+                <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-gray-800 flex items-center">
+                      <Shield className="w-5 h-5 mr-2 text-green-500" />
+                      2. Verify Ownership (SSL)
+                    </h4>
+                    <span className="text-xs font-mono bg-green-100 text-green-800 px-2 py-1 rounded">Required</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
+                      <div className="font-mono text-gray-900 mt-1">TXT</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
+                      <div className="flex items-center mt-1">
+                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={showVerificationModal.sslTxtName}>
+                          {showVerificationModal.sslTxtName.substring(0, 20)}...
+                        </code>
+                        <button onClick={() => copyToClipboard(showVerificationModal.sslTxtName!)} className="ml-2 text-gray-400 hover:text-blue-600">
+                          <Copy className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                     <div>
-                      <span className="font-medium text-gray-600">TTL:</span>
-                      <div className="font-mono">Auto</div>
-                    </div>
-                    <div className="md:col-span-3">
-                      <span className="font-medium text-gray-600">Value:</span>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <code className="flex-1 bg-gray-100 p-2 rounded text-xs break-all">
-                          {PROXY_DOMAIN}
+                      <label className="block text-xs font-semibold text-gray-500 uppercase">Value</label>
+                      <div className="flex items-center mt-1">
+                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={showVerificationModal.sslTxtValue}>
+                          {showVerificationModal.sslTxtValue.substring(0, 20)}...
                         </code>
-                        <button
-                          onClick={() => copyToClipboard(PROXY_DOMAIN)}
-                          className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-100 rounded"
-                          title="Copy value"
-                        >
+                        <button onClick={() => copyToClipboard(showVerificationModal.sslTxtValue!)} className="ml-2 text-gray-400 hover:text-blue-600">
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-semibold text-green-900 mb-2">Verification Token</h4>
-                <p className="text-green-800 text-sm mb-2">
-                  Your unique verification token:
-                </p>
-                <div className="flex items-center space-x-2">
-                  <code className="flex-1 bg-white p-2 rounded text-sm font-mono border">
-                    {showVerificationModal.verificationToken}
-                  </code>
-                  <button
-                    onClick={() => copyToClipboard(showVerificationModal.verificationToken)}
-                    className="text-green-600 hover:text-green-800 p-1 hover:bg-green-100 rounded"
-                    title="Copy token"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              )}
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <h4 className="font-semibold text-yellow-900 mb-2">Important Notes</h4>
                 <ul className="text-yellow-800 text-sm space-y-1">
-                  <li>• DNS changes can take up to 24 hours to propagate</li>
-                  {(() => {
-                    const domain = showVerificationModal.domainName;
-                    const parts = domain.split('.');
-                    const isSubdomain = parts.length > 2;
-
-                    if (isSubdomain) {
-                      return (
-                        <li>• For subdomains: Remove any existing A records for <code className="bg-yellow-100 px-1 rounded">{domain}</code></li>
-                      );
-                    } else {
-                      return (
-                        <li>• For root domains: Remove any existing A records for <code className="bg-yellow-100 px-1 rounded">{domain}</code></li>
-                      );
-                    }
-                  })()}
-                  <li>• The CNAME should point to: <code className="bg-yellow-100 px-1 rounded">{PROXY_DOMAIN}</code></li>
-                  <li>• SSL certificate will be automatically provisioned after verification</li>
-                  <li>• Contact your DNS provider if you need help</li>
-                  {(() => {
-                    const domain = showVerificationModal.domainName;
-                    const parts = domain.split('.');
-                    const isSubdomain = parts.length > 2;
-
-                    if (isSubdomain) {
-                      return (
-                        <li>• 💡 <strong>Cloudflare users:</strong> Make sure the proxy is OFF (gray cloud, not orange)</li>
-                      );
-                    }
-                    return null;
-                  })()}
+                  <li>• DNS changes can take 5-60 minutes to propagate.</li>
+                  <li>• You must add <strong>BOTH</strong> records above for the domain to work.</li>
+                  <li>• Once verified, SSL will be active immediately.</li>
                 </ul>
               </div>
 
-              {showVerificationModal.verificationError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-red-900 mb-2">Verification Error</h4>
-                  <p className="text-red-800 text-sm">{showVerificationModal.verificationError}</p>
-                </div>
-              )}
-
-              {/* Verification Process */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Verification Process
-                </h4>
-                <div className="space-y-3 text-sm text-blue-800">
-                  <div className="flex items-start space-x-3">
-                    <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</div>
-                    <div>
-                      <div className="font-semibold">Add DNS Record</div>
-                      <div className="text-blue-700">Add the CNAME record above to your domain provider</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</div>
-                    <div>
-                      <div className="font-semibold">Wait for Propagation</div>
-                      <div className="text-blue-700">DNS changes typically take 5-10 minutes (up to 24 hours)</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</div>
-                    <div>
-                      <div className="font-semibold">Verify Domain</div>
-                      <div className="text-blue-700">Click "Verify Domain" to complete the setup</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Help */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-semibold text-green-900 mb-2 flex items-center">
-                  <Globe className="w-4 h-4 mr-2" />
-                  Universal Compatibility
-                </h4>
-                <div className="text-sm text-green-800 space-y-1">
-                  <div>✅ <strong>Works with all providers:</strong> Hostinger, GoDaddy, Namecheap, Cloudflare, etc.</div>
-                  <div>✅ <strong>Automatic SSL:</strong> HTTPS certificate provisioned automatically</div>
-                  <div>✅ <strong>Global CDN:</strong> Fast redirects worldwide via Vercel Edge Network</div>
-                  <div>✅ <strong>No conflicts:</strong> Universal proxy eliminates provider-specific issues</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mt-6">
                 <button
                   onClick={() => setShowVerificationModal(null)}
                   className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"

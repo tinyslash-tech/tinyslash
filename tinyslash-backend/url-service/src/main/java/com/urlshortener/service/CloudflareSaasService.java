@@ -63,7 +63,7 @@ public class CloudflareSaasService {
             Map<String, Object> sslConfig = new HashMap<>();
             sslConfig.put("method", "txt"); // TXT validation is non-negotiable
             sslConfig.put("type", "dv"); // Domain Validation certificate
-            // wildcard and ciphers removed to match minimal working curl payload
+            sslConfig.put("bundle_method", "ubiquitous"); // REQUIRED for reliable TXT generation
 
             // SSL settings
             Map<String, String> sslSettings = new HashMap<>();
@@ -74,11 +74,11 @@ public class CloudflareSaasService {
 
             requestBody.put("ssl", sslConfig);
 
-            // Custom Origin Server (Explicitly Requested)
-            requestBody.put("custom_origin_server", "api.tinyslash.com");
+            // Custom Origin Server (Explicitly Requested via Variable)
+            requestBody.put("custom_origin_server", fallbackOrigin);
 
             // Log payload for debugging
-            logger.info("📦 Cloudflare Payload: hostname={} origin={}", domain.getDomainName(), "api.tinyslash.com");
+            logger.info("📦 Cloudflare Payload: hostname={} origin={}", domain.getDomainName(), fallbackOrigin);
 
             // Sanitize input
             String cleanToken = (apiToken != null) ? apiToken.trim() : "";
@@ -121,6 +121,11 @@ public class CloudflareSaasService {
                         for (Map<String, Object> record : validationRecords) {
                             String txtName = (String) record.get("txt_name");
                             String txtValue = (String) record.get("txt_value");
+                            // Fallback for regional API differences
+                            if (txtName == null)
+                                txtName = (String) record.get("name");
+                            if (txtValue == null)
+                                txtValue = (String) record.get("value");
                             String cnameTarget = (String) record.get("cname_target"); // DCV Delegation
 
                             // ALWAYS valid source of truth
@@ -144,7 +149,7 @@ public class CloudflareSaasService {
                     logger.warn("⚠️ No SSL validation records in initial response. Starting polling mechanism...");
 
                     int attempts = 0;
-                    int maxAttempts = 3;
+                    int maxAttempts = 3; // Increased to 5 attempts (approx 12.5s) per user request
 
                     while (!sslRecordsFound && attempts < maxAttempts) {
                         attempts++;
@@ -162,6 +167,11 @@ public class CloudflareSaasService {
                                         for (Map<String, Object> record : fetchedRecords) {
                                             String txtName = (String) record.get("txt_name");
                                             String txtValue = (String) record.get("txt_value");
+                                            // Fallback
+                                            if (txtName == null)
+                                                txtName = (String) record.get("name");
+                                            if (txtValue == null)
+                                                txtValue = (String) record.get("value");
                                             String cnameTarget = (String) record.get("cname_target");
 
                                             // Update domain if we found the records
@@ -236,6 +246,11 @@ public class CloudflareSaasService {
                                     for (Map<String, Object> record : fetchedRecords) {
                                         String txtName = (String) record.get("txt_name");
                                         String txtValue = (String) record.get("txt_value");
+                                        // Fallback
+                                        if (txtName == null)
+                                            txtName = (String) record.get("name");
+                                        if (txtValue == null)
+                                            txtValue = (String) record.get("value");
                                         String cnameTarget = (String) record.get("cname_target");
 
                                         if (txtName != null && txtValue != null) {
@@ -338,6 +353,11 @@ public class CloudflareSaasService {
                             for (Map<String, Object> record : validationRecords) {
                                 String txtName = (String) record.get("txt_name");
                                 String txtValue = (String) record.get("txt_value");
+                                // Fallback
+                                if (txtName == null)
+                                    txtName = (String) record.get("name");
+                                if (txtValue == null)
+                                    txtValue = (String) record.get("value");
                                 String cnameTarget = (String) record.get("cname_target");
 
                                 if (txtName != null && txtValue != null) {
@@ -356,7 +376,7 @@ public class CloudflareSaasService {
                         if ("active".equals(status)) {
                             domain.setSslStatus("ACTIVE");
                             domain.setSslIssuedAt(LocalDateTime.now());
-                            domain.setSslExpiresAt(LocalDateTime.now().plusMonths(3));
+                            // Expiry managed by Cloudflare
                             domain.setSslError(null);
                             domainRepository.save(domain);
                             logger.info("✅ SSL certificate is ACTIVE for: {}", domain.getDomainName());

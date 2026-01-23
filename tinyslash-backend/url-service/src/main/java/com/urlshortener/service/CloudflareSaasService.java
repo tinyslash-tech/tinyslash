@@ -139,38 +139,57 @@ public class CloudflareSaasService {
                     }
                 }
 
-                // FALLBACK: If SSL records are missing (async propagation), try fetching
-                // details explicitly
+                // FALLBACK: If SSL records are missing (async propagation), poll for them
                 if (!sslRecordsFound) {
-                    logger.warn("⚠️ No SSL validation records in initial response. Attempting fetch-after-create...");
-                    try {
-                        // Short delay to allow Cloudflare to generate records
-                        Thread.sleep(2000);
+                    logger.warn("⚠️ No SSL validation records in initial response. Starting polling mechanism...");
 
-                        Map<String, Object> details = getCustomHostnameDetails(domain);
-                        if (details != null) {
-                            Map<String, Object> fetchedSsl = (Map<String, Object>) details.get("ssl");
-                            if (fetchedSsl != null) {
-                                List<Map<String, Object>> fetchedRecords = (List<Map<String, Object>>) fetchedSsl
-                                        .get("validation_records");
-                                if (fetchedRecords != null) {
-                                    for (Map<String, Object> record : fetchedRecords) {
-                                        String txtName = (String) record.get("txt_name");
-                                        String txtValue = (String) record.get("txt_value");
-                                        if (txtName != null && txtValue != null) {
-                                            domain.setSslValidationMethod("TXT");
-                                            domain.setSslTxtName(txtName);
-                                            domain.setSslTxtValue(txtValue);
-                                            logger.info("✅ Recouped SSL TXT records via fetch fallback");
+                    int attempts = 0;
+                    int maxAttempts = 3;
+
+                    while (!sslRecordsFound && attempts < maxAttempts) {
+                        attempts++;
+                        try {
+                            logger.info("⏳ Polling for SSL records (Attempt {}/{})", attempts, maxAttempts);
+                            Thread.sleep(2500); // Wait 2.5s between checks
+
+                            Map<String, Object> details = getCustomHostnameDetails(domain);
+                            if (details != null) {
+                                Map<String, Object> fetchedSsl = (Map<String, Object>) details.get("ssl");
+                                if (fetchedSsl != null) {
+                                    List<Map<String, Object>> fetchedRecords = (List<Map<String, Object>>) fetchedSsl
+                                            .get("validation_records");
+                                    if (fetchedRecords != null) {
+                                        for (Map<String, Object> record : fetchedRecords) {
+                                            String txtName = (String) record.get("txt_name");
+                                            String txtValue = (String) record.get("txt_value");
+                                            String cnameTarget = (String) record.get("cname_target");
+
+                                            // Update domain if we found the records
+                                            if (txtName != null && txtValue != null) {
+                                                domain.setSslValidationMethod("TXT");
+                                                domain.setSslTxtName(txtName);
+                                                domain.setSslTxtValue(txtValue);
+                                                sslRecordsFound = true; // Break loop
+                                                logger.info("✅ Recouped SSL TXT records via polling attempt {}",
+                                                        attempts);
+                                            }
+                                            if (cnameTarget != null) {
+                                                domain.setSslCnameTarget(cnameTarget);
+                                            }
                                         }
                                     }
                                 }
                             }
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        } catch (Exception ex) {
+                            logger.error("❌ Error during SSL polling", ex);
                         }
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                    } catch (Exception ex) {
-                        logger.error("❌ Failed secondary fetch for SSL records", ex);
+                    }
+
+                    if (!sslRecordsFound) {
+                        logger.error("❌ Failed to retrieve SSL TXT records after {} attempts", maxAttempts);
                     }
                 }
 

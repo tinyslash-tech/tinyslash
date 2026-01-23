@@ -895,7 +895,7 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
               </div>
 
               {/* 2. SSL Verification Record */}
-              {showVerificationModal.sslTxtName && showVerificationModal.sslTxtValue && (
+              {showVerificationModal.sslTxtName && showVerificationModal.sslTxtValue ? (
                 <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-bold text-gray-800 flex items-center">
@@ -933,6 +933,23 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                       </div>
                     </div>
                   </div>
+                </div>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-bold text-red-900 mb-2 flex items-center">
+                    <Shield className="w-5 h-5 mr-2" />
+                    SSL Provisioning Failed
+                  </h4>
+                  <p className="text-red-800 text-sm mb-3">
+                    We could not generate the SSL verification details. This usually happens if the backend cannot reach Cloudflare.
+                  </p>
+                  <button
+                    onClick={() => verifyDomainReliably(showVerificationModal)}
+                    disabled={isVerifying === showVerificationModal.id}
+                    className="bg-red-100 text-red-800 px-4 py-2 rounded text-sm font-semibold hover:bg-red-200 transition-colors disabled:opacity-50"
+                  >
+                    {isVerifying === showVerificationModal.id ? 'Retrying and Checking...' : 'Retry Provisioning'}
+                  </button>
                 </div>
               )}
 

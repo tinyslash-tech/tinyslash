@@ -401,30 +401,34 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
       const dnsResponse = await fetch(`https://dns.google/resolve?name=${domain.domainName}&type=CNAME`);
       const dnsData = await dnsResponse.json();
 
+      let dnsVerifiedLocally = false;
       if (!dnsData.Answer || dnsData.Answer.length === 0) {
-        throw new Error('No CNAME record found. Please check your DNS configuration.');
+        console.warn('Client-side DNS check: No records found. Proceeding to server check...');
+        toast('Could not verify DNS locally. Checking with server...', { icon: '⚠️' });
+      } else {
+        const cnameRecord = dnsData.Answer.find((record: any) => record.type === 5);
+        if (!cnameRecord) {
+          console.warn('Client-side DNS check: No CNAME found. Proceeding to server check...');
+          toast('No CNAME found locally. Checking with server...', { icon: '⚠️' });
+        } else {
+          const resolvedTarget = cnameRecord.data.replace(/\.$/, '');
+          const expectedTarget = PROXY_DOMAIN;
+          if (resolvedTarget !== expectedTarget) {
+            console.warn(`Client-side DNS mismatch: ${resolvedTarget} vs ${expectedTarget}. Proceeding to server check.`);
+            toast(`DNS target mismatch (${resolvedTarget}). Checking with server...`, { icon: '⚠️' });
+          } else {
+            console.log('✅ DNS verification passed locally');
+            toast.success('✅ DNS configuration verified locally!');
+            dnsVerifiedLocally = true;
+          }
+        }
       }
-
-      const cnameRecord = dnsData.Answer.find((record: any) => record.type === 5);
-      if (!cnameRecord) {
-        throw new Error('No CNAME record found. Please add the CNAME record to your DNS.');
-      }
-
-      const resolvedTarget = cnameRecord.data.replace(/\.$/, '');
-
-      const expectedTarget = PROXY_DOMAIN;
-      if (resolvedTarget !== expectedTarget) {
-        throw new Error(`DNS configuration error: CNAME points to ${resolvedTarget}, but should point to ${expectedTarget}`);
-      }
-
-      console.log('✅ DNS verification passed');
-      toast.success('✅ DNS configuration verified!');
 
       // Step 2: Call backend verification endpoint
       console.log('🔍 Calling backend verification...');
 
       const response = await verifyDomain(domain.id, {
-        dnsVerified: true,
+        dnsVerified: dnsVerifiedLocally,
         cnameTarget: PROXY_DOMAIN,
         verificationMethod: 'client-side-dns'
       });
@@ -895,7 +899,17 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
               </div>
 
               {/* 2. SSL Verification Record */}
-              {showVerificationModal.sslTxtName && showVerificationModal.sslTxtValue ? (
+              {showVerificationModal.sslStatus === 'ACTIVE' ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="font-bold text-green-900 mb-2 flex items-center">
+                    <Shield className="w-5 h-5 mr-2" />
+                    SSL Active & Secured
+                  </h4>
+                  <p className="text-green-800 text-sm">
+                    This domain is successfully verified and secured with SSL. No further action is required.
+                  </p>
+                </div>
+              ) : showVerificationModal.sslTxtName && showVerificationModal.sslTxtValue ? (
                 <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-bold text-gray-800 flex items-center">
@@ -947,6 +961,7 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                     onClick={() => verifyDomainReliably(showVerificationModal)}
                     disabled={isVerifying === showVerificationModal.id}
                     className="bg-red-100 text-red-800 px-4 py-2 rounded text-sm font-semibold hover:bg-red-200 transition-colors disabled:opacity-50"
+                    title="This will trigger the backend to retry Cloudflare provisioning"
                   >
                     {isVerifying === showVerificationModal.id ? 'Retrying and Checking...' : 'Retry Provisioning'}
                   </button>

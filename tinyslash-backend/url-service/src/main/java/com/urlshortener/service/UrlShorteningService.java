@@ -353,7 +353,6 @@ public class UrlShorteningService {
     }
 
     @CacheEvict(value = { "clickCounts", "urlAnalytics", "userAnalytics" }, key = "#shortCode")
-    @CacheEvict(value = { "clickCounts", "urlAnalytics", "userAnalytics" }, key = "#shortCode")
     public void incrementClicks(String shortCode, String domain) {
         Optional<ShortenedUrl> urlOpt = shortenedUrlRepository.findByShortCodeAndDomain(shortCode, domain);
         if (urlOpt.isPresent()) {

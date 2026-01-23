@@ -104,7 +104,7 @@ public class UrlController {
             // Record analytics (if enabled)
             if (url.isTrackClicks() && request != null) {
                 // You can add analytics recording here
-                urlShorteningService.incrementClicks(shortCode);
+                urlShorteningService.incrementClicks(shortCode, url.getDomain());
             }
 
             // Return the original URL
@@ -427,7 +427,16 @@ public class UrlController {
             String browser = request.get("browser");
             String os = request.get("os");
 
-            analyticsService.recordClick(shortCode, ipAddress, userAgent, referrer,
+            // Resolve domain first
+            Optional<ShortenedUrl> urlOpt = urlShorteningService.getByShortCode(shortCode);
+            if (urlOpt.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "URL not found");
+                return ResponseEntity.status(404).body(response);
+            }
+            ShortenedUrl url = urlOpt.get();
+
+            analyticsService.recordClick(url.getDomain(), shortCode, ipAddress, userAgent, referrer,
                     country, city, deviceType, browser, os);
 
             response.put("success", true);

@@ -26,7 +26,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
   const [dnsInstructions, setDnsInstructions] = useState<any>(null);
 
   // Universal proxy domain configuration
-  const proxyDomain = process.env.REACT_APP_PROXY_DOMAIN || 'tinyslash.com';
+  const proxyDomain = 'tinyslash.com';
 
   if (!isOpen) return null;
 

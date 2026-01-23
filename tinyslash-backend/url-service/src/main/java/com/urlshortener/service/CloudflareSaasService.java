@@ -63,17 +63,19 @@ public class CloudflareSaasService {
             Map<String, Object> sslConfig = new HashMap<>();
             sslConfig.put("method", "txt"); // TXT validation is non-negotiable
             sslConfig.put("type", "dv"); // Domain Validation certificate
-            sslConfig.put("wildcard", false); // No wildcard for free tier
+            // wildcard and ciphers removed to match minimal working curl payload
 
             // SSL settings
             Map<String, String> sslSettings = new HashMap<>();
             sslSettings.put("http2", "on");
             sslSettings.put("min_tls_version", "1.2");
             sslSettings.put("tls_1_3", "on");
-            sslSettings.put("ciphers", "default");
             sslConfig.put("settings", sslSettings);
 
             requestBody.put("ssl", sslConfig);
+
+            // Log payload for debugging
+            logger.info("📦 Cloudflare Payload: hostname={}", domain.getDomainName());
 
             // Sanitize input
             String cleanToken = (apiToken != null) ? apiToken.trim() : "";

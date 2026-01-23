@@ -347,9 +347,14 @@ public class CustomDomainController {
 
             if (addedToCloudflare) {
                 // Success! Domain is verified and status update handled in service, but we
-                // double check
+                // Success! Domain is verified
                 customDomain.markAsVerified();
-                // SSL Status is set inside createCustomHostname
+
+                // Force an immediate status check to capture "ACTIVE" state if ready
+                // This fixes the issue where DB says PENDING but Cloudflare is ACTIVE
+                String currentSslStatus = cloudflareService.checkSslStatus(customDomain);
+
+                // Save updated domain state
                 domainRepository.save(customDomain);
 
                 System.out.println("✅ Domain verified and activated: " + domainName);

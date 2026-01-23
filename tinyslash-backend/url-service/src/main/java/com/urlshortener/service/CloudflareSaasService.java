@@ -107,6 +107,8 @@ public class CloudflareSaasService {
 
                 // --- ROBUST PARSING LOGIC (TXT IS CANONICAL) ---
                 Map<String, Object> ssl = (Map<String, Object>) result.get("ssl");
+                boolean sslRecordsFound = false;
+
                 if (ssl != null) {
                     List<Map<String, Object>> validationRecords = (List<Map<String, Object>>) ssl
                             .get("validation_records");
@@ -123,6 +125,7 @@ public class CloudflareSaasService {
                                 domain.setSslValidationMethod("TXT");
                                 domain.setSslTxtName(txtName);
                                 domain.setSslTxtValue(txtValue);
+                                sslRecordsFound = true;
                             }
 
                             // Optional accelerator (DCV)
@@ -130,6 +133,41 @@ public class CloudflareSaasService {
                                 domain.setSslCnameTarget(cnameTarget);
                             }
                         }
+                    }
+                }
+
+                // FALLBACK: If SSL records are missing (async propagation), try fetching
+                // details explicitly
+                if (!sslRecordsFound) {
+                    logger.warn("⚠️ No SSL validation records in initial response. Attempting fetch-after-create...");
+                    try {
+                        // Short delay to allow Cloudflare to generate records
+                        Thread.sleep(2000);
+
+                        Map<String, Object> details = getCustomHostnameDetails(domain);
+                        if (details != null) {
+                            Map<String, Object> fetchedSsl = (Map<String, Object>) details.get("ssl");
+                            if (fetchedSsl != null) {
+                                List<Map<String, Object>> fetchedRecords = (List<Map<String, Object>>) fetchedSsl
+                                        .get("validation_records");
+                                if (fetchedRecords != null) {
+                                    for (Map<String, Object> record : fetchedRecords) {
+                                        String txtName = (String) record.get("txt_name");
+                                        String txtValue = (String) record.get("txt_value");
+                                        if (txtName != null && txtValue != null) {
+                                            domain.setSslValidationMethod("TXT");
+                                            domain.setSslTxtName(txtName);
+                                            domain.setSslTxtValue(txtValue);
+                                            logger.info("✅ Recouped SSL TXT records via fetch fallback");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    } catch (Exception ex) {
+                        logger.error("❌ Failed secondary fetch for SSL records", ex);
                     }
                 }
 

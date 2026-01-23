@@ -421,6 +421,7 @@ public class CloudflareSaasService {
                         // Update domain with SSL status
                         if ("active".equals(status)) {
                             domain.setSslStatus("ACTIVE");
+                            domain.setStatus("ACTIVE");
                             domain.setSslIssuedAt(LocalDateTime.now());
                             // Expiry managed by Cloudflare
                             domain.setSslError(null);

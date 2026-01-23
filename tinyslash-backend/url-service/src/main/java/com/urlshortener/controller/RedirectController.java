@@ -4,246 +4,139 @@ import com.urlshortener.model.ShortenedUrl;
 import com.urlshortener.service.UrlShorteningService;
 import com.urlshortener.service.AnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
 import jakarta.servlet.http.HttpServletRequest;
+import java.net.URI;
 import java.util.Optional;
 
 @RestController
 @CrossOrigin(origins = "*")
 public class RedirectController {
-    
+
     @Autowired
     private UrlShorteningService urlShorteningService;
-    
+
     @Autowired(required = false)
     private AnalyticsService analyticsService;
-    
+
+    /**
+     * Strict Domain Resolution (FIX 1)
+     * No guessing. No rewriting. Host header is the source of truth.
+     */
+    private String resolveDomain(HttpServletRequest request) {
+        String host = request.getHeader("Host");
+        if (host == null || host.isBlank()) {
+            throw new IllegalStateException("Missing Host header");
+        }
+        return host.toLowerCase();
+    }
+
     @GetMapping("/debug/{shortCode}")
     public ResponseEntity<String> debugUrl(@PathVariable String shortCode, HttpServletRequest request) {
         try {
-            String hostDomain = getOriginalHostDomain(request);
-            
+            String domain = resolveDomain(request);
+
             StringBuilder debug = new StringBuilder();
-            debug.append("🔍 DEBUG INFO:\n");
+            debug.append("🔍 DEBUG INFO (Strict Mode):\n");
             debug.append("ShortCode: ").append(shortCode).append("\n");
-            debug.append("HostDomain: ").append(hostDomain).append("\n");
-            debug.append("ServerName: ").append(request.getServerName()).append("\n");
-            
-            // Try all lookup methods
-            Optional<ShortenedUrl> urlOpt1 = urlShorteningService.getByShortCodeAndDomain(shortCode, hostDomain);
-            debug.append("Lookup 1 (shortCode + domain): ").append(urlOpt1.isPresent() ? "FOUND" : "NOT FOUND").append("\n");
-            
-            Optional<ShortenedUrl> urlOpt2 = urlShorteningService.getByShortCode(shortCode);
-            debug.append("Lookup 2 (shortCode only): ").append(urlOpt2.isPresent() ? "FOUND" : "NOT FOUND").append("\n");
-            
-            Optional<ShortenedUrl> urlOpt3 = urlShorteningService.findByShortCodeIgnoreDomain(shortCode);
-            debug.append("Lookup 3 (ignore domain): ").append(urlOpt3.isPresent() ? "FOUND" : "NOT FOUND").append("\n");
-            
-            if (urlOpt3.isPresent()) {
-                ShortenedUrl url = urlOpt3.get();
-                debug.append("Found URL:\n");
-                debug.append("  Original: ").append(url.getOriginalUrl()).append("\n");
-                debug.append("  Domain: ").append(url.getDomain()).append("\n");
-                debug.append("  ShortUrl: ").append(url.getShortUrl()).append("\n");
+            debug.append("Domain (Host Header): ").append(domain).append("\n");
+
+            // FIX 4: Debug must mirror production strictness
+            Optional<ShortenedUrl> urlOpt = urlShorteningService.getByShortCodeAndDomain(shortCode, domain);
+
+            if (urlOpt.isPresent()) {
+                ShortenedUrl url = urlOpt.get();
+                debug.append("✅ FOUND:\n");
+                debug.append("  Original URL: ").append(url.getOriginalUrl()).append("\n");
+                debug.append("  Owner Domain: ").append(url.getDomain()).append("\n");
+                debug.append("  Short URL: ").append(url.getShortUrl()).append("\n");
+            } else {
+                debug.append("❌ NOT FOUND (Strict Lookup Failed)\n");
+                debug.append("  Note: Using domain '").append(domain)
+                        .append("'. If the link exists under 'tinyslash.com', you must access it via that domain.\n");
             }
-            
+
             return ResponseEntity.ok(debug.toString());
-            
+
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
 
     @GetMapping("/{shortCode}")
-    public RedirectView redirect(@PathVariable String shortCode, HttpServletRequest request) {
+    public ResponseEntity<Void> redirect(@PathVariable String shortCode, HttpServletRequest request) {
         try {
-            // Get the host domain from the request - check proxy headers first
-            String hostDomain = getOriginalHostDomain(request);
-            
-            System.out.println("🔍 Redirect Request - ShortCode: " + shortCode + ", HostDomain: " + hostDomain);
-            
-            // Enhanced URL lookup with multiple fallback strategies
-            Optional<ShortenedUrl> urlOpt = Optional.empty();
-            
-            try {
-                // Strategy 1: Find by shortCode and exact domain match
-                urlOpt = urlShorteningService.getByShortCodeAndDomain(shortCode, hostDomain);
-                if (urlOpt.isPresent()) {
-                    System.out.println("✅ Found URL with exact domain match: " + hostDomain);
-                }
-            } catch (Exception e) {
-                System.err.println("⚠️ Domain lookup failed, trying fallbacks: " + e.getMessage());
-            }
-            
-            // Strategy 2: For default domain, try with null domain (legacy URLs)
-            if (urlOpt.isEmpty() && "pebly.vercel.app".equals(hostDomain)) {
-                try {
-                    urlOpt = urlShorteningService.getByShortCodeAndDomain(shortCode, null);
-                    if (urlOpt.isPresent()) {
-                        System.out.println("✅ Found URL with null domain (legacy default domain URL)");
-                    }
-                } catch (Exception e) {
-                    System.err.println("⚠️ Null domain lookup failed: " + e.getMessage());
-                }
-            }
-            
-            // Strategy 3: Try shortCode only (most permissive fallback)
+            // 1. Resolve Identity
+            String domain = resolveDomain(request);
+
+            // 2. Strict Lookup (FIX 2)
+            Optional<ShortenedUrl> urlOpt = urlShorteningService.getByShortCodeAndDomain(shortCode, domain);
+
             if (urlOpt.isEmpty()) {
-                try {
-                    urlOpt = urlShorteningService.getByShortCode(shortCode);
-                    if (urlOpt.isPresent()) {
-                        System.out.println("✅ Found URL with shortCode-only lookup");
-                    }
-                } catch (Exception e) {
-                    System.err.println("⚠️ ShortCode-only lookup failed: " + e.getMessage());
-                }
+                // Return 404 if not found (or strict mismatch)
+                return ResponseEntity.notFound().build();
             }
-            
-            // Strategy 4: Final fallback using ignore domain method
-            if (urlOpt.isEmpty()) {
-                try {
-                    System.out.println("🔍 Trying final fallback search for shortCode: " + shortCode);
-                    urlOpt = urlShorteningService.findByShortCodeIgnoreDomain(shortCode);
-                    if (urlOpt.isPresent()) {
-                        System.out.println("✅ Found URL with fallback search: " + urlOpt.get().getOriginalUrl());
-                    }
-                } catch (Exception e) {
-                    System.err.println("⚠️ Final fallback failed: " + e.getMessage());
-                }
-            }
-            
-            if (urlOpt.isEmpty()) {
-                System.out.println("❌ URL not found for shortCode: " + shortCode);
-                // Redirect to a 404 page or error page
-                RedirectView redirectView = new RedirectView();
-                redirectView.setUrl("https://pebly.vercel.app/404?error=url-not-found");
-                redirectView.setStatusCode(HttpStatus.NOT_FOUND);
-                return redirectView;
-            }
-            
+
             ShortenedUrl url = urlOpt.get();
-            
-            // ✅ CHECK PASSWORD PROTECTION
-            if (url.isPasswordProtected()) {
-                System.out.println("🔒 Password-protected link detected - redirecting to password page");
-                // Redirect to frontend password page
-                RedirectView redirectView = new RedirectView();
-                redirectView.setUrl("https://pebly.vercel.app/redirect/" + shortCode);
-                redirectView.setStatusCode(HttpStatus.TEMPORARY_REDIRECT);
-                return redirectView;
-            }
-            
-            // ✅ CHECK IF URL IS ACTIVE
+
+            // 3. Validation Checks
             if (!url.isActive()) {
-                System.out.println("❌ URL is not active");
-                RedirectView redirectView = new RedirectView();
-                redirectView.setUrl("https://pebly.vercel.app/404?error=url-inactive");
-                redirectView.setStatusCode(HttpStatus.GONE);
-                return redirectView;
+                return ResponseEntity.status(HttpStatus.GONE).build();
             }
-            
-            // ✅ CHECK IF URL HAS EXPIRED
+
             if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
-                System.out.println("❌ URL has expired");
-                RedirectView redirectView = new RedirectView();
-                redirectView.setUrl("https://pebly.vercel.app/404?error=url-expired");
-                redirectView.setStatusCode(HttpStatus.GONE);
-                return redirectView;
+                return ResponseEntity.status(HttpStatus.GONE).build();
             }
-            
-            // ✅ CHECK IF MAX CLICKS LIMIT REACHED
+
             if (url.getMaxClicks() != null && url.getTotalClicks() >= url.getMaxClicks()) {
-                System.out.println("❌ URL has reached maximum clicks limit");
-                RedirectView redirectView = new RedirectView();
-                redirectView.setUrl("https://pebly.vercel.app/404?error=max-clicks-reached");
-                redirectView.setStatusCode(HttpStatus.GONE);
-                return redirectView;
+                return ResponseEntity.status(HttpStatus.GONE).build();
             }
-            
-            // Record analytics if service is available
+
+            // 4. Domain-Aware Analytics (FIX 3)
+            // prevents cross-tenant data leakage
             if (analyticsService != null) {
                 try {
                     String userAgent = request.getHeader("User-Agent");
                     String referer = request.getHeader("Referer");
                     String clientIp = getClientIpAddress(request);
-                    
-                    analyticsService.recordClick(shortCode, clientIp, userAgent, referer, 
-                                                null, null, null, null, null);
+
+                    analyticsService.recordClick(domain, shortCode, clientIp, userAgent, referer,
+                            null, null, null, null, null);
                 } catch (Exception e) {
-                    // Log error but don't fail the redirect
-                    System.err.println("Failed to record analytics: " + e.getMessage());
+                    System.err.println("Analytics error: " + e.getMessage());
                 }
             }
-            
-            // Increment click count
-            urlShorteningService.incrementClicks(shortCode);
-            
-            // Perform the redirect
-            System.out.println("✅ Redirecting to: " + url.getOriginalUrl());
-            RedirectView redirectView = new RedirectView();
-            redirectView.setUrl(url.getOriginalUrl());
-            redirectView.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
-            return redirectView;
-            
+
+            // Increment domain-scoped clicks
+            urlShorteningService.incrementClicks(shortCode, domain);
+
+            // 5. Password Protection Handling
+            if (url.isPasswordProtected()) {
+                // Redirect to password entry page (still 302)
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create("https://" + domain + "/redirect/" + shortCode))
+                        .build();
+            }
+
+            // 6. Final Redirect (302 Found)
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(url.getOriginalUrl()))
+                    .build();
+
         } catch (Exception e) {
             System.err.println("Redirect error: " + e.getMessage());
-            // Redirect to error page
-            RedirectView redirectView = new RedirectView();
-            redirectView.setUrl("https://pebly.vercel.app/404?error=redirect-failed");
-            redirectView.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-            return redirectView;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
-    /**
-     * Get the original host domain, checking proxy headers first for custom domains
-     */
-    private String getOriginalHostDomain(HttpServletRequest request) {
-        // For custom domains coming through Cloudflare Worker proxy
-        String xForwardedHost = request.getHeader("X-Forwarded-Host");
-        if (xForwardedHost != null && !xForwardedHost.isEmpty() && 
-            !xForwardedHost.contains("onrender.com") &&
-            !xForwardedHost.contains("pebly.vercel.app")) { // Don't treat default domain as custom
-            System.out.println("🌐 Custom Domain via X-Forwarded-Host: " + xForwardedHost);
-            return xForwardedHost;
-        }
-        
-        String xOriginalHost = request.getHeader("X-Original-Host");
-        if (xOriginalHost != null && !xOriginalHost.isEmpty() && 
-            !xOriginalHost.contains("onrender.com") &&
-            !xOriginalHost.contains("pebly.vercel.app")) { // Don't treat default domain as custom
-            System.out.println("🌐 Custom Domain via X-Original-Host: " + xOriginalHost);
-            return xOriginalHost;
-        }
-        
-        // For default domain requests (either direct backend access or via Vercel)
-        String serverName = request.getServerName();
-        System.out.println("🌐 Server Name: " + serverName);
-        
-        // Normalize default domain requests to use the frontend domain
-        if (serverName.contains("onrender.com") || serverName.contains("pebly.vercel.app")) {
-            System.out.println("🌐 Normalized to Default Domain: pebly.vercel.app");
-            return "pebly.vercel.app";
-        }
-        
-        return serverName;
-    }
-    
+
     private String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
             return xForwardedFor.split(",")[0].trim();
         }
-        
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        
         return request.getRemoteAddr();
     }
 }

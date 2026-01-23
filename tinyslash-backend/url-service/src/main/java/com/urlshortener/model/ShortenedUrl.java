@@ -8,6 +8,11 @@ import java.util.Map;
 import java.util.HashMap;
 
 @Document(collection = "shortened_urls")
+@org.springframework.data.mongodb.core.index.CompoundIndexes({
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "domain_shortcode_idx", def = "{'domain': 1, 'shortCode': 1}", unique = true),
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "domain_created_idx", def = "{'domain': 1, 'createdAt': -1}"),
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "domain_clicks_idx", def = "{'domain': 1, 'totalClicks': -1}")
+})
 public class ShortenedUrl {
 
     @Id
@@ -16,7 +21,7 @@ public class ShortenedUrl {
     @Indexed(unique = true)
     private Long numericId; // For Feistel algorithm
 
-    @Indexed(unique = true)
+    @Indexed // Global uniqueness removed, now scoped to domain
     private String shortCode;
 
     private String originalUrl;

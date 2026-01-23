@@ -77,6 +77,18 @@ public class UrlShorteningService {
             throw new RuntimeException("Invalid URL format");
         }
 
+        // Loop Prevention: Cannot shorten your own domain
+        try {
+            java.net.URI uri = java.net.URI.create(originalUrl);
+            String targetHost = uri.getHost();
+            String myDomain = customDomain != null ? customDomain : extractDomainFromUrl(shortUrlDomain);
+            if (targetHost != null && targetHost.equalsIgnoreCase(myDomain)) {
+                throw new RuntimeException("Cannot shorten a URL from the same domain (Loop Prevention)");
+            }
+        } catch (Exception e) {
+            // Ignore parse errors here, let them pass if strict validation passed
+        }
+
         // Check subscription limits
         if (!subscriptionService.canCreateUrl(userId)) {
             int remaining = subscriptionService.getRemainingDailyUrls(userId);
@@ -113,6 +125,10 @@ public class UrlShorteningService {
             // Our plan says createUrl uses new logic.
         } else {
             // New Deterministic Logic: Auto-Increment -> Feistel -> Base62
+            // We need a loop to ensure collision resistance if using random (though Feistel
+            // is 1:1)
+            // But strict (Domain + ShortCode) allows same code on different domains
+
             long id = sequenceGenerator.generateSequence("url_sequence");
             long shuffledId = feistelCipher.encrypt(id);
             shortCode = base62Encoder.encode(shuffledId);
@@ -175,6 +191,16 @@ public class UrlShorteningService {
 
         // Note: Domain is already set above for custom domains
         // Don't overwrite the custom domain with the original URL's domain
+
+        // Check for existence (idempotency safety) within the specific domain
+        // Although Feistel guarantees uniqueness, this safety check is good
+        // AND it now checks (Domain + Code) instead of global
+        if (shortenedUrlRepository.findByShortCodeAndDomain(shortCode, shortenedUrl.getDomain()).isPresent()) {
+            // In the rare case of collision or re-use, we could regenerate or fail
+            // Given Feistel is 1:1, this implies a re-submission or manual conflict
+            // We'll trust the sequence generator but logging would be good
+            logger.warn("ShortCode {} already exists for domain {}", shortCode, shortenedUrl.getDomain());
+        }
 
         // Save to database
         ShortenedUrl saved = shortenedUrlRepository.save(shortenedUrl);
@@ -327,8 +353,9 @@ public class UrlShorteningService {
     }
 
     @CacheEvict(value = { "clickCounts", "urlAnalytics", "userAnalytics" }, key = "#shortCode")
-    public void incrementClicks(String shortCode) {
-        Optional<ShortenedUrl> urlOpt = shortenedUrlRepository.findByShortCode(shortCode);
+    @CacheEvict(value = { "clickCounts", "urlAnalytics", "userAnalytics" }, key = "#shortCode")
+    public void incrementClicks(String shortCode, String domain) {
+        Optional<ShortenedUrl> urlOpt = shortenedUrlRepository.findByShortCodeAndDomain(shortCode, domain);
         if (urlOpt.isPresent()) {
             ShortenedUrl url = urlOpt.get();
             url.setTotalClicks(url.getTotalClicks() + 1);

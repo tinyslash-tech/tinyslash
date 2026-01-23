@@ -36,7 +36,7 @@ public class AnalyticsService {
 
     @CacheEvict(value = { "urlAnalytics", "userAnalytics", "clickCounts",
             "realtimeAnalytics" }, key = "#shortCode", beforeInvocation = false)
-    public ClickAnalytics recordClick(String shortCode, String ipAddress, String userAgent,
+    public ClickAnalytics recordClick(String domain, String shortCode, String ipAddress, String userAgent,
             String referrer, String country, String city,
             String deviceType, String browser, String os) {
 
@@ -46,10 +46,10 @@ public class AnalyticsService {
             return null;
         }
 
-        // Get the shortened URL
-        Optional<ShortenedUrl> urlOpt = shortenedUrlRepository.findByShortCode(shortCode);
+        // Get the shortened URL using Strict Lookup
+        Optional<ShortenedUrl> urlOpt = shortenedUrlRepository.findByShortCodeAndDomain(shortCode, domain);
         if (urlOpt.isEmpty()) {
-            throw new RuntimeException("Short URL not found");
+            throw new RuntimeException("Short URL not found for domain: " + domain);
         }
 
         ShortenedUrl shortenedUrl = urlOpt.get();

@@ -266,6 +266,27 @@ public class CloudflareSaasService {
                         logger.info("   Method: {}", method);
                         logger.info("   Type: {}", type);
 
+                        // --- SELF-HEALING: Update TXT records if missing or refreshed ---
+                        List<Map<String, Object>> validationRecords = (List<Map<String, Object>>) ssl
+                                .get("validation_records");
+                        if (validationRecords != null && !validationRecords.isEmpty()) {
+                            for (Map<String, Object> record : validationRecords) {
+                                String txtName = (String) record.get("txt_name");
+                                String txtValue = (String) record.get("txt_value");
+                                String cnameTarget = (String) record.get("cname_target");
+
+                                if (txtName != null && txtValue != null) {
+                                    domain.setSslValidationMethod("TXT");
+                                    domain.setSslTxtName(txtName);
+                                    domain.setSslTxtValue(txtValue);
+                                    logger.info("🔄 Self-Healed SSL TXT records during status check");
+                                }
+                                if (cnameTarget != null) {
+                                    domain.setSslCnameTarget(cnameTarget);
+                                }
+                            }
+                        }
+
                         // Update domain with SSL status
                         if ("active".equals(status)) {
                             domain.setSslStatus("ACTIVE");

@@ -75,10 +75,18 @@ public class CloudflareSaasService {
 
             requestBody.put("ssl", sslConfig);
 
+            // Sanitize input
+            String cleanToken = (apiToken != null) ? apiToken.trim() : "";
+
+            logger.info("🔑 Auth Debug: TokenLength={} ZoneID={}", cleanToken.length(), zoneId);
+            if (cleanToken.length() > 4) {
+                logger.info("   Token Prefix: {}...", cleanToken.substring(0, 4));
+            }
+
             // Make API call to Cloudflare
             Map<String, Object> response = webClient.post()
                     .uri("/zones/{zoneId}/custom_hostnames", zoneId)
-                    .header("Authorization", "Bearer " + apiToken)
+                    .header("Authorization", "Bearer " + cleanToken)
                     .header("Content-Type", "application/json")
                     .bodyValue(requestBody)
                     .retrieve()

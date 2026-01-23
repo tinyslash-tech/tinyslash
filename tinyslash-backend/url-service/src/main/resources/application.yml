@@ -58,7 +58,7 @@ cloudflare:
   api:
     token: ${CLOUDFLARE_API_TOKEN:default}
   zone:
-    id: ${CLOUDFLARE_ZONE_ID:default}
+    id: ${CLOUDFLARE_ZONE_ID:0e33fe0b0ba1dbbed0133a1319e078ad}
 
 # Application Configuration
 app:

@@ -190,6 +190,48 @@ public class CloudflareSaasService {
                 List<Map<String, Object>> errors = (List<Map<String, Object>>) response.get("errors");
                 if (errors != null && !errors.isEmpty()) {
                     String errorMessage = (String) errors.get(0).get("message");
+
+                    // --- IDEMPOTENCY HANDLING ---
+                    // If hostname already exists, treat it as success and fetch details
+                    if (errorMessage.toLowerCase().contains("already exists")) {
+                        logger.warn("⚠️ Hostname already exists in Cloudflare. Fetching existing details...");
+
+                        // Fetch details to ensure local DB is in sync (Idempotency)
+                        Map<String, Object> details = getCustomHostnameDetails(domain);
+                        if (details != null) {
+                            String existingId = (String) details.get("id");
+                            String existingStatus = (String) details.get("status");
+
+                            domain.setCloudflareHostnameId(existingId);
+                            domain.setCloudflareStatus(existingStatus);
+
+                            Map<String, Object> fetchedSsl = (Map<String, Object>) details.get("ssl");
+                            if (fetchedSsl != null) {
+                                List<Map<String, Object>> fetchedRecords = (List<Map<String, Object>>) fetchedSsl
+                                        .get("validation_records");
+                                if (fetchedRecords != null) {
+                                    for (Map<String, Object> record : fetchedRecords) {
+                                        String txtName = (String) record.get("txt_name");
+                                        String txtValue = (String) record.get("txt_value");
+                                        String cnameTarget = (String) record.get("cname_target");
+
+                                        if (txtName != null && txtValue != null) {
+                                            domain.setSslValidationMethod("TXT");
+                                            domain.setSslTxtName(txtName);
+                                            domain.setSslTxtValue(txtValue);
+                                        }
+                                        if (cnameTarget != null) {
+                                            domain.setSslCnameTarget(cnameTarget);
+                                        }
+                                    }
+                                }
+                            }
+                            domainRepository.save(domain);
+                            logger.info("✅ Recovered existing Cloudflare hostname details");
+                            return true; // Return SUCCESS implies we recovered
+                        }
+                    }
+
                     logger.error("❌ Cloudflare API error: {}", errorMessage);
                     domain.setSslError(errorMessage);
                     domainRepository.save(domain);

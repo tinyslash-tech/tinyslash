@@ -281,6 +281,52 @@ public class CloudflareSaasService {
             String errorBody = e.getResponseBodyAsString();
             logger.error("❌ Cloudflare API Error (Status {}): {}", e.getStatusCode(), errorBody);
 
+            // --- IDEMPOTENCY HANDLING (Conflict/Duplicate) ---
+            if (e.getStatusCode().value() == 409 || errorBody.toLowerCase().contains("already exists")
+                    || errorBody.toLowerCase().contains("duplicate")) {
+                logger.warn("⚠️ Hostname duplicate/exists (409). Fetching existing details...");
+
+                // Fetch details to ensure local DB is in sync
+                Map<String, Object> details = getCustomHostnameDetails(domain);
+                if (details != null) {
+                    String existingId = (String) details.get("id");
+                    String existingStatus = (String) details.get("status");
+
+                    domain.setCloudflareHostnameId(existingId);
+                    domain.setCloudflareStatus(existingStatus);
+                    domain.setSslError(null); // Clear any previous error
+
+                    Map<String, Object> fetchedSsl = (Map<String, Object>) details.get("ssl");
+                    if (fetchedSsl != null) {
+                        List<Map<String, Object>> fetchedRecords = (List<Map<String, Object>>) fetchedSsl
+                                .get("validation_records");
+                        if (fetchedRecords != null) {
+                            for (Map<String, Object> record : fetchedRecords) {
+                                String txtName = (String) record.get("txt_name");
+                                String txtValue = (String) record.get("txt_value");
+                                // Fallback
+                                if (txtName == null)
+                                    txtName = (String) record.get("name");
+                                if (txtValue == null)
+                                    txtValue = (String) record.get("value");
+                                String cnameTarget = (String) record.get("cname_target");
+                                if (txtName != null && txtValue != null) {
+                                    domain.setSslValidationMethod("TXT");
+                                    domain.setSslTxtName(txtName);
+                                    domain.setSslTxtValue(txtValue);
+                                }
+                                if (cnameTarget != null) {
+                                    domain.setSslCnameTarget(cnameTarget);
+                                }
+                            }
+                        }
+                    }
+                    domainRepository.save(domain);
+                    logger.info("✅ Recovered existing Cloudflare hostname details (from 409)");
+                    return true;
+                }
+            }
+
             String friendlyError = "Cloudflare error: " + e.getStatusCode();
             try {
                 // Robust regex to find "message": "The specific error"

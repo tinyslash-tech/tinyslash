@@ -785,11 +785,23 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                     )}
                     {domain.status === 'ERROR' && (
                       <button
-                        onClick={() => verifyDomain(domain.id)}
+                        onClick={() => verifyDomainReliably(domain)}
                         disabled={isVerifying === domain.id}
                         className="text-yellow-600 hover:text-yellow-800 px-3 py-1 text-sm border border-yellow-600 rounded hover:bg-yellow-50 transition-colors disabled:opacity-50"
                       >
                         {isVerifying === domain.id ? 'Retrying...' : 'Retry'}
+                      </button>
+                    )}
+                    {/* Self-Healing Trigger for Verified but Missing SSL */}
+                    {domain.status === 'VERIFIED' && domain.sslStatus !== 'ACTIVE' && (
+                      <button
+                        onClick={() => verifyDomainReliably(domain)}
+                        disabled={isVerifying === domain.id}
+                        className="text-orange-600 hover:text-orange-800 px-3 py-1 text-sm border border-orange-600 rounded hover:bg-orange-50 transition-colors disabled:opacity-50 flex items-center"
+                        title="Retry SSL provisioning"
+                      >
+                        <RefreshCw className={`w-3 h-3 mr-1 ${isVerifying === domain.id ? 'animate-spin' : ''}`} />
+                        Fix SSL
                       </button>
                     )}
                     <button
@@ -800,17 +812,7 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                       <RefreshCw className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        // Ensure we have ownerId (or current user ID)
-                        const userIdToDelete = ownerId || '';
-                        if (!userIdToDelete) {
-                          toast.error("User ID missing");
-                          return;
-                        }
-                        handleDeleteDomain(domain.domainName);
-                        // Note: handleDeleteDomain wrapper usually handles the API call best, 
-                        // but if calling service directly: deleteDomain(domain.domainName, userIdToDelete)
-                      }}
+                      onClick={() => handleDeleteDomain(domain.id)}
                       className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded transition-colors"
                       title="Delete domain"
                     >

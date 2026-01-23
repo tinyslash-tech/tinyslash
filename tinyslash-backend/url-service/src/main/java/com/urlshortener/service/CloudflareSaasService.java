@@ -74,8 +74,11 @@ public class CloudflareSaasService {
 
             requestBody.put("ssl", sslConfig);
 
+            // Custom Origin Server (Explicitly Requested)
+            requestBody.put("custom_origin_server", "api.tinyslash.com");
+
             // Log payload for debugging
-            logger.info("📦 Cloudflare Payload: hostname={}", domain.getDomainName());
+            logger.info("📦 Cloudflare Payload: hostname={} origin={}", domain.getDomainName(), "api.tinyslash.com");
 
             // Sanitize input
             String cleanToken = (apiToken != null) ? apiToken.trim() : "";
@@ -193,7 +196,8 @@ public class CloudflareSaasService {
 
                     // --- IDEMPOTENCY HANDLING ---
                     // If hostname already exists, treat it as success and fetch details
-                    if (errorMessage.toLowerCase().contains("already exists")) {
+                    if (errorMessage.toLowerCase().contains("already exists")
+                            || errorMessage.toLowerCase().contains("duplicate")) {
                         logger.warn("⚠️ Hostname already exists in Cloudflare. Fetching existing details...");
 
                         // Fetch details to ensure local DB is in sync (Idempotency)

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import QRCodeGenerator from '../QRCodeGenerator';
-import { aiService, AliasSuggestion, SecurityCheck } from '../../services/aiService';
+
 import * as QRCode from 'qrcode';
 import toast from 'react-hot-toast';
 import LinkSuccessModal from '../LinkSuccessModal';
@@ -126,10 +126,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     centerTextBold: true
   });
 
-  // AI Features
-  const [aiSuggestions, setAiSuggestions] = useState<AliasSuggestion[]>([]);
-  const [securityCheck, setSecurityCheck] = useState<SecurityCheck | null>(null);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  // AI Features removed for v1.0 Security Update
   const [customDomains, setCustomDomains] = useState<string[]>(['tinyslash.com']);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -285,33 +282,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     }
   };
 
-  // AI-powered URL analysis
-  useEffect(() => {
-    const analyzeURL = async () => {
-      const currentUrl = mode === 'url' ? urlInput : mode === 'qr' ? qrText : '';
 
-      if (!currentUrl.trim() || !currentUrl.startsWith('http')) return;
-
-      setIsLoadingAI(true);
-
-      try {
-        const [suggestions, security] = await Promise.all([
-          aiService.generateAliasSuggestions(currentUrl),
-          aiService.checkURLSecurity(currentUrl)
-        ]);
-
-        setAiSuggestions(suggestions);
-        setSecurityCheck(security);
-      } catch (error) {
-        console.error('AI analysis failed:', error);
-      } finally {
-        setIsLoadingAI(false);
-      }
-    };
-
-    const timer = setTimeout(analyzeURL, 1000);
-    return () => clearTimeout(timer);
-  }, [urlInput, qrText, mode]);
 
   // Generate QR code preview with optimized debouncing
   useEffect(() => {
@@ -719,8 +690,6 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
         setExpirationDays('');
         setMaxClicks('');
         setIsOneTime(false);
-        setAiSuggestions([]);
-        setSecurityCheck(null);
       } else {
         // Reset edit mode after successful update
         setIsEditMode(false);
@@ -1250,11 +1219,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                         onChange={(e) => setUrlInput(e.target.value)}
                         className="w-full px-3 sm:px-4 py-3 sm:py-4 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                       />
-                      {isLoadingAI && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <Sparkles className="w-5 h-5 text-purple-500 animate-pulse" />
-                        </div>
-                      )}
+                      {/* AI Loading indicator removed */}
                     </div>
                   </div>
                 )}
@@ -1321,32 +1286,6 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                       >
                         Choose File
                       </label>
-                    </div>
-                  </div>
-                )}
-
-
-
-                {/* Security Check */}
-                {securityCheck && (
-                  <div className={`p-4 rounded-lg border ${securityCheck.isSpam || securityCheck.riskScore > 50
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-green-50 border-green-200'
-                    }`}>
-                    <div className="flex items-center">
-                      <Shield className={`w-5 h-5 mr-2 ${securityCheck.isSpam || securityCheck.riskScore > 50
-                        ? 'text-red-600'
-                        : 'text-green-600'
-                        }`} />
-                      <span className="font-medium">
-                        {securityCheck.isSpam || securityCheck.riskScore > 50
-                          ? 'Security Risk Detected'
-                          : 'URL is Safe'
-                        }
-                      </span>
-                      <span className="ml-2 text-sm text-gray-600">
-                        (Risk Score: {securityCheck.riskScore}%)
-                      </span>
                     </div>
                   </div>
                 )}
@@ -2425,8 +2364,6 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           setExpirationDays('');
           setMaxClicks('');
           setIsOneTime(false);
-          setAiSuggestions([]);
-          setSecurityCheck(null);
         }}
       />
     </div>

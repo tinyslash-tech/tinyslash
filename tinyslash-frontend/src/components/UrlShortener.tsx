@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
 import { useUpgradeModal } from '../context/ModalContext';
 import QRCodeGenerator from './QRCodeGenerator';
-import { aiService, AliasSuggestion, SecurityCheck } from '../services/aiService';
 import toast from 'react-hot-toast';
 import { uploadFileToBackend, createShortUrl, createQrCode, getUserUrls, getUserFiles, getUserQrCodes } from '../services/api';
 import SimpleFileUpload from './SimpleFileUpload';
@@ -27,7 +26,7 @@ interface ShortenedLink {
 }
 
 const UrlShortener: React.FC = () => {
-  
+
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const featureAccess = useFeatureAccess(user);
@@ -46,7 +45,7 @@ const UrlShortener: React.FC = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [shortenedLinks, setShortenedLinks] = useState<ShortenedLink[]>([]);
-  
+
   // Load data from database on component mount
   useEffect(() => {
     loadDataFromDatabase();
@@ -123,11 +122,8 @@ const UrlShortener: React.FC = () => {
       toast.error('Failed to load your data from database');
     }
   };
-  
-  // AI Features
-  const [aiSuggestions, setAiSuggestions] = useState<AliasSuggestion[]>([]);
-  const [securityCheck, setSecurityCheck] = useState<SecurityCheck | null>(null);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
+
+  // AI Features removed for v1.0 Security Update
   const [customDomains, setCustomDomains] = useState<string[]>(['tinyslash.com']);
   const [isLoadingDomains, setIsLoadingDomains] = useState(false);
 
@@ -139,7 +135,7 @@ const UrlShortener: React.FC = () => {
       try {
         setIsLoadingDomains(true);
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-        
+
         const response = await fetch(`${apiUrl}/api/v1/domains/verified`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -167,34 +163,6 @@ const UrlShortener: React.FC = () => {
 
     loadCustomDomains();
   }, [user]);
-
-  // AI-powered URL analysis
-  React.useEffect(() => {
-    const analyzeURL = async () => {
-      const currentUrl = activeTab === 'url' ? urlInput : activeTab === 'qr' ? qrText : '';
-      
-      if (!currentUrl.trim() || !currentUrl.startsWith('http')) return;
-
-      setIsLoadingAI(true);
-      
-      try {
-        const [suggestions, security] = await Promise.all([
-          aiService.generateAliasSuggestions(currentUrl),
-          aiService.checkURLSecurity(currentUrl)
-        ]);
-        
-        setAiSuggestions(suggestions);
-        setSecurityCheck(security);
-      } catch (error) {
-        console.error('AI analysis failed:', error);
-      } finally {
-        setIsLoadingAI(false);
-      }
-    };
-
-    const timer = setTimeout(analyzeURL, 1000); // Debounce
-    return () => clearTimeout(timer);
-  }, [urlInput, qrText, activeTab]);
 
   const handleShorten = async () => {
     // Basic validation
@@ -238,7 +206,7 @@ const UrlShortener: React.FC = () => {
           description: 'Created via URL Shortener',
           customDomain: finalDomain !== 'tinyslash.com' ? finalDomain : undefined
         });
-        
+
         result = await createShortUrl({
           originalUrl: urlInput,
           userId,
@@ -255,7 +223,7 @@ const UrlShortener: React.FC = () => {
           console.log('🔍 Backend response for URL creation:', result.data);
           console.log('🔍 Selected domain:', finalDomain);
           console.log('🔍 Returned shortUrl:', result.data.shortUrl);
-          
+
           newLink = {
             id: result.data.id,
             shortCode: result.data.shortCode,
@@ -300,13 +268,13 @@ const UrlShortener: React.FC = () => {
       // Add to local state
       if (newLink) {
         setShortenedLinks(prev => [newLink!, ...prev]);
-        
+
         // Reload from database for consistency
         if (user?.id) {
           loadDataFromDatabase();
         }
       }
-      
+
       // Reset form
       setUrlInput('');
       setQrText('');
@@ -316,9 +284,7 @@ const UrlShortener: React.FC = () => {
       setExpirationDays('');
       setMaxClicks('');
       setIsOneTime(false);
-      setAiSuggestions([]);
-      setSecurityCheck(null);
-      
+
     } catch (error) {
       console.error('Error in handleShorten:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred while processing your request';
@@ -343,7 +309,7 @@ const UrlShortener: React.FC = () => {
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      
+
       const { toast } = await import('react-hot-toast');
       toast.success('Link copied to clipboard!');
     }
@@ -355,7 +321,7 @@ const UrlShortener: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Free User Ad Banner */}
       {user?.plan === 'free' && (
-        <motion.div 
+        <motion.div
           className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-lg"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -376,45 +342,42 @@ const UrlShortener: React.FC = () => {
       )}
 
       {/* Main Shortener Card */}
-      <motion.div 
+      <motion.div
         className="bg-white rounded-2xl shadow-lg p-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Create Short Links</h2>
-        
+
         {/* Tab Navigation */}
         <div className="flex justify-center mb-6">
           <div className="bg-gray-100 p-1 rounded-lg flex">
             <button
               onClick={() => setActiveTab('url')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'url'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'url'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               <Link className="w-4 h-4 inline mr-2" />
               URL Shortener
             </button>
             <button
               onClick={() => setActiveTab('qr')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'qr'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'qr'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               <QrCode className="w-4 h-4 inline mr-2" />
               QR Code
             </button>
             <button
               onClick={() => setActiveTab('file')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'file'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'file'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               <Upload className="w-4 h-4 inline mr-2" />
               File to Link
@@ -437,11 +400,7 @@ const UrlShortener: React.FC = () => {
                   onChange={(e) => setUrlInput(e.target.value)}
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                {isLoadingAI && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <Sparkles className="w-5 h-5 text-purple-500 animate-pulse" />
-                  </div>
-                )}
+                {/* AI Loading indicator removed */}
               </div>
             </div>
           )}
@@ -484,60 +443,7 @@ const UrlShortener: React.FC = () => {
           )}
 
           {/* AI Suggestions */}
-          {aiSuggestions.length > 0 && (
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
-                AI-Suggested Aliases
-              </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {aiSuggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCustomAlias(suggestion.alias)}
-                    className="px-3 py-2 bg-white border border-purple-200 rounded-lg text-sm hover:bg-purple-50 transition-colors text-left"
-                    title={suggestion.reason}
-                  >
-                    <div className="font-medium">{suggestion.alias}</div>
-                    <div className="text-xs text-gray-500 capitalize">{suggestion.category}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Security Check */}
-          {securityCheck && (
-            <div className={`p-4 rounded-lg border ${
-              securityCheck.isSpam || securityCheck.riskScore > 50
-                ? 'bg-red-50 border-red-200'
-                : 'bg-green-50 border-green-200'
-            }`}>
-              <div className="flex items-center">
-                <Shield className={`w-5 h-5 mr-2 ${
-                  securityCheck.isSpam || securityCheck.riskScore > 50
-                    ? 'text-red-600'
-                    : 'text-green-600'
-                }`} />
-                <span className="font-medium">
-                  {securityCheck.isSpam || securityCheck.riskScore > 50
-                    ? 'Security Risk Detected'
-                    : 'URL is Safe'
-                  }
-                </span>
-                <span className="ml-2 text-sm text-gray-600">
-                  (Risk Score: {securityCheck.riskScore}%)
-                </span>
-              </div>
-              {securityCheck.reasons.length > 0 && (
-                <ul className="mt-2 text-sm text-gray-600">
-                  {securityCheck.reasons.map((reason, index) => (
-                    <li key={index}>• {reason}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+          {/* AI Suggestions removed */}
 
           {/* Advanced Settings */}
           <div className="border-t pt-4">
@@ -551,7 +457,7 @@ const UrlShortener: React.FC = () => {
             </button>
 
             {showAdvanced && (
-              <motion.div 
+              <motion.div
                 className="grid grid-cols-1 md:grid-cols-2 gap-4"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -579,13 +485,13 @@ const UrlShortener: React.FC = () => {
                     onChange={(e) => {
                       const selectedValue = e.target.value;
                       console.log('Domain dropdown changed:', selectedValue);
-                      
+
                       if (selectedValue === 'ADD_CUSTOM_DOMAIN') {
                         e.preventDefault();
-                        
+
                         // Reset dropdown to default
                         setSelectedDomain('tinyslash.com');
-                        
+
                         // Check if user can use custom domains
                         if (!featureAccess.canUseCustomDomain) {
                           // Show upgrade modal for custom domains
@@ -598,7 +504,7 @@ const UrlShortener: React.FC = () => {
                           // User has access, navigate to domain management
                           navigate('/dashboard?tab=domains');
                         }
-                        
+
                         return;
                       } else {
                         setSelectedDomain(selectedValue);
@@ -617,7 +523,7 @@ const UrlShortener: React.FC = () => {
                             {domain} {domain === 'tinyslash.com' ? '(Default)' : ''}
                           </option>
                         ))}
-                        
+
                         {/* Add Custom Domain option for all users */}
                         <option value="ADD_CUSTOM_DOMAIN" className="text-blue-600 font-medium">
                           + Add Custom Domain {!featureAccess.canUseCustomDomain ? '(Pro)' : ''}
@@ -631,13 +537,13 @@ const UrlShortener: React.FC = () => {
                       : 'Select "Add Custom Domain" to upgrade and use your own branded domains'
                     }
                   </p>
-                  
+
 
                 </div>
 
                 <div>
-                  <PremiumField 
-                    feature="customAlias" 
+                  <PremiumField
+                    feature="customAlias"
                     label="Custom Alias (Optional)"
                     description="Create memorable branded short links that are easy to remember and share"
                   >
@@ -656,8 +562,8 @@ const UrlShortener: React.FC = () => {
                   )}
                 </div>
 
-                <PremiumField 
-                  feature="passwordProtection" 
+                <PremiumField
+                  feature="passwordProtection"
                   label="Password Protection"
                   description="Secure your links with password protection - only users with the password can access your content"
                 >
@@ -679,8 +585,8 @@ const UrlShortener: React.FC = () => {
                   </div>
                 </PremiumField>
 
-                <PremiumField 
-                  feature="linkExpiration" 
+                <PremiumField
+                  feature="linkExpiration"
                   label="Expiration (Days)"
                   description="Set expiration dates for your links to automatically disable them after a certain time period"
                 >
@@ -693,8 +599,8 @@ const UrlShortener: React.FC = () => {
                   />
                 </PremiumField>
 
-                <PremiumField 
-                  feature="clickLimits" 
+                <PremiumField
+                  feature="clickLimits"
                   label="Max Clicks"
                   description="Control the maximum number of clicks your links can receive before they become inactive"
                 >
@@ -739,14 +645,14 @@ const UrlShortener: React.FC = () => {
               </>
             )}
           </button>
-          
+
 
         </div>
       </motion.div>
 
       {/* Results */}
       {shortenedLinks.length > 0 && (
-        <motion.div 
+        <motion.div
           className="bg-white rounded-2xl shadow-lg p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -781,7 +687,7 @@ const UrlShortener: React.FC = () => {
                     <p className="text-xs text-gray-400">{new Date(link.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
-                
+
                 {activeTab === 'qr' && (
                   <div className="mt-3 flex justify-center">
                     <QRCodeGenerator value={link.shortUrl} size={128} />

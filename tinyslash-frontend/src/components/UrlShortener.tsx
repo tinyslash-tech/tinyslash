@@ -285,10 +285,34 @@ const UrlShortener: React.FC = () => {
       setMaxClicks('');
       setIsOneTime(false);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in handleShorten:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while processing your request';
-      toast.error(`Failed to create link: ${errorMessage}`);
+
+      // Handle Security Violations (422 Unprocessable Entity)
+      if (error.response?.status === 422 && error.response?.data?.uiErrorCode) {
+        const securityError = error.response.data;
+
+        toast.error((t) => (
+          <div className="flex flex-col">
+            <span className="font-bold">{securityError.title}</span>
+            <span className="text-sm">{securityError.message}</span>
+            {securityError.secondaryMessage && (
+              <span className="text-xs mt-1 opacity-75">{securityError.secondaryMessage}</span>
+            )}
+          </div>
+        ), {
+          duration: 6000,
+          style: {
+            border: '1px solid #EF4444',
+            background: '#FEF2F2',
+            color: '#7F1D1D',
+          },
+        });
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'An error occurred while processing your request';
+        const apiMessage = error.response?.data?.message || errorMessage;
+        toast.error(`Failed to create link: ${apiMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }

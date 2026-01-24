@@ -323,8 +323,10 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                   </div>
                 </div>
 
-                {/* 2. SSL Verification Record (TXT) */}
-                {dnsInstructions.ssl && (
+
+
+                {/* 2. SSL Verification Record (TXT) - Conditional Render */}
+                {dnsInstructions.ssl ? (
                   <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-bold text-gray-800 flex items-center">
@@ -358,6 +360,30 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                         </div>
                       </div>
                     </div>
+                  </div>
+                ) : (
+                  <div className="bg-orange-50 border-l-4 border-orange-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-bold text-orange-900 flex items-center">
+                        <Shield className="w-5 h-5 mr-2 text-orange-500" />
+                        2. Verify Ownership (SSL)
+                      </h4>
+                      <span className="text-xs font-mono bg-orange-100 text-orange-800 px-2 py-1 rounded">Pending</span>
+                    </div>
+                    <p className="text-sm text-orange-800 mb-4">
+                      SSL verification details are not yet available. This happens if the system is busy or the domain was just added.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        // We need a function to retry - using window.location.reload() as fallback or implementing a retry fetch
+                        // For now, let's close and tell them to check the dashboard, OR trigger a re-fetch if we had the context
+                        toast('Please check the main dashboard to retry SSL verification', { icon: 'ℹ️' });
+                        onClose();
+                      }}
+                      className="bg-white border border-orange-300 text-orange-700 px-4 py-2 rounded text-sm font-semibold hover:bg-orange-50 transition-colors"
+                    >
+                      Wait & Manage in Dashboard
+                    </button>
                   </div>
                 )}
 
@@ -472,7 +498,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

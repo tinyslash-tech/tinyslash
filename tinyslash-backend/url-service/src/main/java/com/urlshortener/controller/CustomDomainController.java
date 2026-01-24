@@ -155,12 +155,29 @@ public class CustomDomainController {
                 return ResponseEntity.ok(response);
 
             } else {
-                logger.error("❌ Failed to provision on Cloudflare");
-                response.put("success", false);
-                response.put("message", "Domain added but failed to provision SSL. " + customDomain.getSslError());
-                // Return saved domain even on error so user can retry/delete
+                logger.warn("⚠️ Domain added but Cloudflare provisioning failed/pending");
+
+                // Still return success because the domain is saved in our DB
+                // Frontend needs to show "Routing" instructions and a "Retry SSL" button
+
+                Map<String, Object> dnsInstructions = new HashMap<>();
+
+                // 1. Routing Record (Always known)
+                Map<String, String> routingRecord = new HashMap<>();
+                routingRecord.put("type", "CNAME");
+                routingRecord.put("name", verificationService.extractSubdomain(domain));
+                routingRecord.put("target", proxyTarget);
+                routingRecord.put("ttl", "Auto or 3600");
+                dnsInstructions.put("routing", routingRecord);
+
+                response.put("success", true);
+                response.put("message", "Domain reserved. SSL provisioning is pending or requires retry.");
                 response.put("domain", customDomain);
-                return ResponseEntity.status(500).body(response);
+                response.put("status", "pending_ssl"); // distinct status for frontend
+                response.put("dnsInstructions", dnsInstructions);
+                response.put("sslProvisioningFailed", true);
+
+                return ResponseEntity.ok(response);
             }
 
         } catch (org.springframework.dao.DuplicateKeyException e) {

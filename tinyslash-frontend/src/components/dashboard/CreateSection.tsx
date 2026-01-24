@@ -669,6 +669,57 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           }
 
           toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
+
+          setResult(newLink);
+
+          // Reset form (except in edit mode)
+          if (!isEditMode) {
+            setUrlInput('');
+            setQrText('');
+            setSelectedFile(null);
+            setCustomAlias('');
+            setPassword('');
+            setExpirationDays('');
+            setMaxClicks('');
+            setIsOneTime(false);
+          } else {
+            // Reset edit mode after successful update
+            setIsEditMode(false);
+            setEditQRId(null);
+          }
+
+          // Add a small delay for better UX
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          setIsLoading(false);
+
+          // Show appropriate success modal
+          if (mode === 'qr') {
+            // Ensure QR code is generated and ready
+            if (qrText && canvasRef.current) {
+              try {
+                console.log('Final QR generation before modal...');
+                await QRCode.toCanvas(canvasRef.current, qrText, {
+                  width: qrCustomization.size,
+                  margin: qrCustomization.margin,
+                  color: {
+                    dark: qrCustomization.foregroundColor,
+                    light: qrCustomization.backgroundColor
+                  },
+                  errorCorrectionLevel: qrCustomization.errorCorrectionLevel
+                });
+                console.log('QR code ready for modal, canvas size:', canvasRef.current.width, 'x', canvasRef.current.height);
+              } catch (error) {
+                console.error('Final QR generation error:', error);
+                toast.error('QR generation failed, but modal will still open with regeneration option');
+              }
+            }
+
+            // Show modal - it will handle QR generation if needed
+            setShowQRSuccessModal(true);
+          } else {
+            setShowSuccessModal(true);
+          }
         } else {
           console.error('Backend save failed:', backendResult);
           toast.error('Failed to save to database: ' + (backendResult?.message || 'Unknown error'));

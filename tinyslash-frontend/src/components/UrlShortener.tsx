@@ -273,17 +273,17 @@ const UrlShortener: React.FC = () => {
         if (user?.id) {
           loadDataFromDatabase();
         }
-      }
 
-      // Reset form
-      setUrlInput('');
-      setQrText('');
-      setSelectedFile(null);
-      setCustomAlias('');
-      setPassword('');
-      setExpirationDays('');
-      setMaxClicks('');
-      setIsOneTime(false);
+        // Reset form only on success
+        setUrlInput('');
+        setQrText('');
+        setSelectedFile(null);
+        setCustomAlias('');
+        setPassword('');
+        setExpirationDays('');
+        setMaxClicks('');
+        setIsOneTime(false);
+      }
 
     } catch (error: any) {
       console.error('Error in handleShorten:', error);

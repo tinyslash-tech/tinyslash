@@ -59,11 +59,19 @@ public class FileUploadService {
 
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
     private static final String[] ALLOWED_TYPES = {
+            // Images
             "image/jpeg", "image/png", "image/gif", "image/webp",
-            "application/pdf", "text/plain", "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            // Documents
+            "application/pdf", "text/plain",
+            "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOC,
+                                                                                                             // DOCX
+            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // XLS,
+                                                                                                             // XLSX
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation", // PPT, PPTX
+            // Archives (Optional, but useful)
             "application/zip", "application/x-zip-compressed"
+            // EXPLICITLY BLOCKED: .exe, .apk, .js, .jar, .html, .docm, .xlsm via Whitelist
     };
 
     public UploadedFile uploadFile(MultipartFile file, String userId, String title,
@@ -316,7 +324,10 @@ public class FileUploadService {
         }
 
         if (!isAllowed) {
-            throw new RuntimeException("File type not allowed: " + contentType);
+            throw new com.urlshortener.exception.SecurityViolationException(
+                    "blocked_file_type_" + contentType,
+                    100,
+                    "TS-BLOCK-002");
         }
     }
 

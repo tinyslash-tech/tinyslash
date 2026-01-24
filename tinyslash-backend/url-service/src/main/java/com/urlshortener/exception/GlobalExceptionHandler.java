@@ -85,4 +85,28 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
+
+    /**
+     * Handle Security Violation Exceptions (Tinyslash Precheck Engine)
+     */
+    @ExceptionHandler(SecurityViolationException.class)
+    public ResponseEntity<com.urlshortener.dto.SecurityUiResponse> handleSecurityViolationException(
+            SecurityViolationException e) {
+        logger.warn("Security Violation: {} (Score: {})", e.getReason(), e.getRiskScore());
+
+        // Reconstruct decision context for the mapper
+        // We assume BLOCK because the exception was thrown
+        com.urlshortener.dto.SecurityDecision decision = new com.urlshortener.dto.SecurityDecision(
+                com.urlshortener.dto.SecurityDecision.Decision.BLOCK,
+                e.getReason(),
+                null,
+                e.getRiskScore(),
+                null);
+
+        com.urlshortener.dto.SecurityUiResponse uiResponse = com.urlshortener.util.SecurityMessageMapper
+                .mapToUserMessage(decision);
+
+        // Return 422 Unprocessable Entity (Content is dangerous) or 400
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(uiResponse);
+    }
 }

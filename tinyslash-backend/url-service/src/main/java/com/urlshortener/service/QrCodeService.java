@@ -4,6 +4,8 @@ import com.urlshortener.model.QrCode;
 import com.urlshortener.model.User;
 import com.urlshortener.repository.QrCodeRepository;
 import com.urlshortener.repository.UserRepository;
+import com.urlshortener.dto.SecurityDecision;
+import com.urlshortener.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -36,6 +38,9 @@ public class QrCodeService {
     @Autowired
     private CacheService cacheService;
 
+    @Autowired
+    private SecurityService securityService;
+
     @Value("${app.shorturl.domain:https://pebly.vercel.app}")
     private String shortUrlDomain;
 
@@ -56,6 +61,26 @@ public class QrCodeService {
         if (content == null || content.trim().isEmpty()) {
             throw new RuntimeException("Content cannot be empty");
         }
+
+        // --- SECURITY CHECK (MANDATORY FOR URLs) ---
+        // If content looks like a web link, verify it.
+        String contentLower = content.toLowerCase();
+        if (contentLower.startsWith("http://") || contentLower.startsWith("https://")
+                || contentLower.startsWith("www.")) {
+            String urlToCheck = contentLower.startsWith("www.") ? "https://" + content : content;
+            User user = null;
+            if (userId != null) {
+                user = userRepository.findById(userId).orElse(null);
+            }
+            com.urlshortener.dto.SecurityDecision decision = securityService.preCheckUrl(urlToCheck, user);
+            if (decision.getDecision() == com.urlshortener.dto.SecurityDecision.Decision.BLOCK) {
+                throw new com.urlshortener.exception.SecurityViolationException(
+                        decision.getReason(),
+                        decision.getRiskScore(),
+                        "TS-BLOCK-003");
+            }
+        }
+        // ------------------------------------------
 
         // Create QR code
         QrCode qrCode = new QrCode(content, contentType, userId, scopeType, scopeId);

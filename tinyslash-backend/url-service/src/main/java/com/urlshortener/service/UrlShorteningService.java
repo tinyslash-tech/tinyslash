@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 import java.util.List;
+import com.urlshortener.dto.SecurityDecision;
+import com.urlshortener.service.SecurityService;
 import com.urlshortener.service.SequenceGeneratorService;
 import com.urlshortener.service.FeistelCipher;
 import com.urlshortener.service.Base62Encoder;
@@ -32,6 +34,7 @@ public class UrlShorteningService {
     private final SequenceGeneratorService sequenceGenerator;
     private final FeistelCipher feistelCipher;
     private final Base62Encoder base62Encoder;
+    private final SecurityService securityService;
 
     @Autowired
     public UrlShorteningService(ShortenedUrlRepository shortenedUrlRepository,
@@ -40,7 +43,8 @@ public class UrlShorteningService {
             SubscriptionService subscriptionService,
             SequenceGeneratorService sequenceGenerator,
             FeistelCipher feistelCipher,
-            Base62Encoder base62Encoder) {
+            Base62Encoder base62Encoder,
+            SecurityService securityService) {
         this.shortenedUrlRepository = shortenedUrlRepository;
         this.userRepository = userRepository;
         this.cacheService = cacheService;
@@ -48,6 +52,7 @@ public class UrlShorteningService {
         this.sequenceGenerator = sequenceGenerator;
         this.feistelCipher = feistelCipher;
         this.base62Encoder = base62Encoder;
+        this.securityService = securityService;
     }
 
     @Value("${app.shorturl.domain:https://pebly.vercel.app}")
@@ -76,6 +81,21 @@ public class UrlShorteningService {
         if (!isValidUrl(originalUrl)) {
             throw new RuntimeException("Invalid URL format");
         }
+
+        // --- SECURITY CHECK (MANDATORY) ---
+        User user = null;
+        if (userId != null) {
+            user = userRepository.findById(userId).orElse(null);
+        }
+        com.urlshortener.dto.SecurityDecision decision = securityService.preCheckUrl(originalUrl, user);
+        if (decision.getDecision() == com.urlshortener.dto.SecurityDecision.Decision.BLOCK) {
+            throw new com.urlshortener.exception.SecurityViolationException(
+                    decision.getReason(),
+                    decision.getRiskScore(),
+                    "TS-BLOCK-003" // Default code, mapper will resolve actual code
+            );
+        }
+        // ----------------------------------
 
         // Loop Prevention: Cannot shorten your own domain
         try {

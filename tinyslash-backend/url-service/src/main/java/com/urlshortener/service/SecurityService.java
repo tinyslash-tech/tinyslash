@@ -779,7 +779,9 @@ public class SecurityService {
 
     // 0. Check Trust List FIRST
     if (TRUSTED_SHORT_DOMAINS.contains(domain)) {
-      return null; // Explicitly allowed
+      analysis.setWhitelisted(true); // <--- CRITICAL FIX: Explicitly bypass risk scoring
+      analysis.addRiskScore("whitelisted_domain", 0);
+      return null;
     }
 
     // 1. Known Shortener Domain Block

@@ -20,6 +20,12 @@ export interface PlanFeatures {
   advancedQRSettings: boolean;
   // File Upload Premium Features
   advancedFileSettings: boolean;
+  // Advanced Link Features
+  whatsAppPreview: boolean;
+  geoRedirect: boolean;
+  deepLinks: boolean;
+  leadLock: boolean;
+  trustBadge: boolean;
 }
 
 export interface PlanLimits {
@@ -61,6 +67,12 @@ export const PLAN_POLICY: Record<string, PlanLimits> = {
       advancedQRSettings: false,
       // File Upload Premium Features
       advancedFileSettings: false,
+      // Advanced Link Features
+      whatsAppPreview: false,
+      geoRedirect: false,
+      deepLinks: false,
+      leadLock: false,
+      trustBadge: false,
     },
   },
 
@@ -91,6 +103,12 @@ export const PLAN_POLICY: Record<string, PlanLimits> = {
       advancedQRSettings: true,
       // File Upload Premium Features
       advancedFileSettings: true,
+      // Advanced Link Features
+      whatsAppPreview: true,
+      geoRedirect: true,
+      deepLinks: true,
+      leadLock: true,
+      trustBadge: false,
     },
   },
 
@@ -121,6 +139,12 @@ export const PLAN_POLICY: Record<string, PlanLimits> = {
       advancedQRSettings: true,
       // File Upload Premium Features
       advancedFileSettings: true,
+      // Advanced Link Features
+      whatsAppPreview: true,
+      geoRedirect: true,
+      deepLinks: true,
+      leadLock: true,
+      trustBadge: true,
     },
   },
 
@@ -151,6 +175,12 @@ export const PLAN_POLICY: Record<string, PlanLimits> = {
       advancedQRSettings: true,
       // File Upload Premium Features
       advancedFileSettings: true,
+      // Advanced Link Features
+      whatsAppPreview: true,
+      geoRedirect: true,
+      deepLinks: true,
+      leadLock: true,
+      trustBadge: true,
     },
   },
 };
@@ -158,7 +188,7 @@ export const PLAN_POLICY: Record<string, PlanLimits> = {
 // Helper function to get plan policy with fallback
 export const getPlanPolicy = (planName?: string): PlanLimits => {
   if (!planName) return PLAN_POLICY.FREE;
-  
+
   // Normalize plan name to match our policy keys
   const normalizedPlan = normalizePlanName(planName);
   return PLAN_POLICY[normalizedPlan] || PLAN_POLICY.FREE;
@@ -167,22 +197,22 @@ export const getPlanPolicy = (planName?: string): PlanLimits => {
 // Helper function to normalize plan names from backend to frontend format
 export const normalizePlanName = (planName: string): string => {
   const plan = planName.toUpperCase().trim();
-  
+
   // Handle different plan name formats from backend
   if (plan === 'FREE' || plan === 'FREE_PLAN') {
     return 'FREE';
   }
-  
+
   // Pro plans (monthly/yearly) -> PRO
   if (plan.includes('PRO')) {
     return 'PRO';
   }
-  
+
   // Business plans (monthly/yearly) -> BUSINESS
   if (plan.includes('BUSINESS')) {
     return 'BUSINESS';
   }
-  
+
   // Trial plans
   if (plan.includes('TRIAL')) {
     if (plan.includes('BUSINESS')) {
@@ -190,7 +220,7 @@ export const normalizePlanName = (planName: string): string => {
     }
     return 'PRO'; // Default trial to PRO features
   }
-  
+
   // Fallback to original plan name
   return plan;
 };
@@ -203,9 +233,9 @@ export const isTrialPlan = (planName?: string): boolean => {
 // Helper function to get upgrade path
 export const getUpgradePath = (currentPlan?: string): string => {
   const plan = currentPlan?.toUpperCase();
-  
+
   if (!plan || plan === 'FREE') return 'PRO';
   if (plan === 'PRO') return 'BUSINESS';
-  
+
   return 'BUSINESS';
 };

@@ -16,12 +16,12 @@ interface FeatureAccessResult {
   canAddDomain: (currentDomainCount: number) => boolean;
   canUseDomains: boolean;
   domainLimit: number;
-  
+
   // Team access
   canAddTeamMember: (currentMemberCount: number) => boolean;
   canUseTeams: boolean;
   teamMemberLimit: number;
-  
+
   // Feature access
   hasFeature: (feature: keyof PlanFeatures) => boolean;
   canUseAnalytics: boolean;
@@ -30,34 +30,42 @@ interface FeatureAccessResult {
   canUseWhiteLabel: boolean;
   canUseApiAccess: boolean;
   canUsePrioritySupport: boolean;
-  
+
   // URL Shortener Premium Features
   canUseCustomAlias: boolean;
   canUsePasswordProtection: boolean;
   canUseLinkExpiration: boolean;
   canUseClickLimits: boolean;
-  
+
   // QR Code Premium Features
   canUseCustomQRColors: boolean;
   canUseQRLogo: boolean;
   canUseQRBranding: boolean;
   canUseAdvancedQRSettings: boolean;
-  
+
+  // File Upload Premium Features
   // File Upload Premium Features
   canUseAdvancedFileSettings: boolean;
-  
+
+  // Advanced Link Features
+  canUseWhatsAppPreview: boolean;
+  canUseGeoRedirect: boolean;
+  canUseDeepLinks: boolean;
+  canUseLeadLock: boolean;
+  canUseTrustBadge: boolean;
+
   // Usage limits
   canCreateUrl: (currentCount: number) => boolean;
   canCreateQR: (currentCount: number) => boolean;
   canUploadFile: (currentCount: number) => boolean;
-  
+
   // Plan info
   limits: ReturnType<typeof usePlanLimits>;
   isFree: boolean;
   isPaid: boolean;
   isTrial: boolean;
   upgradePath: string;
-  
+
   // Helper methods
   getUpgradeReason: (feature: string, currentCount?: number) => string;
   shouldShowUpgradeModal: (feature: string, currentCount?: number) => boolean;
@@ -169,21 +177,28 @@ export const useFeatureAccess = (user?: User | null): FeatureAccessResult => {
       canUseWhiteLabel: hasFeature('whiteLabel'),
       canUseApiAccess: hasFeature('apiAccess'),
       canUsePrioritySupport: hasFeature('prioritySupport'),
-      
+
       // URL Shortener Premium Features
       canUseCustomAlias: hasFeature('customAlias'),
       canUsePasswordProtection: hasFeature('passwordProtection'),
       canUseLinkExpiration: hasFeature('linkExpiration'),
       canUseClickLimits: hasFeature('clickLimits'),
-      
+
       // QR Code Premium Features
       canUseCustomQRColors: hasFeature('customQRColors'),
       canUseQRLogo: hasFeature('qrLogo'),
       canUseQRBranding: hasFeature('qrBranding'),
       canUseAdvancedQRSettings: hasFeature('advancedQRSettings'),
-      
+
       // File Upload Premium Features
       canUseAdvancedFileSettings: hasFeature('advancedFileSettings'),
+
+      // Advanced Link Features
+      canUseWhatsAppPreview: hasFeature('whatsAppPreview'),
+      canUseGeoRedirect: hasFeature('geoRedirect'),
+      canUseDeepLinks: hasFeature('deepLinks'),
+      canUseLeadLock: hasFeature('leadLock'),
+      canUseTrustBadge: hasFeature('trustBadge'),
 
       // Usage limits
       canCreateUrl,

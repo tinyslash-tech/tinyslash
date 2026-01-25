@@ -488,6 +488,80 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     ctx.fillText(qrCustomization.centerText, centerX, centerY);
   };
 
+  // 🎯 CENTRALIZED SECURITY HANDLER (FINAL)
+  const showSecurityBlockedUI = () => {
+    const headline = "🚫 Link blocked by Tinyslash Security";
+    const message = "This URL did not pass our security checks.";
+    const inlineMessage = "Link blocked by Tinyslash Security. This URL did not pass our security checks.";
+
+    toast.error(
+      <div className="flex flex-col">
+        <span className="font-bold">{headline}</span>
+        <span className="text-sm">{message}</span>
+      </div>,
+      {
+        duration: 6000,
+        style: {
+          border: '1px solid #EF4444',
+          background: '#FEF2F2',
+          color: '#7F1D1D',
+        },
+      }
+    );
+
+    setErrorMessage(inlineMessage);
+  };
+
+  const handleSuccess = async (newLink: any) => {
+    setResult(newLink);
+
+    // Reset form (except in edit mode)
+    if (!isEditMode) {
+      setUrlInput('');
+      setQrText('');
+      setSelectedFile(null);
+      setCustomAlias('');
+      setPassword('');
+      setExpirationDays('');
+      setMaxClicks('');
+      setIsOneTime(false);
+    } else {
+      // Reset edit mode after successful update
+      setIsEditMode(false);
+      setEditQRId(null);
+    }
+
+    // Add a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    setIsLoading(false);
+
+    // Show appropriate success modal
+    if (mode === 'qr') {
+      // Ensure QR code is generated and ready
+      if (qrText && canvasRef.current) {
+        try {
+          console.log('Final QR generation before modal...');
+          await QRCode.toCanvas(canvasRef.current, qrText, {
+            width: qrCustomization.size,
+            margin: qrCustomization.margin,
+            color: {
+              dark: qrCustomization.foregroundColor,
+              light: qrCustomization.backgroundColor
+            },
+            errorCorrectionLevel: qrCustomization.errorCorrectionLevel
+          });
+        } catch (error) {
+          console.error('Final QR generation error:', error);
+          toast.error('QR generation failed, but modal will still open with regeneration option');
+        }
+      }
+      setShowQRSuccessModal(true);
+    } else {
+      setShowSuccessModal(true);
+    }
+  };
+
   const handleCreate = async () => {
     if (mode === 'url' && !urlInput.trim()) return;
     if (mode === 'qr' && !qrText.trim()) return;
@@ -677,56 +751,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
 
           toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
 
-          setResult(newLink);
-
-          // Reset form (except in edit mode)
-          if (!isEditMode) {
-            setUrlInput('');
-            setQrText('');
-            setSelectedFile(null);
-            setCustomAlias('');
-            setPassword('');
-            setExpirationDays('');
-            setMaxClicks('');
-            setIsOneTime(false);
-          } else {
-            // Reset edit mode after successful update
-            setIsEditMode(false);
-            setEditQRId(null);
-          }
-
-          // Add a small delay for better UX
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          setIsLoading(false);
-
-          // Show appropriate success modal
-          if (mode === 'qr') {
-            // Ensure QR code is generated and ready
-            if (qrText && canvasRef.current) {
-              try {
-                console.log('Final QR generation before modal...');
-                await QRCode.toCanvas(canvasRef.current, qrText, {
-                  width: qrCustomization.size,
-                  margin: qrCustomization.margin,
-                  color: {
-                    dark: qrCustomization.foregroundColor,
-                    light: qrCustomization.backgroundColor
-                  },
-                  errorCorrectionLevel: qrCustomization.errorCorrectionLevel
-                });
-                console.log('QR code ready for modal, canvas size:', canvasRef.current.width, 'x', canvasRef.current.height);
-              } catch (error) {
-                console.error('Final QR generation error:', error);
-                toast.error('QR generation failed, but modal will still open with regeneration option');
-              }
-            }
-
-            // Show modal - it will handle QR generation if needed
-            setShowQRSuccessModal(true);
-          } else {
-            setShowSuccessModal(true);
-          }
+          toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
+          await handleSuccess(newLink);
         } else {
           console.error('Backend save failed:', backendResult);
           const backendErrorMsg = backendResult?.message || 'Failed to save to database';
@@ -738,12 +764,21 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       } catch (error: any) {
         console.error('Error saving to backend:', error);
 
-        let saveErrorMsg = 'Failed to save to database';
-        if (error.response?.data?.message) {
-          saveErrorMsg = error.response.data.message;
-        } else if (error instanceof Error) {
-          saveErrorMsg = error.message;
+        const isSecurityBlocked =
+          error?.response?.status === 422 ||
+          error?.response?.data?.error === 'SECURITY_BLOCKED';
+
+        if (isSecurityBlocked) {
+          showSecurityBlockedUI();
+          setIsLoading(false);
+          return;
         }
+
+        // 🔥 DO NOT TRUST BACKEND MESSAGE FOR SECURITY
+        const saveErrorMsg =
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to save to database';
 
         toast.error(saveErrorMsg);
         setErrorMessage(saveErrorMsg);
@@ -751,103 +786,26 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
         return; // CRITICAL: Stop execution here
       }
 
-      setResult(newLink);
-
-      // Reset form (except in edit mode)
-      if (!isEditMode) {
-        setUrlInput('');
-        setQrText('');
-        setSelectedFile(null);
-        setCustomAlias('');
-        setPassword('');
-        setExpirationDays('');
-        setMaxClicks('');
-        setIsOneTime(false);
-      } else {
-        // Reset edit mode after successful update
-        setIsEditMode(false);
-        setEditQRId(null);
-      }
-
-      // Add a small delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setIsLoading(false);
-
-      // Show appropriate success modal
-      if (mode === 'qr') {
-        // Ensure QR code is generated and ready
-        if (qrText && canvasRef.current) {
-          try {
-            console.log('Final QR generation before modal...');
-            await QRCode.toCanvas(canvasRef.current, qrText, {
-              width: qrCustomization.size,
-              margin: qrCustomization.margin,
-              color: {
-                dark: qrCustomization.foregroundColor,
-                light: qrCustomization.backgroundColor
-              },
-              errorCorrectionLevel: qrCustomization.errorCorrectionLevel
-            });
-            console.log('QR code ready for modal, canvas size:', canvasRef.current.width, 'x', canvasRef.current.height);
-          } catch (error) {
-            console.error('Final QR generation error:', error);
-            toast.error('QR generation failed, but modal will still open with regeneration option');
-          }
-        }
-
-        // Show modal - it will handle QR generation if needed
-        setShowQRSuccessModal(true);
-      } else {
-        setShowSuccessModal(true);
-      }
     } catch (error: any) {
       console.error('Error creating link:', error);
+      setIsLoading(false);
 
-      // Handle Security Violations (422 Unprocessable Entity)
-      // Handle Security Violations (422 Unprocessable Entity OR 400 with generic catch)
-      // The backend controller might catch the exception and return 400 with the message manually
-      const errorMsg = error.response?.data?.message || (error instanceof Error ? error.message : '');
-      const lowerMsg = errorMsg.toLowerCase();
+      const isSecurityBlocked =
+        error?.response?.status === 422 ||
+        error?.response?.data?.error === 'SECURITY_BLOCKED';
 
-      const isSecurityViolation =
-        error.response?.status === 422 ||
-        lowerMsg.includes("security violation") ||
-        lowerMsg.includes("high_risk_score") ||
-        lowerMsg.includes("risk_score");
-
-      if (isSecurityViolation) {
-        // 🎯 FINAL UI COPY (LOCKED) - Do not change dynamic messages
-        const headline = "🚫 Link blocked by Tinyslash Security";
-        const message = "This URL did not pass our security checks.";
-        const inlineMessage = "Link blocked by Tinyslash Security. This URL did not pass our security checks.";
-
-        toast.error((t) => (
-          <div className="flex flex-col">
-            <span className="font-bold">{headline}</span>
-            <span className="text-sm">{message}</span>
-          </div>
-        ), {
-          duration: 6000,
-          style: {
-            border: '1px solid #EF4444',
-            background: '#FEF2F2',
-            color: '#7F1D1D',
-          },
-        });
-
-        setErrorMessage(inlineMessage);
-        setIsLoading(false);
+      if (isSecurityBlocked) {
+        showSecurityBlockedUI();
         return;
-      } else {
-        const errorMessage = error instanceof Error ? error.message : 'An error occurred while processing your request';
-        // Check for other API error messages
-        const apiMessage = error.response?.data?.message || errorMessage;
-        toast.error(`Failed to create link: ${apiMessage}`);
-        setErrorMessage(apiMessage); // Ensure other errors are also shown inline
       }
 
-      setIsLoading(false);
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'An unexpected error occurred';
+
+      toast.error(msg);
+      setErrorMessage(msg);
     }
   };
 

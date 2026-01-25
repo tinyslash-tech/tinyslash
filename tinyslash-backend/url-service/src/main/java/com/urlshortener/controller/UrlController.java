@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.time.LocalDateTime;
+import com.urlshortener.exception.SecurityViolationException;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/v1/urls")
@@ -215,6 +217,15 @@ public class UrlController {
             response.put("data", urlData);
 
             return ResponseEntity.ok(response);
+
+        } catch (SecurityViolationException e) {
+            // Explicitly handle security violations to ensure 422 status is returned
+            // instead of falling through to the generic catch block
+            response.put("success", false);
+            response.put("error", "SECURITY_BLOCKED");
+            // We intentionally do not include reason/score to prevent leaking internal
+            // rules
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
 
         } catch (Exception e) {
             response.put("success", false);

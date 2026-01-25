@@ -67,7 +67,7 @@ public class RedirectController {
     }
 
     @GetMapping("/{shortCode}")
-    public ResponseEntity<Void> redirect(@PathVariable String shortCode, HttpServletRequest request) {
+    public ResponseEntity<?> redirect(@PathVariable String shortCode, HttpServletRequest request) {
         try {
             // 1. Resolve Identity
             String domain = resolveDomain(request);
@@ -76,7 +76,6 @@ public class RedirectController {
             Optional<ShortenedUrl> urlOpt = urlShorteningService.getByShortCodeAndDomain(shortCode, domain);
 
             if (urlOpt.isEmpty()) {
-                // Return 404 if not found (or strict mismatch)
                 return ResponseEntity.notFound().build();
             }
 
@@ -95,11 +94,18 @@ public class RedirectController {
                 return ResponseEntity.status(HttpStatus.GONE).build();
             }
 
+            String userAgent = request.getHeader("User-Agent");
+
+            // --- FEATURE: SMART LINK PREVIEW (Universal Bot Detection) ---
+            if (url.getSmartLinkPreview() != null && url.getSmartLinkPreview().isEnabled()) {
+                if (isPreviewBot(userAgent)) {
+                    return serveSmartPreview(url);
+                }
+            }
+
             // 4. Domain-Aware Analytics (FIX 3)
-            // prevents cross-tenant data leakage
             if (analyticsService != null) {
                 try {
-                    String userAgent = request.getHeader("User-Agent");
                     String referer = request.getHeader("Referer");
                     String clientIp = getClientIpAddress(request);
 
@@ -115,21 +121,99 @@ public class RedirectController {
 
             // 5. Password Protection Handling
             if (url.isPasswordProtected()) {
-                // Redirect to password entry page (still 302)
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(URI.create("https://" + domain + "/redirect/" + shortCode))
                         .build();
             }
 
+            String targetUrl = url.getOriginalUrl();
+
+            // --- FEATURE: APP DEEP LINKING (Zero-Config) ---
+            if (url.getDeepLinkConfig() != null && url.getDeepLinkConfig().isEnabled()) {
+                String deepLink = generateAppDeepLink(targetUrl, userAgent);
+                if (deepLink != null) {
+                    // For Deep Links, we typically redirect to the intent URI
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create(deepLink))
+                            .build();
+                }
+            }
+
             // 6. Final Redirect (302 Found)
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(url.getOriginalUrl()))
+                    .location(URI.create(targetUrl))
                     .build();
 
         } catch (Exception e) {
             System.err.println("Redirect error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private boolean isPreviewBot(String userAgent) {
+        if (userAgent == null)
+            return false;
+        String ua = userAgent.toLowerCase();
+        return ua.contains("whatsapp") || ua.contains("facebookexternalhit") || ua.contains("twitterbot") ||
+                ua.contains("telegrambot") || ua.contains("linkedinbot") || ua.contains("slackbot") ||
+                ua.contains("discordbot") || ua.contains("bsky");
+    }
+
+    private ResponseEntity<String> serveSmartPreview(ShortenedUrl url) {
+        ShortenedUrl.SmartLinkPreview preview = url.getSmartLinkPreview();
+        String html = "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "    <meta charset=\"UTF-8\">\n" +
+                "    <meta property=\"og:title\" content=\"" + escapeHtml(preview.getTitle()) + "\" />\n" +
+                "    <meta property=\"og:description\" content=\"" + escapeHtml(preview.getDescription()) + "\" />\n" +
+                "    <meta property=\"og:image\" content=\"" + (preview.getImage() != null ? preview.getImage() : "")
+                + "\" />\n" +
+                "    <meta property=\"og:url\" content=\"" + url.getOriginalUrl() + "\" />\n" +
+                "    <meta name=\"twitter:card\" content=\"summary_large_image\" />\n" +
+                "    <title>" + escapeHtml(preview.getTitle()) + "</title>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "</body>\n" +
+                "</html>";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "text/html; charset=utf-8");
+        return new ResponseEntity<>(html, headers, HttpStatus.OK);
+    }
+
+    private String escapeHtml(String input) {
+        if (input == null)
+            return "";
+        return input.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+    private String generateAppDeepLink(String targetUrl, String userAgent) {
+        if (userAgent == null)
+            return null;
+        String ua = userAgent.toLowerCase();
+        boolean isAndroid = ua.contains("android");
+
+        if (!isAndroid)
+            return null; // Initially supporting Android Zero-Config "Intent"
+
+        // Amazon
+        if (targetUrl.contains("amazon.in") || targetUrl.contains("amzn.to")) {
+            String cleanUrl = targetUrl.replace("https://", "").replace("http://", "");
+            return "intent://" + cleanUrl + "#Intent;scheme=https;package=com.amazon.mShop.android.shopping;end";
+        }
+
+        // Flipkart
+        if (targetUrl.contains("flipkart.com")) {
+            String cleanUrl = targetUrl.replace("https://", "").replace("http://", "");
+            return "intent://" + cleanUrl + "#Intent;scheme=https;package=com.flipkart.android;end";
+        }
+
+        return null;
     }
 
     private String getClientIpAddress(HttpServletRequest request) {

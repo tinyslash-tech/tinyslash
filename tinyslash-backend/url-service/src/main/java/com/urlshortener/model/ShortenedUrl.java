@@ -96,6 +96,63 @@ public class ShortenedUrl {
     private String category;
     private String notes;
 
+    // Advanced Features
+    private DeepLinkConfig deepLinkConfig;
+    private SmartLinkPreview smartLinkPreview;
+
+    // Inner Classes for Configuration
+    public static class DeepLinkConfig {
+        private boolean enabled;
+        // Logic handled automatically by backend "Zero-Config"
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
+    public static class SmartLinkPreview {
+        private boolean enabled;
+        private String title;
+        private String description;
+        private String image;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public String getImage() {
+            return image;
+        }
+
+        public void setImage(String image) {
+            this.image = image;
+        }
+    }
+
     // Constructors
     public ShortenedUrl() {
     }
@@ -470,5 +527,21 @@ public class ShortenedUrl {
 
     public void setScopeId(String scopeId) {
         this.scopeId = scopeId;
+    }
+
+    public DeepLinkConfig getDeepLinkConfig() {
+        return deepLinkConfig;
+    }
+
+    public void setDeepLinkConfig(DeepLinkConfig deepLinkConfig) {
+        this.deepLinkConfig = deepLinkConfig;
+    }
+
+    public SmartLinkPreview getSmartLinkPreview() {
+        return smartLinkPreview;
+    }
+
+    public void setSmartLinkPreview(SmartLinkPreview smartLinkPreview) {
+        this.smartLinkPreview = smartLinkPreview;
     }
 }

@@ -9,7 +9,7 @@ import { useUpgradeModal } from '../../../context/ModalContext';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 
 // Types & Hooks
-import { CreateMode, DEFAULT_DOMAIN, QRCustomization, WhatsAppPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from './types';
+import { CreateMode, DEFAULT_DOMAIN, QRCustomization, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from './types';
 import { useCustomDomains } from './hooks/useCustomDomains';
 import { useSecurityUI } from './hooks/useSecurityUI';
 import { useCreateHandler } from './hooks/useCreateHandler';
@@ -54,7 +54,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // New Features State
-  const [whatsappPreview, setWhatsappPreview] = useState<WhatsAppPreview>({ title: '', description: '' });
+  const [smartLinkPreview, setSmartLinkPreview] = useState<SmartLinkPreview>({ title: '', description: '' });
   const [geoConfig, setGeoConfig] = useState<GeoConfig>({ enabled: true, rules: [], defaultUrl: '' });
   const [deepLinkConfig, setDeepLinkConfig] = useState<DeepLinkConfig>({ enabled: false });
   const [leadLockConfig, setLeadLockConfig] = useState<LeadLockConfig>({ enabled: false, type: 'whatsapp' });
@@ -133,7 +133,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     canvasRef,
     showSecurityBlockedUI,
     isMounted,
-    whatsappPreview,
+    smartLinkPreview,
     geoConfig,
     deepLinkConfig,
     leadLockConfig,
@@ -294,8 +294,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
               setMaxClicks={setMaxClicks}
               isOneTime={isOneTime}
               setIsOneTime={setIsOneTime}
-              whatsappPreview={whatsappPreview}
-              setWhatsappPreview={setWhatsappPreview}
+              smartLinkPreview={smartLinkPreview}
+              setSmartLinkPreview={setSmartLinkPreview}
               geoConfig={geoConfig}
               setGeoConfig={setGeoConfig}
               deepLinkConfig={deepLinkConfig}

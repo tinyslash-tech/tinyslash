@@ -2,7 +2,7 @@ import { useState } from 'react';
 import * as QRCode from 'qrcode'; // Need for final generation
 import { toast } from 'react-hot-toast';
 import { createShortUrl, createQrCode, updateQrCode, uploadFileToBackend } from '../../../../services/api';
-import { DEFAULT_DOMAIN, ShortenedLink, CreateMode, QRCustomization, WhatsAppPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from '../types';
+import { DEFAULT_DOMAIN, ShortenedLink, CreateMode, QRCustomization, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from '../types';
 
 interface UseCreateHandlerProps {
   user: any;
@@ -29,7 +29,7 @@ interface UseCreateHandlerProps {
   isMounted: React.MutableRefObject<boolean>;
 
   // New Configs
-  whatsappPreview: WhatsAppPreview;
+  smartLinkPreview: SmartLinkPreview;
   geoConfig: GeoConfig;
   deepLinkConfig: DeepLinkConfig;
   leadLockConfig: LeadLockConfig;
@@ -60,7 +60,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     canvasRef,
     showSecurityBlockedUI,
     isMounted,
-    whatsappPreview,
+    smartLinkPreview,
     geoConfig,
     deepLinkConfig,
     leadLockConfig,
@@ -221,7 +221,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined,
         type: mode,
         qrCustomization: mode === 'qr' ? qrCustomization : undefined,
-        whatsappPreview: featureAccess.canUseWhatsAppPreview ? whatsappPreview : undefined,
+        smartLinkPreview: featureAccess.canUseWhatsAppPreview ? smartLinkPreview : undefined,
         geoConfig: featureAccess.canUseGeoRedirect ? geoConfig : undefined,
         deepLinkConfig: featureAccess.canUseDeepLinks ? deepLinkConfig : undefined,
         leadLockConfig: featureAccess.canUseLeadLock ? leadLockConfig : undefined,
@@ -247,7 +247,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
           // New Advanced Features (These will be ignored by backend if not implemented yet, or stored in generic metadata)
           // Ideally, the backend expects these specific fields if updated. 
           // Assuming we send them as part of the body.
-          whatsappPreview: newLink.whatsappPreview,
+          smartLinkPreview: newLink.smartLinkPreview,
           geoConfig: newLink.geoConfig,
           deepLinkConfig: newLink.deepLinkConfig,
           leadLockConfig: newLink.leadLockConfig,

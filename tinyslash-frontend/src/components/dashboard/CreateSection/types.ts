@@ -25,7 +25,7 @@ export interface QRCustomization {
 
 // --- New Feature Interfaces ---
 
-export interface WhatsAppPreview {
+export interface SmartLinkPreview {
   title: string;
   description: string;
   image?: string; // base64 or URL
@@ -72,7 +72,7 @@ export interface ShortenedLink {
   qrCustomization?: QRCustomization;
 
   // New Feature Fields
-  whatsappPreview?: WhatsAppPreview;
+  smartLinkPreview?: SmartLinkPreview;
   geoConfig?: GeoConfig;
   deepLinkConfig?: DeepLinkConfig;
   leadLockConfig?: LeadLockConfig;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Zap, Lock, Sparkles, Eye, EyeOff, ChevronDown, ChevronUp, Settings } from 'lucide-react';
-import { DEFAULT_DOMAIN, WhatsAppPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from '../types';
+import { DEFAULT_DOMAIN, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from '../types';
 import { GrowthMarketing } from './GrowthMarketing';
 import { SecurityTrust } from './SecurityTrust';
 
@@ -33,8 +33,8 @@ interface AdvancedSettingsProps {
   setIsOneTime: (isOneTime: boolean) => void;
 
   // New Feature Props
-  whatsappPreview: WhatsAppPreview;
-  setWhatsappPreview: (config: WhatsAppPreview) => void;
+  smartLinkPreview: SmartLinkPreview;
+  setSmartLinkPreview: (config: SmartLinkPreview) => void;
   geoConfig: GeoConfig;
   setGeoConfig: (config: GeoConfig) => void;
   deepLinkConfig: DeepLinkConfig;
@@ -65,8 +65,8 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   setMaxClicks,
   isOneTime,
   setIsOneTime,
-  whatsappPreview,
-  setWhatsappPreview,
+  smartLinkPreview,
+  setSmartLinkPreview,
   geoConfig,
   setGeoConfig,
   deepLinkConfig,
@@ -232,8 +232,8 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
         {activeTab === 'growth' && (
           <div className="animate-fadeIn">
             <GrowthMarketing
-              whatsappPreview={whatsappPreview}
-              setWhatsappPreview={setWhatsappPreview}
+              smartLinkPreview={smartLinkPreview}
+              setSmartLinkPreview={setSmartLinkPreview}
               geoConfig={geoConfig}
               setGeoConfig={setGeoConfig}
               deepLinkConfig={deepLinkConfig}

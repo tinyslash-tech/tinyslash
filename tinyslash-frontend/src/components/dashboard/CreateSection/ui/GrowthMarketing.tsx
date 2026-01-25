@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Share2, Globe, Smartphone, Lock, Plus, Trash2, HelpCircle } from 'lucide-react';
-import { WhatsAppPreview, GeoConfig, DeepLinkConfig, LeadLockConfig } from '../types';
+import { SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig } from '../types';
 
 interface GrowthMarketingProps {
-  whatsappPreview: WhatsAppPreview;
-  setWhatsappPreview: (config: WhatsAppPreview) => void;
+  smartLinkPreview: SmartLinkPreview;
+  setSmartLinkPreview: (config: SmartLinkPreview) => void;
   geoConfig: GeoConfig;
   setGeoConfig: (config: GeoConfig) => void;
   deepLinkConfig: DeepLinkConfig;
@@ -16,8 +16,8 @@ interface GrowthMarketingProps {
 }
 
 export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
-  whatsappPreview,
-  setWhatsappPreview,
+  smartLinkPreview,
+  setSmartLinkPreview,
   geoConfig,
   setGeoConfig,
   deepLinkConfig,
@@ -39,10 +39,10 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
 
   // --- Render Helpers ---
 
-  const renderWhatsAppPreview = () => (
+  const renderSmartLinkPreview = () => (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       <button
-        onClick={() => toggleSection('whatsapp')}
+        onClick={() => toggleSection('smartPreview')}
         className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 text-left transition-colors"
       >
         <div className="flex items-center space-x-3">
@@ -51,38 +51,49 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
           </div>
           <div>
             <h4 className="font-medium text-gray-900 flex items-center">
-              WhatsApp Smart Preview
+              Smart Link Preview
               {!featureAccess.canUseWhatsAppPreview && (
                 <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
               )}
             </h4>
-            <p className="text-sm text-gray-500">Customize title & image for 40% higher CTR</p>
+            <p className="text-sm text-gray-500">Universal rich previews for WhatsApp, Telegram, FB, LinkedIn & more</p>
           </div>
         </div>
-        <span className="text-gray-400 text-sm">{expandedSection === 'whatsapp' ? 'Collapse' : 'Expand'}</span>
+        <span className="text-gray-400 text-sm">{expandedSection === 'smartPreview' ? 'Collapse' : 'Expand'}</span>
       </button>
 
-      {expandedSection === 'whatsapp' && (
+      {expandedSection === 'smartPreview' && (
         <div className="p-4 bg-gray-50 border-t border-gray-200 space-y-4">
           {!featureAccess.canUseWhatsAppPreview && (
             <div className="inset-0 bg-white/50 backdrop-blur-[1px] absolute z-10 flex items-center justify-center rounded-b-lg">
               <button
-                onClick={() => handleProFeatureClick('WhatsApp Smart Preview', 'Customize how your links look on WhatsApp to boost clicks.')}
+                onClick={() => handleProFeatureClick('Smart Link Preview', 'Customize how your links look on all social platforms.')}
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-lg text-sm font-medium hover:shadow-xl transition-all"
               >
-                Unlock WhatsApp Previews
+                Unlock Smart Previews
               </button>
             </div>
           )}
 
           <div className={`${!featureAccess.canUseWhatsAppPreview ? 'filter blur-sm pointer-events-none select-none opacity-50' : ''}`}>
+
+            {/* Platform Icons */}
+            <div className="flex space-x-2 mb-4 opacity-70">
+              {['WhatsApp', 'Telegram', 'Facebook', 'LinkedIn', 'Twitter/X', 'Slack', 'Discord'].map(p => (
+                <span key={p} title={p} className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-gray-500 cursor-help">
+                  {p[0]}
+                </span>
+              ))}
+              <span className="text-xs text-gray-400 self-center ml-2">+ many more</span>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Custom Title</label>
               <input
                 type="text"
                 placeholder="e.g. 🔥 50% OFF Diwali Sale"
-                value={whatsappPreview.title || ''}
-                onChange={(e) => setWhatsappPreview({ ...whatsappPreview, title: e.target.value })}
+                value={smartLinkPreview.title || ''}
+                onChange={(e) => setSmartLinkPreview({ ...smartLinkPreview, title: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
               />
             </div>
@@ -90,8 +101,8 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">Custom Description</label>
               <textarea
                 placeholder="Limited time offer. Click to claim your discount now!"
-                value={whatsappPreview.description || ''}
-                onChange={(e) => setWhatsappPreview({ ...whatsappPreview, description: e.target.value })}
+                value={smartLinkPreview.description || ''}
+                onChange={(e) => setSmartLinkPreview({ ...smartLinkPreview, description: e.target.value })}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
               />
@@ -275,7 +286,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
             <div className="bg-white p-3 rounded border border-gray-200">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Supported Platforms</p>
               <div className="flex flex-wrap gap-2">
-                {['Amazon', 'Flipkart', 'Myntra', 'Meesho', 'AJIO', 'Nykaa', 'FirstCry'].map(platform => (
+                {['Amazon', 'Flipkart', 'Myntra', 'Meesho', 'AJIO', 'Nykaa'].map(platform => (
                   <span key={platform} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md border border-gray-200">
                     {platform}
                   </span>
@@ -391,7 +402,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
 
   return (
     <div className="space-y-4">
-      {renderWhatsAppPreview()}
+      {renderSmartLinkPreview()}
       {renderGeoRedirects()}
       {renderDeepLink()}
       {renderLeadLock()}

@@ -23,6 +23,44 @@ export interface QRCustomization {
   secondaryColor: string;
 }
 
+// --- New Feature Interfaces ---
+
+export interface WhatsAppPreview {
+  title: string;
+  description: string;
+  image?: string; // base64 or URL
+}
+
+export interface GeoRule {
+  state: string;
+  url: string;
+}
+
+export interface GeoConfig {
+  enabled: boolean;
+  rules: GeoRule[];
+  defaultUrl: string;
+}
+
+export interface DeepLinkConfig {
+  enabled: boolean;
+  androidScheme?: string;
+  iosScheme?: string;
+  fallbackUrl?: string;
+}
+
+export interface LeadLockConfig {
+  enabled: boolean;
+  type: 'whatsapp' | 'email';
+  redirectUrl?: string;
+}
+
+export interface TrustBadgeConfig {
+  enabled: boolean;
+  requested: boolean;
+  status?: 'pending' | 'approved' | 'rejected';
+}
+
 export interface ShortenedLink {
   id: string;
   shortCode: string;
@@ -34,6 +72,13 @@ export interface ShortenedLink {
   customDomain?: string;
   type: 'url' | 'qr' | 'file';
   qrCustomization?: QRCustomization;
+
+  // New Feature Fields
+  whatsappPreview?: WhatsAppPreview;
+  geoConfig?: GeoConfig;
+  deepLinkConfig?: DeepLinkConfig;
+  leadLockConfig?: LeadLockConfig;
+  trustBadgeConfig?: TrustBadgeConfig;
 }
 
 export const DEFAULT_DOMAIN = 'tinyslash.com';

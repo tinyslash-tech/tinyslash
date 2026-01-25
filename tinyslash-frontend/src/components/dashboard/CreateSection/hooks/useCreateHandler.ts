@@ -2,44 +2,75 @@ import { useState } from 'react';
 import * as QRCode from 'qrcode'; // Need for final generation
 import { toast } from 'react-hot-toast';
 import { createShortUrl, createQrCode, updateQrCode, uploadFileToBackend } from '../../../../services/api';
-import { DEFAULT_DOMAIN, ShortenedLink, CreateMode, QRCustomization } from '../types';
+import { DEFAULT_DOMAIN, ShortenedLink, CreateMode, QRCustomization, WhatsAppPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from '../types';
 
-export const useCreateHandler = (
-  user: any,
-  mode: CreateMode,
-  selectedDomain: string,
-  urlInput: string,
-  qrText: string,
-  selectedFile: File | null,
-  customAlias: string,
-  password: string,
-  expirationDays: number | '',
-  maxClicks: number | '',
-  qrCustomization: QRCustomization,
-  isEditMode: boolean,
-  editQRId: string | null,
-  featureAccess: any,
-  checkAccess: any,
-  showUpgradeModal: any,
-  planInfo: any,
-  handleApiError: (error: any) => boolean,
-  setErrorMessage: (msg: string | null) => void,
-  canvasRef: React.RefObject<HTMLCanvasElement>,
-  showSecurityBlockedUI: () => void,
-  isMounted: React.MutableRefObject<boolean>
-) => {
+interface UseCreateHandlerProps {
+  user: any;
+  mode: CreateMode;
+  selectedDomain: string;
+  urlInput: string;
+  qrText: string;
+  selectedFile: File | null;
+  customAlias: string;
+  password: string;
+  expirationDays: number | '';
+  maxClicks: number | '';
+  qrCustomization: QRCustomization;
+  isEditMode: boolean;
+  editQRId: string | null;
+  featureAccess: any;
+  checkAccess: any;
+  showUpgradeModal: any;
+  planInfo: any;
+  handleApiError: (error: any) => boolean;
+  setErrorMessage: (msg: string | null) => void;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  showSecurityBlockedUI: () => void;
+  isMounted: React.MutableRefObject<boolean>;
+
+  // New Configs
+  whatsappPreview: WhatsAppPreview;
+  geoConfig: GeoConfig;
+  deepLinkConfig: DeepLinkConfig;
+  leadLockConfig: LeadLockConfig;
+  trustBadgeConfig: TrustBadgeConfig;
+}
+
+export const useCreateHandler = (props: UseCreateHandlerProps) => {
+  const {
+    user,
+    mode,
+    selectedDomain,
+    urlInput,
+    qrText,
+    selectedFile,
+    customAlias,
+    password,
+    expirationDays,
+    maxClicks,
+    qrCustomization,
+    isEditMode,
+    editQRId,
+    featureAccess,
+    checkAccess,
+    showUpgradeModal,
+    planInfo,
+    handleApiError,
+    setErrorMessage,
+    canvasRef,
+    showSecurityBlockedUI,
+    isMounted,
+    whatsappPreview,
+    geoConfig,
+    deepLinkConfig,
+    leadLockConfig,
+    trustBadgeConfig
+  } = props;
+
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ShortenedLink | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showQRSuccessModal, setShowQRSuccessModal] = useState(false);
-
-  // Callbacks to reset form - typically passed from Parent or we return a reset trigger
-  // For simplicity, we assume parent handles reset or we return logic to do so.
-  // Actually, handleSuccess does the reset in original code. 
-  // We can return a "shouldReset" flag or similar, or just return setters.
-  // Better: return the handleSuccess function that does the state updates, but it needs access to setters.
-  // So we might need to pass setters to this hook. which is getting messy with many args.
-  // Alternative: Internalize simple state like "isLoading" here. 
 
   const handleSuccess = async (newLink: any, resetForm: () => void) => {
     setResult(newLink);
@@ -189,32 +220,51 @@ export const useCreateHandler = (
         createdAt: new Date().toISOString(),
         customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined,
         type: mode,
-        qrCustomization: mode === 'qr' ? qrCustomization : undefined
+        qrCustomization: mode === 'qr' ? qrCustomization : undefined,
+        whatsappPreview: featureAccess.canUseWhatsAppPreview ? whatsappPreview : undefined,
+        geoConfig: featureAccess.canUseGeoRedirect ? geoConfig : undefined,
+        deepLinkConfig: featureAccess.canUseDeepLinks ? deepLinkConfig : undefined,
+        leadLockConfig: featureAccess.canUseLeadLock ? leadLockConfig : undefined,
+        trustBadgeConfig: featureAccess.canUseTrustBadge ? trustBadgeConfig : undefined
       };
 
       try {
         let backendResult;
 
+        // Construct Payload with new features
+        const commonPayload = {
+          userId: user?.id || 'anonymous-user',
+          title: mode === 'url' ? `Dashboard URL - ${shortCode}` : `Dashboard QR - ${shortCode}`,
+          description: 'Created via Dashboard',
+
+          // Legacy Features
+          customAlias: finalCustomAlias || undefined,
+          password: finalPassword || undefined,
+          expirationDays: finalExpirationDays ? parseInt(finalExpirationDays.toString()) : undefined,
+          maxClicks: finalMaxClicks ? parseInt(finalMaxClicks.toString()) : undefined,
+          customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined,
+
+          // New Advanced Features (These will be ignored by backend if not implemented yet, or stored in generic metadata)
+          // Ideally, the backend expects these specific fields if updated. 
+          // Assuming we send them as part of the body.
+          whatsappPreview: newLink.whatsappPreview,
+          geoConfig: newLink.geoConfig,
+          deepLinkConfig: newLink.deepLinkConfig,
+          leadLockConfig: newLink.leadLockConfig,
+          trustBadgeConfig: newLink.trustBadgeConfig
+        };
+
         if (mode === 'url') {
           backendResult = await createShortUrl({
             originalUrl: originalUrl,
-            userId: user?.id || 'anonymous-user',
-            customAlias: finalCustomAlias || undefined,
-            password: finalPassword || undefined,
-            expirationDays: finalExpirationDays ? parseInt(finalExpirationDays.toString()) : undefined,
-            maxClicks: finalMaxClicks ? parseInt(finalMaxClicks.toString()) : undefined,
-            title: `Dashboard URL - ${shortCode}`,
-            description: 'Created via Dashboard',
-            customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined
+            ...commonPayload
           });
         } else if (mode === 'qr') {
           if (isEditMode && editQRId) {
             backendResult = await updateQrCode(editQRId, {
-              userId: user?.id || 'anonymous-user',
+              ...commonPayload,
               content: originalUrl,
               contentType: 'TEXT',
-              title: `Dashboard QR - ${shortCode}`,
-              description: 'Updated via Dashboard',
               foregroundColor: finalQrCustomization.foregroundColor,
               backgroundColor: finalQrCustomization.backgroundColor,
               size: finalQrCustomization.size,
@@ -222,11 +272,9 @@ export const useCreateHandler = (
             });
           } else {
             backendResult = await createQrCode({
+              ...commonPayload,
               content: originalUrl,
               contentType: 'TEXT',
-              userId: user?.id || 'anonymous-user',
-              title: `Dashboard QR - ${shortCode}`,
-              description: 'Created via Dashboard',
               foregroundColor: finalQrCustomization.foregroundColor,
               backgroundColor: finalQrCustomization.backgroundColor,
               size: finalQrCustomization.size,
@@ -245,6 +293,7 @@ export const useCreateHandler = (
           toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
           await handleSuccess(newLink, resetForm);
         } else {
+          // ... Error handling logic is preserved
           console.error('Backend save failed:', backendResult);
 
           // CRITICAL: Check for security violation in the response object
@@ -272,6 +321,7 @@ export const useCreateHandler = (
           return;
         }
       } catch (error: any) {
+        // ... Error handling logic
         console.error('Error saving to backend:', error);
         if (handleApiError(error)) {
           setIsLoading(false);

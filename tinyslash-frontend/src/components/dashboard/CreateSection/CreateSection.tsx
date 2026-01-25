@@ -9,7 +9,7 @@ import { useUpgradeModal } from '../../../context/ModalContext';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 
 // Types & Hooks
-import { CreateMode, DEFAULT_DOMAIN, QRCustomization } from './types';
+import { CreateMode, DEFAULT_DOMAIN, QRCustomization, WhatsAppPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from './types';
 import { useCustomDomains } from './hooks/useCustomDomains';
 import { useSecurityUI } from './hooks/useSecurityUI';
 import { useCreateHandler } from './hooks/useCreateHandler';
@@ -52,6 +52,13 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const [editQRId, setEditQRId] = useState<string | null>(null);
   const [isOneTime, setIsOneTime] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // New Features State
+  const [whatsappPreview, setWhatsappPreview] = useState<WhatsAppPreview>({ title: '', description: '' });
+  const [geoConfig, setGeoConfig] = useState<GeoConfig>({ enabled: true, rules: [], defaultUrl: '' });
+  const [deepLinkConfig, setDeepLinkConfig] = useState<DeepLinkConfig>({ enabled: true });
+  const [leadLockConfig, setLeadLockConfig] = useState<LeadLockConfig>({ enabled: false, type: 'whatsapp' });
+  const [trustBadgeConfig, setTrustBadgeConfig] = useState<TrustBadgeConfig>({ enabled: false, requested: false });
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,7 +110,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     setShowSuccessModal,
     showQRSuccessModal,
     setShowQRSuccessModal
-  } = useCreateHandler(
+  } = useCreateHandler({
     user,
     mode,
     selectedDomain,
@@ -125,8 +132,13 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     setErrorMessage,
     canvasRef,
     showSecurityBlockedUI,
-    isMounted
-  );
+    isMounted,
+    whatsappPreview,
+    geoConfig,
+    deepLinkConfig,
+    leadLockConfig,
+    trustBadgeConfig
+  });
 
   // Lifecycle
   useEffect(() => {
@@ -282,6 +294,16 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
               setMaxClicks={setMaxClicks}
               isOneTime={isOneTime}
               setIsOneTime={setIsOneTime}
+              whatsappPreview={whatsappPreview}
+              setWhatsappPreview={setWhatsappPreview}
+              geoConfig={geoConfig}
+              setGeoConfig={setGeoConfig}
+              deepLinkConfig={deepLinkConfig}
+              setDeepLinkConfig={setDeepLinkConfig}
+              leadLockConfig={leadLockConfig}
+              setLeadLockConfig={setLeadLockConfig}
+              trustBadgeConfig={trustBadgeConfig}
+              setTrustBadgeConfig={setTrustBadgeConfig}
               featureAccess={featureAccess}
               upgradeModal={upgradeModal}
             />

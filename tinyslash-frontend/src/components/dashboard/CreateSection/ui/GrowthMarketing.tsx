@@ -1,0 +1,398 @@
+import React, { useState } from 'react';
+import { Share2, Globe, Smartphone, Lock, Plus, Trash2, HelpCircle } from 'lucide-react';
+import { WhatsAppPreview, GeoConfig, DeepLinkConfig, LeadLockConfig } from '../types';
+
+interface GrowthMarketingProps {
+  whatsappPreview: WhatsAppPreview;
+  setWhatsappPreview: (config: WhatsAppPreview) => void;
+  geoConfig: GeoConfig;
+  setGeoConfig: (config: GeoConfig) => void;
+  deepLinkConfig: DeepLinkConfig;
+  setDeepLinkConfig: (config: DeepLinkConfig) => void;
+  leadLockConfig: LeadLockConfig;
+  setLeadLockConfig: (config: LeadLockConfig) => void;
+  featureAccess: any;
+  upgradeModal: any;
+}
+
+export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
+  whatsappPreview,
+  setWhatsappPreview,
+  geoConfig,
+  setGeoConfig,
+  deepLinkConfig,
+  setDeepLinkConfig,
+  leadLockConfig,
+  setLeadLockConfig,
+  featureAccess,
+  upgradeModal
+}) => {
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  const handleProFeatureClick = (featureName: string, description: string) => {
+    upgradeModal.open(featureName, description, false);
+  };
+
+  // --- Render Helpers ---
+
+  const renderWhatsAppPreview = () => (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <button
+        onClick={() => toggleSection('whatsapp')}
+        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 text-left transition-colors"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-green-100 rounded-lg text-green-600">
+            <Share2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900 flex items-center">
+              WhatsApp Smart Preview
+              {!featureAccess.canUseWhatsAppPreview && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
+              )}
+            </h4>
+            <p className="text-sm text-gray-500">Customize title & image for 40% higher CTR</p>
+          </div>
+        </div>
+        <span className="text-gray-400 text-sm">{expandedSection === 'whatsapp' ? 'Collapse' : 'Expand'}</span>
+      </button>
+
+      {expandedSection === 'whatsapp' && (
+        <div className="p-4 bg-gray-50 border-t border-gray-200 space-y-4">
+          {!featureAccess.canUseWhatsAppPreview && (
+            <div className="inset-0 bg-white/50 backdrop-blur-[1px] absolute z-10 flex items-center justify-center rounded-b-lg">
+              <button
+                onClick={() => handleProFeatureClick('WhatsApp Smart Preview', 'Customize how your links look on WhatsApp to boost clicks.')}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-lg text-sm font-medium hover:shadow-xl transition-all"
+              >
+                Unlock WhatsApp Previews
+              </button>
+            </div>
+          )}
+
+          <div className={`${!featureAccess.canUseWhatsAppPreview ? 'filter blur-sm pointer-events-none select-none opacity-50' : ''}`}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Custom Title</label>
+              <input
+                type="text"
+                placeholder="e.g. 🔥 50% OFF Diwali Sale"
+                value={whatsappPreview.title || ''}
+                onChange={(e) => setWhatsappPreview({ ...whatsappPreview, title: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Custom Description</label>
+              <textarea
+                placeholder="Limited time offer. Click to claim your discount now!"
+                value={whatsappPreview.description || ''}
+                onChange={(e) => setWhatsappPreview({ ...whatsappPreview, description: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+            {/* Simple visual placeholder for image upload for now */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+              <p className="text-xs text-gray-500">Preview Image Upload (Coming Soon)</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderGeoRedirects = () => (
+    <div className="border border-gray-200 rounded-lg overflow-hidden mt-3">
+      <button
+        onClick={() => toggleSection('geo')}
+        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 text-left transition-colors"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+            <Globe className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900 flex items-center">
+              Geo-Linguistic Routing
+              {!featureAccess.canUseGeoRedirect && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
+              )}
+            </h4>
+            <p className="text-sm text-gray-500">Show different pages based on location (India States)</p>
+          </div>
+        </div>
+        <span className="text-gray-400 text-sm">{expandedSection === 'geo' ? 'Collapse' : 'Expand'}</span>
+      </button>
+
+      {expandedSection === 'geo' && (
+        <div className="p-4 bg-gray-50 border-t border-gray-200">
+          {!featureAccess.canUseGeoRedirect && (
+            <div className="mb-4 p-3 bg-purple-50 border border-purple-100 rounded-lg flex justify-between items-center">
+              <span className="text-sm text-purple-800">Available on Pro Plan</span>
+              <button
+                onClick={() => handleProFeatureClick('Geo Routing', 'Route users to specific URLs based on their state or region.')}
+                className="px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
+              >
+                Upgrade
+              </button>
+            </div>
+          )}
+
+          <div className={`${!featureAccess.canUseGeoRedirect ? 'opacity-50 pointer-events-none' : ''}`}>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">State Rules</label>
+              <button
+                onClick={() => setGeoConfig({
+                  ...geoConfig,
+                  rules: [...geoConfig.rules, { state: '', url: '' }]
+                })}
+                className="text-xs text-blue-600 font-medium hover:text-blue-800 flex items-center"
+              >
+                <Plus className="w-3 h-3 mr-1" /> Add Rule
+              </button>
+            </div>
+
+            {geoConfig.rules.map((rule, idx) => (
+              <div key={idx} className="flex space-x-2 mb-2">
+                <select
+                  value={rule.state}
+                  onChange={(e) => {
+                    const newRules = [...geoConfig.rules];
+                    newRules[idx].state = e.target.value;
+                    setGeoConfig({ ...geoConfig, rules: newRules });
+                  }}
+                  className="w-1/3 px-2 py-1.5 border border-gray-300 rounded text-sm"
+                >
+                  <option value="">Select State</option>
+                  <option value="TN">Tamil Nadu</option>
+                  <option value="MH">Maharashtra</option>
+                  <option value="KA">Karnataka</option>
+                  <option value="DL">Delhi</option>
+                  {/* Add more states as needed */}
+                </select>
+                <input
+                  type="url"
+                  placeholder="https://site.com/regional"
+                  value={rule.url}
+                  onChange={(e) => {
+                    const newRules = [...geoConfig.rules];
+                    newRules[idx].url = e.target.value;
+                    setGeoConfig({ ...geoConfig, rules: newRules });
+                  }}
+                  className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm"
+                />
+                <button
+                  onClick={() => {
+                    const newRules = geoConfig.rules.filter((_, i) => i !== idx);
+                    setGeoConfig({ ...geoConfig, rules: newRules });
+                  }}
+                  className="p-1.5 text-red-500 hover:bg-red-50 rounded"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+
+            {geoConfig.rules.length === 0 && (
+              <p className="text-xs text-center text-gray-500 py-2 border border-dashed rounded mb-2">No rules added. Click "Add Rule" to start.</p>
+            )}
+
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Fallback URL (Default)</label>
+              <input
+                type="url"
+                placeholder="https://site.com/en (Default if no match)"
+                value={geoConfig.defaultUrl || ''}
+                onChange={(e) => setGeoConfig({ ...geoConfig, defaultUrl: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderDeepLink = () => (
+    <div className="border border-gray-200 rounded-lg overflow-hidden mt-3">
+      <button
+        onClick={() => toggleSection('deeplink')}
+        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 text-left transition-colors"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900 flex items-center">
+              App Deep-Linking
+              {!featureAccess.canUseDeepLinks && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
+              )}
+            </h4>
+            <p className="text-sm text-gray-500">Open directly in mobile apps (Amazon, Flipkart, etc.)</p>
+          </div>
+        </div>
+        <span className="text-gray-400 text-sm">{expandedSection === 'deeplink' ? 'Collapse' : 'Expand'}</span>
+      </button>
+
+      {expandedSection === 'deeplink' && (
+        <div className="p-4 bg-gray-50 border-t border-gray-200">
+          {!featureAccess.canUseDeepLinks && (
+            <div className="mb-4 p-3 bg-purple-50 border border-purple-100 rounded-lg flex justify-between items-center">
+              <span className="text-sm text-purple-800">Available on Pro Plan</span>
+              <button
+                onClick={() => handleProFeatureClick('App Deep-Linking', 'Increase conversions by opening links directly in mobile apps.')}
+                className="px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
+              >
+                Upgrade
+              </button>
+            </div>
+          )}
+
+          <div className={`${!featureAccess.canUseDeepLinks ? 'opacity-50 pointer-events-none' : 'space-y-3'}`}>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Android App Scheme</label>
+              <input
+                type="text"
+                placeholder="example://product/123"
+                value={deepLinkConfig.androidScheme || ''}
+                onChange={(e) => setDeepLinkConfig({ ...deepLinkConfig, androidScheme: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">iOS App Scheme</label>
+              <input
+                type="text"
+                placeholder="example://product/123"
+                value={deepLinkConfig.iosScheme || ''}
+                onChange={(e) => setDeepLinkConfig({ ...deepLinkConfig, iosScheme: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Web Fallback URL</label>
+              <input
+                type="url"
+                placeholder="https://website.com/product/123"
+                value={deepLinkConfig.fallbackUrl || ''}
+                onChange={(e) => setDeepLinkConfig({ ...deepLinkConfig, fallbackUrl: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderLeadLock = () => (
+    <div className="border border-gray-200 rounded-lg overflow-hidden mt-3">
+      <button
+        onClick={() => toggleSection('leadlock')}
+        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 text-left transition-colors"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+            <Lock className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900 flex items-center">
+              Lead-Lock Access
+              {!featureAccess.canUseLeadLock && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
+              )}
+            </h4>
+            <p className="text-sm text-gray-500">Capture WhatsApp/Email before showing content</p>
+          </div>
+        </div>
+        <span className="text-gray-400 text-sm">{expandedSection === 'leadlock' ? 'Collapse' : 'Expand'}</span>
+      </button>
+
+      {expandedSection === 'leadlock' && (
+        <div className="p-4 bg-gray-50 border-t border-gray-200">
+          {!featureAccess.canUseLeadLock && (
+            <div className="mb-4 p-3 bg-purple-50 border border-purple-100 rounded-lg flex justify-between items-center">
+              <span className="text-sm text-purple-800">Available on Pro Plan</span>
+              <button
+                onClick={() => handleProFeatureClick('Lead Lock', 'Capture high-quality leads by locking content behind a gateway.')}
+                className="px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
+              >
+                Upgrade
+              </button>
+            </div>
+          )}
+
+          <div className={`${!featureAccess.canUseLeadLock ? 'opacity-50 pointer-events-none' : 'space-y-4'}`}>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="enable-leadlock"
+                checked={leadLockConfig.enabled}
+                onChange={(e) => setLeadLockConfig({ ...leadLockConfig, enabled: e.target.checked })}
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              />
+              <label htmlFor="enable-leadlock" className="text-sm font-medium text-gray-700">Enable Lead Lock</label>
+            </div>
+
+            {leadLockConfig.enabled && (
+              <div className="pl-6 space-y-3">
+                <div className="flex space-x-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="leadType"
+                      value="whatsapp"
+                      checked={leadLockConfig.type === 'whatsapp'}
+                      onChange={() => setLeadLockConfig({ ...leadLockConfig, type: 'whatsapp' })}
+                      className="text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-gray-600">Request WhatsApp</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="leadType"
+                      value="email"
+                      checked={leadLockConfig.type === 'email'}
+                      onChange={() => setLeadLockConfig({ ...leadLockConfig, type: 'email' })}
+                      className="text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-gray-600">Request Email</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Destination URL (After Unlock)</label>
+                  <input
+                    type="url"
+                    placeholder="https://drive.google.com/file/d/..."
+                    value={leadLockConfig.redirectUrl || ''}
+                    onChange={(e) => setLeadLockConfig({ ...leadLockConfig, redirectUrl: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Users will be redirected here after submitting details.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {renderWhatsAppPreview()}
+      {renderGeoRedirects()}
+      {renderDeepLink()}
+      {renderLeadLock()}
+    </div>
+  );
+};

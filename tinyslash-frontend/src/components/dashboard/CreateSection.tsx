@@ -22,7 +22,8 @@ import {
   Download,
   Save,
   Lock,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import QRCodeGenerator from '../QRCodeGenerator';
@@ -99,7 +100,9 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ShortenedLink | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   const [showQRSuccessModal, setShowQRSuccessModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // QR Code caching for performance
   const qrCacheRef = useRef<Map<string, HTMLCanvasElement>>(new Map());
@@ -547,6 +550,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     // Anonymous users can use basic functionality without limits
 
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
       const shortCode = finalCustomAlias || Math.random().toString(36).substr(2, 6);
@@ -582,7 +586,10 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           }
         } catch (error) {
           console.error('File upload error:', error);
-          toast.error('Failed to upload file to database');
+          const uploadErrorMsg = error instanceof Error ? error.message : 'Failed to upload file to database';
+          toast.error(uploadErrorMsg);
+          setErrorMessage(uploadErrorMsg);
+          setIsLoading(false);
           return;
         }
       }
@@ -722,11 +729,26 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           }
         } else {
           console.error('Backend save failed:', backendResult);
-          toast.error('Failed to save to database: ' + (backendResult?.message || 'Unknown error'));
+          const backendErrorMsg = backendResult?.message || 'Failed to save to database';
+          toast.error(backendErrorMsg);
+          setErrorMessage(backendErrorMsg);
+          setIsLoading(false);
+          return; // CRITICAL: Stop execution here to prevent success modal
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error saving to backend:', error);
-        toast.error('Failed to save to database');
+
+        let saveErrorMsg = 'Failed to save to database';
+        if (error.response?.data?.message) {
+          saveErrorMsg = error.response.data.message;
+        } else if (error instanceof Error) {
+          saveErrorMsg = error.message;
+        }
+
+        toast.error(saveErrorMsg);
+        setErrorMessage(saveErrorMsg);
+        setIsLoading(false); // Stop loading
+        return; // CRITICAL: Stop execution here
       }
 
       setResult(newLink);
@@ -1296,11 +1318,21 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                         type="url"
                         placeholder="https://example.com/very-long-url..."
                         value={urlInput}
-                        onChange={(e) => setUrlInput(e.target.value)}
-                        className="w-full px-3 sm:px-4 py-3 sm:py-4 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                        onChange={(e) => {
+                          setUrlInput(e.target.value);
+                          setErrorMessage(null);
+                        }}
+                        className={`w-full px-3 sm:px-4 py-3 sm:py-4 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base ${errorMessage ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                          }`}
                       />
                       {/* AI Loading indicator removed */}
                     </div>
+                    {errorMessage && (
+                      <div className="mt-2 flex items-center text-sm text-red-600 animate-fadeIn">
+                        <AlertCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                        <span>{errorMessage}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1318,17 +1350,30 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                       <textarea
                         placeholder={isEditMode ? "Editing QR code content..." : "Enter text, URL, or any content..."}
                         value={qrText}
-                        onChange={(e) => setQrText(e.target.value)}
+                        onChange={(e) => {
+                          setQrText(e.target.value);
+                          setErrorMessage(null);
+                        }}
                         rows={3}
                         maxLength={2000}
-                        className={`w-full px-3 sm:px-4 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base ${isEditMode ? 'border-blue-300 bg-blue-50' : 'border-gray-300'
+                        className={`w-full px-3 sm:px-4 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base ${errorMessage
+                          ? 'border-red-500 bg-red-50'
+                          : isEditMode
+                            ? 'border-blue-300 bg-blue-50'
+                            : 'border-gray-300'
                           }`}
                       />
                       <div className="absolute bottom-2 right-2 text-xs text-gray-500">
                         {qrText.length}/2000
                       </div>
                     </div>
-                    {qrText && (
+                    {errorMessage && (
+                      <div className="mt-2 flex items-center text-sm text-red-600 animate-fadeIn">
+                        <AlertCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                        <span>{errorMessage}</span>
+                      </div>
+                    )}
+                    {qrText && !errorMessage && (
                       <div className="mt-2 flex items-center space-x-2 text-sm">
                         <div className={`w-2 h-2 rounded-full ${qrText.length > 0 ? 'bg-green-500' : 'bg-gray-300'
                           }`} />

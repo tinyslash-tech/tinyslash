@@ -630,7 +630,10 @@ public class SecurityService {
   }
 
   private boolean isOfficialBrandDomain(String domain, String brand) {
-    if (INDIAN_WHITELIST.contains(domain) || domain.endsWith(".gov.in") || domain.endsWith(".nic.in"))
+    if (INDIAN_WHITELIST.contains(domain) || TRUSTED_SHORT_DOMAINS.contains(domain))
+      return true;
+
+    if (domain.endsWith(".gov.in") || domain.endsWith(".nic.in"))
       return true;
 
     // Heuristic whitelist

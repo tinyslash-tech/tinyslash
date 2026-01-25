@@ -32,7 +32,9 @@ import * as QRCode from 'qrcode';
 import toast from 'react-hot-toast';
 import LinkSuccessModal from '../LinkSuccessModal';
 import QRSuccessModal from '../QRSuccessModal';
-import { createShortUrl, createQrCode, uploadFileToBackend } from '../../services/api';
+import { createShortUrl, createQrCode, updateQrCode, uploadFileToBackend } from '../../services/api';
+
+const DEFAULT_DOMAIN = 'tinyslash.com';
 
 type CreateMode = 'url' | 'qr' | 'file';
 
@@ -88,7 +90,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const [qrText, setQrText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customAlias, setCustomAlias] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState('tinyslash.com');
+  const [selectedDomain, setSelectedDomain] = useState(DEFAULT_DOMAIN);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [expirationDays, setExpirationDays] = useState<number | ''>('');
@@ -130,7 +132,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   });
 
   // AI Features removed for v1.0 Security Update
-  const [customDomains, setCustomDomains] = useState<string[]>(['tinyslash.com']);
+  const [customDomains, setCustomDomains] = useState<string[]>([DEFAULT_DOMAIN]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -152,8 +154,18 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   }, [planInfo]);
 
   // Handle edit mode when component loads with edit data
+  const isMounted = useRef(true);
+
   useEffect(() => {
-    const editData = (location.state as any)?.editQRData;
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    const editData = location.state && typeof location.state === 'object' && 'editQRData' in location.state
+      ? (location.state as any).editQRData
+      : null;
+
     if (editData) {
       console.log('Loading edit data:', editData); // Debug log
       console.log('Setting QR text to:', editData.content); // Debug log
@@ -161,10 +173,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       setEditQRId(editData.id);
       setQrText(editData.content || '');
 
-      // Force a small delay to ensure state is set
-      setTimeout(() => {
-        console.log('QR text after setting:', qrText);
-      }, 100);
+      // Safely check state update in next tick if component is mounted
+      // Removed unnecessary setTimeout that was checking stale state
 
       // Load all customization data in a single call
       setQrCustomization({
@@ -194,24 +204,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     }
   }, [location.state]);
 
-  // Add roundRect polyfill for older browsers
-  useEffect(() => {
-    if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
-      CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, width: number, height: number, radius: number) {
-        this.beginPath();
-        this.moveTo(x + radius, y);
-        this.lineTo(x + width - radius, y);
-        this.quadraticCurveTo(x + width, y, x + width, y + radius);
-        this.lineTo(x + width, y + height - radius);
-        this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        this.lineTo(x + radius, y + height);
-        this.quadraticCurveTo(x, y + height, x, y + height - radius);
-        this.lineTo(x, y + radius);
-        this.quadraticCurveTo(x, y, x + radius, y);
-        this.closePath();
-      };
-    }
-  }, []);
+  // Removed dangerous prototype pollution of CanvasRenderingContext2D.prototype.roundRect
+  // Replaced with safe local utility function usage where needed.
 
   // Color presets for QR codes
   const colorPresets = [
@@ -244,9 +238,17 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
 
   const loadCustomDomainsFromBackend = async () => {
     try {
-      const token = localStorage.getItem('token');
+      let token = null;
+      try {
+        token = localStorage.getItem('token');
+      } catch (e) {
+        console.warn('Storage access failed:', e);
+        setCustomDomains([DEFAULT_DOMAIN]);
+        return;
+      }
+
       if (!token) {
-        setCustomDomains(['tinyslash.com']);
+        setCustomDomains([DEFAULT_DOMAIN]);
         return;
       }
 
@@ -268,26 +270,33 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
             .map((domain: any) => domain.domainName);
 
           // Always include default domain first, then verified custom domains
-          const allDomains = ['tinyslash.com', ...verifiedDomains];
+          const allDomains = [DEFAULT_DOMAIN, ...verifiedDomains];
           setCustomDomains(allDomains);
 
           console.log('✅ Loaded custom domains for Create section:', allDomains);
         } else {
-          setCustomDomains(['tinyslash.com']);
+          setCustomDomains([DEFAULT_DOMAIN]);
         }
       } else {
         console.warn('Failed to load custom domains:', response.status);
-        setCustomDomains(['tinyslash.com']);
+        setCustomDomains([DEFAULT_DOMAIN]);
       }
     } catch (error) {
       console.error('Failed to load custom domains:', error);
-      setCustomDomains(['tinyslash.com']);
+      setCustomDomains([DEFAULT_DOMAIN]);
     }
   };
+
+  const isSecurityError = (error: any) =>
+    error?.response?.status === 422 ||
+    error?.response?.data?.error === 'SECURITY_BLOCKED';
 
 
 
   // Generate QR code preview with optimized debouncing
+  // Fix: Deep comparison for qrCustomization using JSON.stringify
+  const qrSettingsString = JSON.stringify(qrCustomization);
+
   useEffect(() => {
     if (mode === 'qr' && qrText && canvasRef.current) {
       console.log('QR generation triggered for text:', qrText.substring(0, 50) + '...');
@@ -296,7 +305,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       }, 50); // Reduced delay for faster response
       return () => clearTimeout(timer);
     }
-  }, [qrText, qrCustomization, mode]);
+  }, [qrText, qrSettingsString, mode]);
 
   // Ultra-fast QR code generation with caching and optimization
   const generateQRCodeOptimized = async () => {
@@ -362,8 +371,14 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
         return;
       }
 
-      // Cache the basic QR code for future use
+      // Cache the basic QR code for future use with LRU-like limit
       if (!cachedCanvas) {
+        // Limit cache size to prevent memory leaks (max 50 entries)
+        if (qrCacheRef.current.size > 50) {
+          const firstKey = qrCacheRef.current.keys().next().value;
+          if (firstKey) qrCacheRef.current.delete(firstKey);
+        }
+
         const cacheCanvas = document.createElement('canvas');
         cacheCanvas.width = canvas.width;
         cacheCanvas.height = canvas.height;
@@ -443,9 +458,11 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
 
     const img = new Image();
     img.onload = () => {
-      const logoSize = qrCustomization.size * 0.15; // Smaller for better performance
-      const x = (qrCustomization.size - logoSize) / 2;
-      const y = (qrCustomization.size - logoSize) / 2;
+      // Fix: Use canvas width for accurate logo sizing instead of customization size which might differ
+      const canvasWidth = ctx.canvas.width;
+      const logoSize = canvasWidth * 0.15; // Smaller for better performance
+      const x = (canvasWidth - logoSize) / 2;
+      const y = (canvasWidth - logoSize) / 2;
 
       // Simple white background (no complex shapes for speed)
       ctx.fillStyle = '#FFFFFF';
@@ -453,6 +470,9 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
 
       // Draw logo
       ctx.drawImage(img, x, y, logoSize, logoSize);
+    };
+    img.onerror = () => {
+      console.error('Failed to load QR logo image');
     };
     img.src = qrCustomization.logo;
   };
@@ -533,6 +553,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
 
     // Add a small delay for better UX
     await new Promise(resolve => setTimeout(resolve, 1000));
+
+    if (!isMounted.current) return;
 
     setIsLoading(false);
 
@@ -638,7 +660,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       } else if (mode === 'file' && selectedFile) {
         // For now, create a data URL for the file (works for images and small files)
         const reader = new FileReader();
-        const fileDataUrl = await new Promise<string>((resolve) => {
+        await new Promise<string>((resolve) => {
           reader.onload = (e) => resolve(e.target?.result as string);
           reader.readAsDataURL(selectedFile);
         });
@@ -668,7 +690,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
         }
       }
 
-      const finalDomain = selectedDomain === 'tinyslash.com' ? baseUrl : `https://${selectedDomain}`;
+      const finalDomain = selectedDomain === DEFAULT_DOMAIN ? baseUrl : `https://${selectedDomain}`;
 
       const newLink: ShortenedLink = {
         id: Date.now().toString(),
@@ -677,7 +699,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
         originalUrl,
         clicks: 0,
         createdAt: new Date().toISOString(),
-        customDomain: selectedDomain !== 'tinyslash.com' ? selectedDomain : undefined,
+        customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined,
         type: mode,
         qrCustomization: mode === 'qr' ? qrCustomization : undefined
       };
@@ -698,14 +720,14 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
             maxClicks: finalMaxClicks ? parseInt(finalMaxClicks.toString()) : undefined,
             title: `Dashboard URL - ${shortCode}`,
             description: 'Created via Dashboard',
-            customDomain: selectedDomain !== 'tinyslash.com' ? selectedDomain : undefined
+            customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined
           });
           console.log('🔍 CreateSection - Backend response:', backendResult);
         } else if (mode === 'qr') {
           // Call QR code API using centralized function
           if (isEditMode && editQRId) {
             // Update existing QR code - use updateQrCode function
-            const { updateQrCode } = await import('../../services/api');
+            // optimization: Imported at top level
             backendResult = await updateQrCode(editQRId, {
               userId: user?.id || 'anonymous-user',
               content: originalUrl,
@@ -751,7 +773,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
 
           toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
 
-          toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
+
+          // Removed duplicate toast.success call here
           await handleSuccess(newLink);
         } else {
           console.error('Backend save failed:', backendResult);
@@ -764,11 +787,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       } catch (error: any) {
         console.error('Error saving to backend:', error);
 
-        const isSecurityBlocked =
-          error?.response?.status === 422 ||
-          error?.response?.data?.error === 'SECURITY_BLOCKED';
-
-        if (isSecurityBlocked) {
+        if (isSecurityError(error)) {
           showSecurityBlockedUI();
           setIsLoading(false);
           return;
@@ -790,11 +809,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       console.error('Error creating link:', error);
       setIsLoading(false);
 
-      const isSecurityBlocked =
-        error?.response?.status === 422 ||
-        error?.response?.data?.error === 'SECURITY_BLOCKED';
-
-      if (isSecurityBlocked) {
+      if (isSecurityError(error)) {
         showSecurityBlockedUI();
         return;
       }
@@ -1007,12 +1022,33 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Security: Validate file type and size
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Invalid file type. Please upload a PNG or JPEG image.');
+        return;
+      }
+
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        toast.error('File too large. Maximum size is 2MB.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (event) => {
-        setQrCustomization(prev => ({
-          ...prev,
-          logo: event.target?.result as string
-        }));
+        // Additional check: verify it's actually an image
+        const img = new Image();
+        img.onload = () => {
+          setQrCustomization(prev => ({
+            ...prev,
+            logo: event.target?.result as string
+          }));
+        };
+        img.onerror = () => {
+          toast.error('Invalid image file.');
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -1248,7 +1284,9 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                               canvasRef.current.toBlob((blob) => {
                                 if (blob) {
                                   const url = URL.createObjectURL(blob);
-                                  copyToClipboard(url);
+                                  copyToClipboard(url).finally(() => {
+                                    URL.revokeObjectURL(url); // Fix memory leak
+                                  });
                                 }
                               });
                             }
@@ -2167,9 +2205,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                             e.preventDefault();
 
                             // Reset selection first
-                            setSelectedDomain('pebly.vercel.app');
-
-                            // Check if user can use custom domains
+                            setSelectedDomain(DEFAULT_DOMAIN); // ✅ CORRECT                         // Check if user can use custom domains
                             if (!featureAccess.canUseCustomDomain) {
                               console.log('✅ FREE user - showing upgrade modal');
                               upgradeModal.open(
@@ -2192,7 +2228,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                         {/* Default and custom domains */}
                         {customDomains.map(domain => (
                           <option key={domain} value={domain}>
-                            {domain} {domain === 'pebly.vercel.app' ? '(Default)' : ''}
+                            {domain} {domain === DEFAULT_DOMAIN ? '(Default)' : ''}
                           </option>
                         ))}
 

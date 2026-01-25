@@ -246,7 +246,26 @@ export const useCreateHandler = (
           await handleSuccess(newLink, resetForm);
         } else {
           console.error('Backend save failed:', backendResult);
+
+          // CRITICAL: Check for security violation in the response object
           const backendErrorMsg = backendResult?.message || 'Failed to save to database';
+
+          // Create a mock error object to pass to handleApiError logic
+          const mockError = {
+            message: backendErrorMsg,
+            response: {
+              data: {
+                message: backendErrorMsg,
+                error: backendResult?.error || 'UNKNOWN_ERROR'
+              }
+            }
+          };
+
+          if (handleApiError(mockError)) {
+            setIsLoading(false);
+            return;
+          }
+
           toast.error(backendErrorMsg);
           setErrorMessage(backendErrorMsg);
           setIsLoading(false);

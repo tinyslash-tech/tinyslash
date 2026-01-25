@@ -25,9 +25,23 @@ export const useSecurityUI = () => {
     setErrorMessage(inlineMessage);
   };
 
-  const isSecurityError = (error: any) =>
-    error?.response?.status === 422 ||
-    error?.response?.data?.error === 'SECURITY_BLOCKED';
+  const isSecurityError = (error: any) => {
+    // Check various error structures
+    if (error?.response?.status === 422) return true;
+    if (error?.response?.data?.error === 'SECURITY_BLOCKED') return true;
+
+    // Check message content for specific security keywords
+    const message = error?.response?.data?.message || error?.message || (typeof error === 'string' ? error : '');
+    if (
+      message.includes('Security Violation') ||
+      message.includes('high_risk_score') ||
+      message.includes('SECURITY_BLOCKED')
+    ) {
+      return true;
+    }
+
+    return false;
+  };
 
   // 🛡️ Centralized Error Handler
   const handleApiError = (error: any) => {

@@ -743,8 +743,27 @@ public class SecurityService {
 
   // --- CHECK 5: SHORTENER NESTING ---
 
+  // 1️⃣ TRUSTED SHORTENERS (ALLOWLIST) - Brand Owned
+  private static final Set<String> TRUSTED_SHORT_DOMAINS = Set.of(
+      // Amazon
+      "amzn.to", "amzn.eu", "amzn.in",
+      // Google
+      "goo.gl", "maps.app.goo.gl",
+      // Microsoft
+      "aka.ms",
+      // Apple
+      "apple.co",
+      // Meta
+      "fb.me", "ig.me",
+      // YouTube
+      "youtu.be",
+      // LinkedIn
+      "lnkd.in",
+      // Twitter/X
+      "t.co");
+
   private static final Set<String> KNOWN_SHORTENERS = Set.of(
-      "bit.ly", "tinyurl.com", "goo.gl", "t.co", "ow.ly", "buff.ly", "is.gd", "tiny.cc", "short.io",
+      "bit.ly", "tinyurl.com", "ow.ly", "buff.ly", "is.gd", "tiny.cc", "short.io",
       "cutt.ly", "rebrand.ly", "bl.ink", "clk.ru", "shorturl.at", "tny.im", "po.st",
       "adf.ly", "bc.vc", "linkbucks.com", "soo.gd", "ouo.io", "shrinkearn.com", "shorturl.in", "shrinkme.io");
 
@@ -754,6 +773,11 @@ public class SecurityService {
   // Changed to return SecurityDecision for INSTANT BLOCK capabilities
   private SecurityDecision checkShortenerNesting(String domain, String url, RiskAnalysis analysis) {
     analysis.addCheckPerformed("shortener_nesting");
+
+    // 0. Check Trust List FIRST
+    if (TRUSTED_SHORT_DOMAINS.contains(domain)) {
+      return null; // Explicitly allowed
+    }
 
     // 1. Known Shortener Domain Block
     if (KNOWN_SHORTENERS.contains(domain)) {

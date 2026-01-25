@@ -808,13 +808,13 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       // Handle Security Violations (422 Unprocessable Entity OR 400 with generic catch)
       // The backend controller might catch the exception and return 400 with the message manually
       const errorMsg = error.response?.data?.message || (error instanceof Error ? error.message : '');
+      const lowerMsg = errorMsg.toLowerCase();
+
       const isSecurityViolation =
         error.response?.status === 422 ||
-        (error.response?.status === 400 && (
-          errorMsg.includes("Security Violation") ||
-          errorMsg.includes("high_risk_score") ||
-          errorMsg.includes("risk_score")
-        ));
+        lowerMsg.includes("security violation") ||
+        lowerMsg.includes("high_risk_score") ||
+        lowerMsg.includes("risk_score");
 
       if (isSecurityViolation) {
         // 🎯 FINAL UI COPY (LOCKED) - Do not change dynamic messages

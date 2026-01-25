@@ -805,8 +805,18 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       console.error('Error creating link:', error);
 
       // Handle Security Violations (422 Unprocessable Entity)
-      // Handle Security Violations (422 Unprocessable Entity)
-      if (error.response?.status === 422) {
+      // Handle Security Violations (422 Unprocessable Entity OR 400 with generic catch)
+      // The backend controller might catch the exception and return 400 with the message manually
+      const errorMsg = error.response?.data?.message || (error instanceof Error ? error.message : '');
+      const isSecurityViolation =
+        error.response?.status === 422 ||
+        (error.response?.status === 400 && (
+          errorMsg.includes("Security Violation") ||
+          errorMsg.includes("high_risk_score") ||
+          errorMsg.includes("risk_score")
+        ));
+
+      if (isSecurityViolation) {
         // 🎯 FINAL UI COPY (LOCKED) - Do not change dynamic messages
         const headline = "🚫 Link blocked by Tinyslash Security";
         const message = "This URL did not pass our security checks.";

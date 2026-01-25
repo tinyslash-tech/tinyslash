@@ -56,7 +56,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   // New Features State
   const [whatsappPreview, setWhatsappPreview] = useState<WhatsAppPreview>({ title: '', description: '' });
   const [geoConfig, setGeoConfig] = useState<GeoConfig>({ enabled: true, rules: [], defaultUrl: '' });
-  const [deepLinkConfig, setDeepLinkConfig] = useState<DeepLinkConfig>({ enabled: true });
+  const [deepLinkConfig, setDeepLinkConfig] = useState<DeepLinkConfig>({ enabled: false });
   const [leadLockConfig, setLeadLockConfig] = useState<LeadLockConfig>({ enabled: false, type: 'whatsapp' });
   const [trustBadgeConfig, setTrustBadgeConfig] = useState<TrustBadgeConfig>({ enabled: false, requested: false });
 

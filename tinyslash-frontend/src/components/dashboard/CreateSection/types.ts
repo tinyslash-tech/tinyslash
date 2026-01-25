@@ -44,9 +44,7 @@ export interface GeoConfig {
 
 export interface DeepLinkConfig {
   enabled: boolean;
-  androidScheme?: string;
-  iosScheme?: string;
-  fallbackUrl?: string;
+  // No manual schemes needed - handled by backend "Auto-Magic"
 }
 
 export interface LeadLockConfig {

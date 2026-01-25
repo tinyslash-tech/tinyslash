@@ -255,36 +255,38 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
             </div>
           )}
 
-          <div className={`${!featureAccess.canUseDeepLinks ? 'opacity-50 pointer-events-none' : 'space-y-3'}`}>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Android App Scheme</label>
-              <input
-                type="text"
-                placeholder="example://product/123"
-                value={deepLinkConfig.androidScheme || ''}
-                onChange={(e) => setDeepLinkConfig({ ...deepLinkConfig, androidScheme: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
+          <div className={`${!featureAccess.canUseDeepLinks ? 'opacity-50 pointer-events-none' : 'space-y-4'}`}>
+            <div className="flex items-start space-x-3">
+              <div className="flex items-center h-5">
+                <input
+                  id="smart-app-open"
+                  type="checkbox"
+                  checked={deepLinkConfig.enabled}
+                  onChange={(e) => setDeepLinkConfig({ ...deepLinkConfig, enabled: e.target.checked })}
+                  className="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300 rounded"
+                />
+              </div>
+              <div className="ml-0 text-sm">
+                <label htmlFor="smart-app-open" className="font-medium text-gray-700">Smart App Open (Auto)</label>
+                <p className="text-gray-500">Automatically open links inside shopping apps if installed.</p>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">iOS App Scheme</label>
-              <input
-                type="text"
-                placeholder="example://product/123"
-                value={deepLinkConfig.iosScheme || ''}
-                onChange={(e) => setDeepLinkConfig({ ...deepLinkConfig, iosScheme: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
+
+            <div className="bg-white p-3 rounded border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Supported Platforms</p>
+              <div className="flex flex-wrap gap-2">
+                {['Amazon', 'Flipkart', 'Myntra', 'Meesho', 'AJIO', 'Nykaa', 'FirstCry'].map(platform => (
+                  <span key={platform} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md border border-gray-200">
+                    {platform}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Web Fallback URL</label>
-              <input
-                type="url"
-                placeholder="https://website.com/product/123"
-                value={deepLinkConfig.fallbackUrl || ''}
-                onChange={(e) => setDeepLinkConfig({ ...deepLinkConfig, fallbackUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
+
+            <div className="flex items-center text-xs text-blue-600 bg-blue-50 p-2 rounded">
+              <div className="flex-1">
+                ℹ️ <strong>How it works:</strong> We auto-detect the destination URL. If it matches a supported app, we allow deep-linking. Otherwise, standard browser behavior applies.
+              </div>
             </div>
           </div>
         </div>

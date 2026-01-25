@@ -805,18 +805,17 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       console.error('Error creating link:', error);
 
       // Handle Security Violations (422 Unprocessable Entity)
-      if (error.response?.status === 422 && error.response?.data?.uiErrorCode) {
-        const securityError = error.response.data;
+      // Handle Security Violations (422 Unprocessable Entity)
+      if (error.response?.status === 422) {
+        // 🎯 FINAL UI COPY (LOCKED) - Do not change dynamic messages
+        const headline = "🚫 Link blocked by Tinyslash Security";
+        const message = "This URL did not pass our security checks.";
+        const inlineMessage = "Link blocked by Tinyslash Security. This URL did not pass our security checks.";
 
-        // Construct a more detailed error message for security violations
-        // We can show the title and message from the backend
         toast.error((t) => (
           <div className="flex flex-col">
-            <span className="font-bold">{securityError.title}</span>
-            <span className="text-sm">{securityError.message}</span>
-            {securityError.secondaryMessage && (
-              <span className="text-xs mt-1 opacity-75">{securityError.secondaryMessage}</span>
-            )}
+            <span className="font-bold">{headline}</span>
+            <span className="text-sm">{message}</span>
           </div>
         ), {
           duration: 6000,
@@ -826,11 +825,16 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
             color: '#7F1D1D',
           },
         });
+
+        setErrorMessage(inlineMessage);
+        setIsLoading(false);
+        return;
       } else {
         const errorMessage = error instanceof Error ? error.message : 'An error occurred while processing your request';
         // Check for other API error messages
         const apiMessage = error.response?.data?.message || errorMessage;
         toast.error(`Failed to create link: ${apiMessage}`);
+        setErrorMessage(apiMessage); // Ensure other errors are also shown inline
       }
 
       setIsLoading(false);

@@ -28,23 +28,22 @@ export const QrCreate: React.FC<QrCreateProps> = ({
             ✏️ Editing existing QR code
           </div>
         )}
-        <textarea
+        <input
+          type="text"
           placeholder={isEditMode ? "Editing QR code content..." : "Enter text, URL, or any content..."}
           value={qrText}
           onChange={(e) => {
             setQrText(e.target.value);
             setErrorMessage(null);
           }}
-          rows={3}
-          maxLength={2000}
-          className={`w-full px-3 sm:px-4 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base ${errorMessage
-              ? 'border-red-500 bg-red-50'
-              : isEditMode
-                ? 'border-blue-300 bg-blue-50'
-                : 'border-gray-300'
+          className={`w-full px-3 sm:px-4 py-3 sm:py-4 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base ${errorMessage
+            ? 'border-red-500 bg-red-50'
+            : isEditMode
+              ? 'border-blue-300 bg-blue-50'
+              : 'border-gray-300'
             }`}
         />
-        <div className="absolute bottom-2 right-2 text-xs text-gray-500">
+        <div className="absolute top-1/2 transform -translate-y-1/2 right-3 text-xs text-gray-500">
           {qrText.length}/2000
         </div>
       </div>

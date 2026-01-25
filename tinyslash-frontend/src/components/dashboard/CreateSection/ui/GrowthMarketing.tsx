@@ -75,42 +75,75 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
             </div>
           )}
 
-          <div className={`${!featureAccess.canUseWhatsAppPreview ? 'filter blur-sm pointer-events-none select-none opacity-50' : ''}`}>
+          <div className={`${!featureAccess.canUseWhatsAppPreview ? 'filter blur-sm pointer-events-none select-none opacity-50' : 'space-y-4'}`}>
 
-            {/* Platform Icons */}
-            <div className="flex space-x-2 mb-4 opacity-70">
-              {['WhatsApp', 'Telegram', 'Facebook', 'LinkedIn', 'Twitter/X', 'Slack', 'Discord'].map(p => (
-                <span key={p} title={p} className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-gray-500 cursor-help">
-                  {p[0]}
-                </span>
+            {/* Realistic Platform Icons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {[
+                { name: 'WhatsApp', color: 'bg-[#25D366]', text: 'white' },
+                { name: 'Telegram', color: 'bg-[#0088cc]', text: 'white' },
+                { name: 'Facebook', color: 'bg-[#1877F2]', text: 'white' },
+                { name: 'LinkedIn', color: 'bg-[#0A66C2]', text: 'white' },
+                { name: 'Twitter/X', color: 'bg-black', text: 'white' },
+                { name: 'Slack', color: 'bg-[#4A154B]', text: 'white' }
+              ].map(p => (
+                <div key={p.name} className={`px-2 py-1 rounded-md shadow-sm flex items-center space-x-1 ${p.color}`}>
+                  <span className={`text-[10px] font-bold text-${p.text}`}>{p.name}</span>
+                </div>
               ))}
-              <span className="text-xs text-gray-400 self-center ml-2">+ many more</span>
+              <span className="text-xs text-gray-400 self-center ml-1">+ many more</span>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Custom Title</label>
-              <input
-                type="text"
-                placeholder="e.g. 🔥 50% OFF Diwali Sale"
-                value={smartLinkPreview.title || ''}
-                onChange={(e) => setSmartLinkPreview({ ...smartLinkPreview, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
+            {/* Enable Toggle */}
+            <div className="flex items-start space-x-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+              <div className="flex items-center h-5">
+                <input
+                  id="enable-smart-preview"
+                  type="checkbox"
+                  checked={smartLinkPreview.enabled}
+                  onChange={(e) => setSmartLinkPreview({ ...smartLinkPreview, enabled: e.target.checked })}
+                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+              </div>
+              <div className="ml-0 text-sm">
+                <label htmlFor="enable-smart-preview" className="font-medium text-gray-900">Enable Custom Preview</label>
+                <p className="text-gray-500 text-xs mt-0.5">Override the default website preview with your own title, description, and image.</p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Custom Description</label>
-              <textarea
-                placeholder="Limited time offer. Click to claim your discount now!"
-                value={smartLinkPreview.description || ''}
-                onChange={(e) => setSmartLinkPreview({ ...smartLinkPreview, description: e.target.value })}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
-            </div>
-            {/* Simple visual placeholder for image upload for now */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-              <p className="text-xs text-gray-500">Preview Image Upload (Coming Soon)</p>
-            </div>
+
+            {/* Conditional Inputs */}
+            {smartLinkPreview.enabled && (
+              <div className="space-y-4 animate-fadeIn">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Custom Title</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 🔥 50% OFF Diwali Sale - Limited Time!"
+                    value={smartLinkPreview.title || ''}
+                    onChange={(e) => setSmartLinkPreview({ ...smartLinkPreview, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Custom Description</label>
+                  <textarea
+                    placeholder="Don't miss out! Click here to claim your exclusive discount coupon. Free shipping on all orders."
+                    value={smartLinkPreview.description || ''}
+                    onChange={(e) => setSmartLinkPreview({ ...smartLinkPreview, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+                {/* Simple visual placeholder for image upload for now */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center hover:bg-gray-50 transition-colors cursor-pointer">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mb-2 text-gray-400">
+                    <Share2 className="w-5 h-5" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">Upload Preview Image</p>
+                  <p className="text-xs text-gray-500 mt-1">Recommended: 1200x630px (Max 2MB)</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

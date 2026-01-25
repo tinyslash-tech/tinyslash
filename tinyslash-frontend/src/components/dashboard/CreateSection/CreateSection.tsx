@@ -54,7 +54,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // New Features State
-  const [smartLinkPreview, setSmartLinkPreview] = useState<SmartLinkPreview>({ title: '', description: '' });
+  const [smartLinkPreview, setSmartLinkPreview] = useState<SmartLinkPreview>({ enabled: false, title: '', description: '' });
   const [geoConfig, setGeoConfig] = useState<GeoConfig>({ enabled: true, rules: [], defaultUrl: '' });
   const [deepLinkConfig, setDeepLinkConfig] = useState<DeepLinkConfig>({ enabled: false });
   const [leadLockConfig, setLeadLockConfig] = useState<LeadLockConfig>({ enabled: false, type: 'whatsapp' });

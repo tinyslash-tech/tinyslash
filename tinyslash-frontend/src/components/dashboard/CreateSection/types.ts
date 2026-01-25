@@ -26,6 +26,7 @@ export interface QRCustomization {
 // --- New Feature Interfaces ---
 
 export interface SmartLinkPreview {
+  enabled: boolean;
   title: string;
   description: string;
   image?: string; // base64 or URL

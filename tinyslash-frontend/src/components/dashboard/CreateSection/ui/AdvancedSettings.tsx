@@ -214,18 +214,36 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
               </div>
             </div>
 
-            {/* One-Time */}
-            <div className="flex items-end">
-              <label className="w-full flex items-center space-x-3 p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer h-[42px]">
-                <input
-                  type="checkbox"
-                  checked={isOneTime}
-                  onChange={(e) => setIsOneTime(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Self-Destruct (One-time)</span>
-              </label>
+            {/* Expiration Days */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Expiration (Days)</label>
+              </div>
+              <input
+                type="number"
+                min="1"
+                placeholder="Never"
+                value={expirationDays}
+                onChange={(e) => setExpirationDays(e.target.value ? parseInt(e.target.value) : '')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
             </div>
+
+            {/* Max Clicks */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Max Clicks</label>
+              </div>
+              <input
+                type="number"
+                min="1"
+                placeholder="Unlimited"
+                value={maxClicks}
+                onChange={(e) => setMaxClicks(e.target.value ? parseInt(e.target.value) : '')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+
           </div>
         )}
 

@@ -163,8 +163,8 @@ const TrustBadge = () => {
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Apply for Trust Verification</h1>
-          <p className="text-gray-500 mt-1">Get the green tick and secure interstitial for your links</p>
+          <h1 className="text-2xl font-bold text-gray-900">Get Verified Trust Badge</h1>
+          <p className="text-gray-500 mt-1">Get the green tick and secure interstitial for your links & QR codes</p>
         </div>
       </div>
 
@@ -295,28 +295,41 @@ const TrustBadge = () => {
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Select Verification Plan</h3>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all relative overflow-hidden">
-                  <h4 className="font-bold text-gray-900 mb-2">Standard Trust</h4>
-                  <div className="text-3xl font-bold text-gray-900 mb-4">₹4,999<span className="text-sm text-gray-500 font-normal">/year</span></div>
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center gap-2 text-sm text-gray-600"><CheckCircle className="w-4 h-4 text-green-500" /> Green Verified Tick</li>
-                    <li className="flex items-center gap-2 text-sm text-gray-600"><CheckCircle className="w-4 h-4 text-green-500" /> Interstitial Page</li>
-                    <li className="flex items-center gap-2 text-sm text-gray-600"><CheckCircle className="w-4 h-4 text-green-500" /> Basic Support</li>
-                  </ul>
-                  <button className="w-full py-2 bg-gray-900 text-white rounded-lg font-medium">Select Plan</button>
-                </div>
+              <div className="max-w-md mx-auto">
+                <div className="border-2 border-green-500 rounded-xl p-8 shadow-xl relative bg-white overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-green-500 text-white text-xs px-4 py-1 rounded-bl-lg font-bold tracking-wider">PREMIUM</div>
+                  <div className="text-center mb-6">
+                    <h4 className="font-bold text-2xl text-gray-900 mb-2">Get Verified Trust Badge</h4>
+                    <p className="text-gray-500 text-sm">Everything you need to secure your brand</p>
+                  </div>
 
-                <div className="border-2 border-blue-600 rounded-xl p-6 shadow-md relative bg-blue-50/50">
-                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs px-3 py-1 rounded-bl-lg font-medium">RECOMMENDED</div>
-                  <h4 className="font-bold text-gray-900 mb-2">Business Trust+</h4>
-                  <div className="text-3xl font-bold text-gray-900 mb-4">₹14,999<span className="text-sm text-gray-500 font-normal">/year</span></div>
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center gap-2 text-sm text-gray-800"><CheckCircle className="w-4 h-4 text-green-500" /> Everything in Standard</li>
-                    <li className="flex items-center gap-2 text-sm text-gray-800"><CheckCircle className="w-4 h-4 text-green-500" /> Priority Review (24 hrs)</li>
-                    <li className="flex items-center gap-2 text-sm text-gray-800"><CheckCircle className="w-4 h-4 text-green-500" /> Dedicated Account Manager</li>
+                  <div className="text-center mb-8">
+                    <div className="text-4xl font-extrabold text-gray-900">₹7,999<span className="text-sm text-gray-500 font-normal">/year</span></div>
+                  </div>
+
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <div className="p-1 bg-green-100 rounded-full"><CheckCircle className="w-4 h-4 text-green-600" /></div>
+                      <span className="font-medium">Green Verified Tick on all Links</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <div className="p-1 bg-green-100 rounded-full"><CheckCircle className="w-4 h-4 text-green-600" /></div>
+                      <span className="font-medium">Verified Badge on QR Codes</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <div className="p-1 bg-green-100 rounded-full"><CheckCircle className="w-4 h-4 text-green-600" /></div>
+                      <span className="font-medium">2-Second Secure Interstitial</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-gray-700">
+                      <div className="p-1 bg-green-100 rounded-full"><CheckCircle className="w-4 h-4 text-green-600" /></div>
+                      <span className="font-medium">Priority Scam Protection</span>
+                    </li>
                   </ul>
-                  <div className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium text-center">Selected</div>
+
+                  <button className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold text-lg hover:bg-black transition-transform hover:scale-[1.02] shadow-lg">
+                    Pay ₹7,999 & Verify
+                  </button>
+                  <p className="text-xs text-center text-gray-400 mt-4">Secure payment via Razorpay. GST Invoice available.</p>
                 </div>
               </div>
             </motion.div>

@@ -4,7 +4,7 @@ import { Shield, CheckCircle, Lock, AlertTriangle } from 'lucide-react';
 
 const VerifiedPage = () => {
   const { shortCode } = useParams();
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(2);
   const [trustInfo, setTrustInfo] = useState({
     brandName: 'Demo Brand', // This should be fetched from backend 
     domain: 'tinyslash.com',

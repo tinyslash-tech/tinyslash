@@ -112,11 +112,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           icon: Users,
           isPro: true,
           badge: !isPro ? 'PRO' : undefined
-        },
-        {
-          id: 'trust-badge' as SidebarSection,
-          label: 'Trust Badge',
-          icon: Shield,
         }
       ]
     },

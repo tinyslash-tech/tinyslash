@@ -238,7 +238,7 @@ const Header: React.FC = () => {
                           className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           <Shield className="w-4 h-4 mr-3 text-blue-600" />
-                          Verify Business (Trust Badge)
+                          Get Verified Trust Badge
                         </button>
                         <button
                           onClick={() => handleNavigation('/dashboard/analytics')}

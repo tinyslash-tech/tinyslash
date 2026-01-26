@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Link, QrCode, Upload, Crown } from 'lucide-react';
 
 // Contexts
 import { useAuth } from '../../../context/AuthContext';
@@ -221,6 +222,42 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Tab Navigation */}
+      <div className="flex justify-center pt-8 pb-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="bg-gray-100 p-1 rounded-xl flex">
+          <button
+            onClick={() => onModeChange('url')}
+            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${mode === 'url'
+                ? 'bg-white text-blue-600 shadow-md'
+                : 'text-gray-600 hover:text-gray-900'
+              }`}
+          >
+            <Link className="w-4 h-4" />
+            <span>URL Shortener</span>
+          </button>
+          <button
+            onClick={() => onModeChange('qr')}
+            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${mode === 'qr'
+                ? 'bg-white text-blue-600 shadow-md'
+                : 'text-gray-600 hover:text-gray-900'
+              }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>QR Code</span>
+          </button>
+          <button
+            onClick={() => onModeChange('file')}
+            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${mode === 'file'
+                ? 'bg-white text-blue-600 shadow-md'
+                : 'text-gray-600 hover:text-gray-900'
+              }`}
+          >
+            <Upload className="w-4 h-4" />
+            <span>File to Link</span>
+            <Crown className="w-3 h-3 text-yellow-500" />
+          </button>
+        </div>
+      </div>
       <div className="flex flex-col lg:flex-row p-6 lg:p-8 gap-8">
 
         {/* Sticky QR Preview (only for QR mode) */}

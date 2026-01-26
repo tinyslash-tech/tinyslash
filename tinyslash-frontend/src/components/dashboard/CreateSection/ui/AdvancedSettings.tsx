@@ -78,203 +78,200 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   featureAccess,
   upgradeModal
 }) => {
-  const [activeTab, setActiveTab] = useState<'basic' | 'growth' | 'security'>('basic');
-  const [isOpen, setIsOpen] = useState(false);
+  const [isBasicOpen, setIsBasicOpen] = useState(false);
+  const [isGrowthOpen, setIsGrowthOpen] = useState(false);
+  const [isSecurityOpen, setIsSecurityOpen] = useState(false);
 
-  if (!isOpen) {
-    return (
+  // Reusable Accordion Section
+  const AccordionSection = ({
+    title,
+    icon: Icon,
+    isOpen,
+    setIsOpen,
+    headerColorClass,
+    children
+  }: {
+    title: string,
+    icon: any,
+    isOpen: boolean,
+    setIsOpen: (v: boolean) => void,
+    headerColorClass: string,
+    children: React.ReactNode
+  }) => (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 mb-4">
       <button
-        onClick={() => setIsOpen(true)}
-        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors text-gray-700 font-medium"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between p-4 font-medium transition-colors ${isOpen ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'}`}
       >
-        <span className="flex items-center">
-          <Settings className="w-5 h-5 mr-2 text-gray-500" />
-          Advanced Settings
+        <span className={`flex items-center ${isOpen ? 'text-gray-900' : 'text-gray-600'}`}>
+          <Icon className={`w-5 h-5 mr-3 ${headerColorClass}`} />
+          {title}
         </span>
-        <ChevronDown className="w-5 h-5 text-gray-400" />
+        {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
       </button>
-    );
-  }
+
+      {isOpen && (
+        <div className="p-4 sm:p-6 border-t border-gray-100 bg-white animate-fadeIn">
+          {children}
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300">
-      {/* Header */}
-      <button
-        onClick={() => setIsOpen(false)}
-        className="w-full flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200 text-gray-700 font-medium"
+    <div className="space-y-2">
+      {/* 1. Basic Controls */}
+      <AccordionSection
+        title="Basic Controls"
+        icon={Settings}
+        isOpen={isBasicOpen}
+        setIsOpen={setIsBasicOpen}
+        headerColorClass="text-blue-600"
       >
-        <span className="flex items-center">
-          <Settings className="w-5 h-5 mr-2 text-blue-600" />
-          Advanced Settings
-        </span>
-        <ChevronUp className="w-5 h-5 text-gray-400" />
-      </button>
-
-      {/* Tabs / Navigation */}
-      <div className="flex border-b border-gray-200 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('basic')}
-          className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${activeTab === 'basic' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-        >
-          Basic Controls
-        </button>
-        <button
-          onClick={() => setActiveTab('growth')}
-          className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${activeTab === 'growth' ? 'border-purple-600 text-purple-600 bg-purple-50/50' : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-        >
-          🟣 Growth & Marketing
-        </button>
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${activeTab === 'security' ? 'border-teal-600 text-teal-600 bg-teal-50/50' : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-        >
-          🛡️ Security & Trust
-        </button>
-      </div>
-
-      {/* Content Area */}
-      <div className="p-4 sm:p-6 bg-white min-h-[300px]">
-        {activeTab === 'basic' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
-            {/* Copied existing basic controls layout */}
-            {/* Domain Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Domain</label>
-              <div className="relative">
-                <select
-                  value={selectedDomain}
-                  onChange={(e) => {
-                    if (e.target.value === 'ADD_CUSTOM_DOMAIN') {
-                      e.preventDefault();
-                      setSelectedDomain(DEFAULT_DOMAIN);
-                      if (!featureAccess.canUseCustomDomain) {
-                        upgradeModal.open('Custom Domains', 'Unlock custom domains...', false);
-                      } else {
-                        window.location.href = '/dashboard?section=domains&action=onboard';
-                      }
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Domain Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Domain</label>
+            <div className="relative">
+              <select
+                value={selectedDomain}
+                onChange={(e) => {
+                  if (e.target.value === 'ADD_CUSTOM_DOMAIN') {
+                    e.preventDefault();
+                    setSelectedDomain(DEFAULT_DOMAIN);
+                    if (!featureAccess.canUseCustomDomain) {
+                      upgradeModal.open('Custom Domains', 'Unlock custom domains...', false);
                     } else {
-                      setSelectedDomain(e.target.value);
+                      window.location.href = '/dashboard?section=domains&action=onboard';
                     }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  {customDomains.map(domain => (
-                    <option key={domain} value={domain}>{domain}</option>
-                  ))}
-                  <option value="ADD_CUSTOM_DOMAIN" className="text-blue-600 font-medium">+ Add Custom Domain</option>
-                </select>
-              </div>
+                  } else {
+                    setSelectedDomain(e.target.value);
+                  }
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                {customDomains.map(domain => (
+                  <option key={domain} value={domain}>{domain}</option>
+                ))}
+                <option value="ADD_CUSTOM_DOMAIN" className="text-blue-600 font-medium">+ Add Custom Domain</option>
+              </select>
             </div>
-
-            {/* Custom Alias */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Custom Alias</label>
-                {!featureAccess.canUseCustomAlias && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Custom Alias', '...', false)}>
-                    <Zap className="w-3 h-3 mr-1" /> Pro
-                  </span>
-                )}
-              </div>
-              <input
-                type="text"
-                placeholder={featureAccess.canUseCustomAlias ? "my-custom-link" : "Pro only"}
-                value={customAlias}
-                onChange={(e) => !featureAccess.canUseCustomAlias ? upgradeModal.open('Custom Alias', '...', false) : setCustomAlias(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                disabled={!featureAccess.canUseCustomAlias}
-              />
-            </div>
-
-            {/* Password Protection */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                {!featureAccess.canUsePasswordProtection && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Password', '...', false)}>
-                    <Lock className="w-3 h-3 mr-1" /> Pro
-                  </span>
-                )}
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder={featureAccess.canUsePasswordProtection ? "Optional" : "Pro only"}
-                  value={password}
-                  onChange={(e) => !featureAccess.canUsePasswordProtection ? upgradeModal.open('Password', '...', false) : setPassword(e.target.value)}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg"
-                  disabled={!featureAccess.canUsePasswordProtection}
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" disabled={!featureAccess.canUsePasswordProtection}>
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Expiration Days */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Expiration (Days)</label>
-              </div>
-              <input
-                type="number"
-                min="1"
-                placeholder="Never"
-                value={expirationDays}
-                onChange={(e) => setExpirationDays(e.target.value ? parseInt(e.target.value) : '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-
-            {/* Max Clicks */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Max Clicks</label>
-              </div>
-              <input
-                type="number"
-                min="1"
-                placeholder="Unlimited"
-                value={maxClicks}
-                onChange={(e) => setMaxClicks(e.target.value ? parseInt(e.target.value) : '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-
           </div>
-        )}
 
-        {activeTab === 'growth' && (
-          <div className="animate-fadeIn">
-            <GrowthMarketing
-              smartLinkPreview={smartLinkPreview}
-              setSmartLinkPreview={setSmartLinkPreview}
-              geoConfig={geoConfig}
-              setGeoConfig={setGeoConfig}
-              deepLinkConfig={deepLinkConfig}
-              setDeepLinkConfig={setDeepLinkConfig}
-              leadLockConfig={leadLockConfig}
-              setLeadLockConfig={setLeadLockConfig}
-              featureAccess={featureAccess}
-              upgradeModal={upgradeModal}
+          {/* Custom Alias */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Custom Alias</label>
+              {!featureAccess.canUseCustomAlias && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Custom Alias', '...', false)}>
+                  <Zap className="w-3 h-3 mr-1" /> Pro
+                </span>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder={featureAccess.canUseCustomAlias ? "my-custom-link" : "Pro only"}
+              value={customAlias}
+              onChange={(e) => !featureAccess.canUseCustomAlias ? upgradeModal.open('Custom Alias', '...', false) : setCustomAlias(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              disabled={!featureAccess.canUseCustomAlias}
             />
           </div>
-        )}
 
-        {activeTab === 'security' && (
-          <div className="animate-fadeIn">
-            <SecurityTrust
-              trustBadgeConfig={trustBadgeConfig}
-              setTrustBadgeConfig={setTrustBadgeConfig}
-              featureAccess={featureAccess}
-              upgradeModal={upgradeModal}
+          {/* Password Protection */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              {!featureAccess.canUsePasswordProtection && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Password', '...', false)}>
+                  <Lock className="w-3 h-3 mr-1" /> Pro
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder={featureAccess.canUsePasswordProtection ? "Optional" : "Pro only"}
+                value={password}
+                onChange={(e) => !featureAccess.canUsePasswordProtection ? upgradeModal.open('Password', '...', false) : setPassword(e.target.value)}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg"
+                disabled={!featureAccess.canUsePasswordProtection}
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" disabled={!featureAccess.canUsePasswordProtection}>
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Expiration Days */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Expiration (Days)</label>
+            </div>
+            <input
+              type="number"
+              min="1"
+              placeholder="Never"
+              value={expirationDays}
+              onChange={(e) => setExpirationDays(e.target.value ? parseInt(e.target.value) : '')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             />
           </div>
-        )}
-      </div>
+
+          {/* Max Clicks */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Max Clicks</label>
+            </div>
+            <input
+              type="number"
+              min="1"
+              placeholder="Unlimited"
+              value={maxClicks}
+              onChange={(e) => setMaxClicks(e.target.value ? parseInt(e.target.value) : '')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+        </div>
+      </AccordionSection>
+
+      {/* 2. Growth & Marketing */}
+      <AccordionSection
+        title="Growth & Marketing"
+        icon={Sparkles}
+        isOpen={isGrowthOpen}
+        setIsOpen={setIsGrowthOpen}
+        headerColorClass="text-purple-600"
+      >
+        <GrowthMarketing
+          smartLinkPreview={smartLinkPreview}
+          setSmartLinkPreview={setSmartLinkPreview}
+          geoConfig={geoConfig}
+          setGeoConfig={setGeoConfig}
+          deepLinkConfig={deepLinkConfig}
+          setDeepLinkConfig={setDeepLinkConfig}
+          leadLockConfig={leadLockConfig}
+          setLeadLockConfig={setLeadLockConfig}
+          featureAccess={featureAccess}
+          upgradeModal={upgradeModal}
+        />
+      </AccordionSection>
+
+      {/* 3. Security & Trust */}
+      <AccordionSection
+        title="Security & Trust"
+        icon={Lock}
+        isOpen={isSecurityOpen}
+        setIsOpen={setIsSecurityOpen}
+        headerColorClass="text-teal-600"
+      >
+        <SecurityTrust
+          trustBadgeConfig={trustBadgeConfig}
+          setTrustBadgeConfig={setTrustBadgeConfig}
+          featureAccess={featureAccess}
+          upgradeModal={upgradeModal}
+        />
+      </AccordionSection>
     </div>
   );
 };

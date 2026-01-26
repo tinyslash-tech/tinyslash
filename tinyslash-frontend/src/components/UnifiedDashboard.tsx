@@ -12,8 +12,9 @@ import QRManageSection from './dashboard/QRManageSection';
 import FileToUrlManager from './dashboard/FileToUrlManager';
 import AnalyticsSection from './dashboard/AnalyticsSection';
 import CustomDomainManager from './CustomDomainManager';
+import Leads from '../pages/dashboard/Leads';
 
-type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
+type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
 type CreateMode = 'url' | 'qr' | 'file';
 
 const UnifiedDashboard: React.FC = () => {
@@ -38,6 +39,8 @@ const UnifiedDashboard: React.FC = () => {
       }
     } else if (path.includes('/dashboard/links')) {
       setActiveSection('links');
+    } else if (path.includes('/dashboard/leads')) {
+      setActiveSection('leads');
     } else if (path.includes('/dashboard/qr-codes')) {
       setActiveSection('qr-codes');
     } else if (path.includes('/dashboard/file-links')) {
@@ -107,6 +110,8 @@ const UnifiedDashboard: React.FC = () => {
         return <QRManageSection onCreateClick={() => handleCreateClick('qr')} />;
       case 'file-to-url':
         return <FileToUrlManager onCreateClick={() => handleCreateClick('file')} />;
+      case 'leads':
+        return <Leads />;
       case 'analytics':
         if (user?.plan?.includes('PRO') || user?.plan?.includes('BUSINESS')) {
           return <AnalyticsSection />;

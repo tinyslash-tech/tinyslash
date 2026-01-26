@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Settings, LogOut, Crown, BarChart3, Users } from 'lucide-react';
+import { User, Settings, LogOut, Crown, BarChart3, Users, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
@@ -62,8 +62,8 @@ const ProfileDropdown: React.FC = () => {
         <div className="hidden md:block text-left">
           <p className="text-sm font-medium text-gray-900">{user.name}</p>
           <p className="text-xs text-gray-500 capitalize">
-            {(user.subscriptionPlan?.includes('BUSINESS') || user.plan?.includes('BUSINESS')) ? 'Business' : 
-             (user.subscriptionPlan?.includes('PRO') || user.plan?.includes('PRO')) ? 'Pro' : 'Free'} Plan
+            {(user.subscriptionPlan?.includes('BUSINESS') || user.plan?.includes('BUSINESS')) ? 'Business' :
+              (user.subscriptionPlan?.includes('PRO') || user.plan?.includes('PRO')) ? 'Pro' : 'Free'} Plan
           </p>
         </div>
       </button>
@@ -92,8 +92,8 @@ const ProfileDropdown: React.FC = () => {
                     <div className="flex items-center">
                       {(user.plan?.includes('PRO') || user.plan?.includes('BUSINESS') || user.subscriptionPlan?.includes('PRO') || user.subscriptionPlan?.includes('BUSINESS')) && <Crown className="w-3 h-3 text-yellow-500 mr-1" />}
                       <span className="text-xs font-medium text-blue-600 capitalize">
-                        {(user.subscriptionPlan?.includes('BUSINESS') || user.plan?.includes('BUSINESS')) ? 'Business' : 
-                         (user.subscriptionPlan?.includes('PRO') || user.plan?.includes('PRO')) ? 'Pro' : 'Free'} Plan
+                        {(user.subscriptionPlan?.includes('BUSINESS') || user.plan?.includes('BUSINESS')) ? 'Business' :
+                          (user.subscriptionPlan?.includes('PRO') || user.plan?.includes('PRO')) ? 'Pro' : 'Free'} Plan
                       </span>
                     </div>
                     <div className="flex items-center text-xs text-gray-500">
@@ -110,15 +110,26 @@ const ProfileDropdown: React.FC = () => {
 
             {/* Menu Items */}
             <div className="py-2 border-t border-gray-100">
-              <button 
+              <button
                 onClick={handleProfileSettings}
                 className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <User className="w-4 h-4 mr-3" />
                 Profile Settings
               </button>
-              
-              <button 
+
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/dashboard/trust-badge');
+                }}
+                className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Shield className="w-4 h-4 mr-3 text-blue-600" />
+                Get Verified Trust Badge
+              </button>
+
+              <button
                 onClick={() => {
                   setIsOpen(false);
                   navigate('/dashboard/analytics');
@@ -128,8 +139,8 @@ const ProfileDropdown: React.FC = () => {
                 <BarChart3 className="w-4 h-4 mr-3" />
                 Analytics Dashboard
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleAccountSettings}
                 className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
@@ -137,16 +148,16 @@ const ProfileDropdown: React.FC = () => {
                 Account Settings
               </button>
 
-              {(!user.plan || user.plan === 'free' || user.plan === 'FREE') && 
-               (!user.subscriptionPlan || user.subscriptionPlan === 'FREE') && (
-                <button 
-                  onClick={handleUpgradeToPro}
-                  className="w-full flex items-center px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors"
-                >
-                  <Crown className="w-4 h-4 mr-3" />
-                  Upgrade to Pro
-                </button>
-              )}
+              {(!user.plan || user.plan === 'free' || user.plan === 'FREE') &&
+                (!user.subscriptionPlan || user.subscriptionPlan === 'FREE') && (
+                  <button
+                    onClick={handleUpgradeToPro}
+                    className="w-full flex items-center px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors"
+                  >
+                    <Crown className="w-4 h-4 mr-3" />
+                    Upgrade to Pro
+                  </button>
+                )}
             </div>
 
             <div className="border-t border-gray-100 pt-2">

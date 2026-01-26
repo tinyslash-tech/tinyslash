@@ -40,6 +40,9 @@ import Careers from './pages/Careers';
 import JobDetail from './pages/JobDetail';
 import Apply from './pages/Apply';
 
+import Leads from './pages/dashboard/Leads';
+import UnlockPage from './pages/UnlockPage';
+
 // New Sitelinks Pages
 import ShortLinks from './pages/ShortLinks';
 import QrCodes from './pages/QrCodes';
@@ -138,6 +141,14 @@ const AppContent: React.FC = () => {
             } />
 
             <Route path="/dashboard/team/settings" element={
+              <AuthRedirect requireAuth={true}>
+                <DashboardLayout>
+                  <UnifiedDashboard />
+                </DashboardLayout>
+              </AuthRedirect>
+            } />
+
+            <Route path="/dashboard/leads" element={
               <AuthRedirect requireAuth={true}>
                 <DashboardLayout>
                   <UnifiedDashboard />
@@ -251,6 +262,7 @@ const AppContent: React.FC = () => {
             } />
 
             <Route path="/file/:fileId" element={<FileViewer />} />
+            <Route path="/unlock/:shortCode" element={<UnlockPage />} />
             <Route path="/redirect/:shortCode" element={<RedirectPage />} />
 
             {/* 404 Route */}

@@ -418,6 +418,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
     </div>
   );
 
+  /* --- Lead Lock Options --- */
   const renderLeadLock = () => (
     <div className="border border-gray-200 rounded-lg overflow-hidden mt-3">
       <button
@@ -435,7 +436,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
                 <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
               )}
             </h4>
-            <p className="text-sm text-gray-500">Capture WhatsApp/Email before showing content</p>
+            <p className="text-sm text-gray-500">Capture leads (WhatsApp/Email) before showing content</p>
           </div>
         </div>
         <span className="text-gray-400 text-sm">{expandedSection === 'leadlock' ? 'Collapse' : 'Expand'}</span>
@@ -456,7 +457,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
           )}
 
           <div className={`${!featureAccess.canUseLeadLock ? 'opacity-50 pointer-events-none' : 'space-y-4'}`}>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 mb-4">
               <input
                 type="checkbox"
                 id="enable-leadlock"
@@ -464,47 +465,93 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
                 onChange={(e) => setLeadLockConfig({ ...leadLockConfig, enabled: e.target.checked })}
                 className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
               />
-              <label htmlFor="enable-leadlock" className="text-sm font-medium text-gray-700">Enable Lead Lock</label>
+              <label htmlFor="enable-leadlock" className="text-sm font-bold text-gray-900">Enable Lead Lock</label>
             </div>
 
             {leadLockConfig.enabled && (
-              <div className="pl-6 space-y-3">
-                <div className="flex space-x-4">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="leadType"
-                      value="whatsapp"
-                      checked={leadLockConfig.type === 'whatsapp'}
-                      onChange={() => setLeadLockConfig({ ...leadLockConfig, type: 'whatsapp' })}
-                      className="text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-600">Request WhatsApp</span>
-                  </label>
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="leadType"
-                      value="email"
-                      checked={leadLockConfig.type === 'email'}
-                      onChange={() => setLeadLockConfig({ ...leadLockConfig, type: 'email' })}
-                      className="text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-600">Request Email</span>
-                  </label>
+              <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-4 animate-fadeIn">
+
+                {/* 1. Lead Type */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Lead Collection Type</label>
+                  <div className="flex gap-3">
+                    {['WHATSAPP', 'EMAIL', 'BOTH'].map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setLeadLockConfig({ ...leadLockConfig, leadType: type as any })}
+                        className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${leadLockConfig.leadType === type
+                            ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                      >
+                        {type === 'BOTH' ? 'WhatsApp & Email' : type.charAt(0) + type.slice(1).toLowerCase()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
+                {/* 2. Custom Message */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Destination URL (After Unlock)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lock Message (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your WhatsApp number to unlock this content..."
+                    value={leadLockConfig.message || ''}
+                    onChange={(e) => setLeadLockConfig({ ...leadLockConfig, message: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                {/* 3. Verification & Rules */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id="otp-verify"
+                        checked={leadLockConfig.otpEnabled}
+                        onChange={(e) => setLeadLockConfig({ ...leadLockConfig, otpEnabled: e.target.checked })}
+                        className="mt-0.5 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <div className="ml-2">
+                        <label htmlFor="otp-verify" className="text-sm font-medium text-gray-900 block">OTP Verification</label>
+                        <p className="text-xs text-gray-500">Verify leads via OTP (Higher Quality)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id="ask-once"
+                        checked={leadLockConfig.askOnce}
+                        onChange={(e) => setLeadLockConfig({ ...leadLockConfig, askOnce: e.target.checked })}
+                        className="mt-0.5 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <div className="ml-2">
+                        <label htmlFor="ask-once" className="text-sm font-medium text-gray-900 block">Ask Once Per Device</label>
+                        <p className="text-xs text-gray-500">Don't ask again if verified (Recommended)</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Redirect Options */}
+                <div>
+                  <label className="flex items-center space-x-2 mb-2">
+                    <span className="text-sm font-medium text-gray-700">Redirect Destination</span>
+                  </label>
                   <input
                     type="url"
-                    placeholder="https://drive.google.com/file/d/..."
+                    placeholder="Use Original URL (Default)"
                     value={leadLockConfig.redirectUrl || ''}
                     onChange={(e) => setLeadLockConfig({ ...leadLockConfig, redirectUrl: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 border border-blue-200 bg-blue-50/30 rounded-lg text-sm placeholder-gray-400"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Users will be redirected here after submitting details.</p>
+                  <p className="text-xs text-gray-500 mt-1">Leave blank to redirect to the original destination after unlock.</p>
                 </div>
+
               </div>
             )}
           </div>

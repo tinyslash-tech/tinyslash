@@ -52,8 +52,12 @@ export interface DeepLinkConfig {
 
 export interface LeadLockConfig {
   enabled: boolean;
-  type: 'whatsapp' | 'email';
-  redirectUrl?: string;
+  leadType: 'WHATSAPP' | 'EMAIL' | 'BOTH';
+  message?: string;
+  otpEnabled: boolean;
+  askOnce: boolean;
+  autoRedirect: boolean;
+  redirectUrl?: string; // Optional override
 }
 
 export interface TrustBadgeConfig {

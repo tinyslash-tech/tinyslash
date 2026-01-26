@@ -58,7 +58,13 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const [smartLinkPreview, setSmartLinkPreview] = useState<SmartLinkPreview>({ enabled: false, title: '', description: '' });
   const [geoConfig, setGeoConfig] = useState<GeoConfig>({ enabled: true, rules: [], defaultUrl: '' });
   const [deepLinkConfig, setDeepLinkConfig] = useState<DeepLinkConfig>({ enabled: false });
-  const [leadLockConfig, setLeadLockConfig] = useState<LeadLockConfig>({ enabled: false, type: 'whatsapp' });
+  const [leadLockConfig, setLeadLockConfig] = useState<LeadLockConfig>({
+    enabled: false,
+    leadType: 'WHATSAPP',
+    otpEnabled: true,
+    askOnce: true,
+    autoRedirect: true
+  });
   const [trustBadgeConfig, setTrustBadgeConfig] = useState<TrustBadgeConfig>({ enabled: false, requested: false });
 
   // Refs
@@ -228,8 +234,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           <button
             onClick={() => onModeChange('url')}
             className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${mode === 'url'
-                ? 'bg-white text-blue-600 shadow-md'
-                : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-white text-blue-600 shadow-md'
+              : 'text-gray-600 hover:text-gray-900'
               }`}
           >
             <Link className="w-4 h-4" />
@@ -238,8 +244,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           <button
             onClick={() => onModeChange('qr')}
             className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${mode === 'qr'
-                ? 'bg-white text-blue-600 shadow-md'
-                : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-white text-blue-600 shadow-md'
+              : 'text-gray-600 hover:text-gray-900'
               }`}
           >
             <QrCode className="w-4 h-4" />
@@ -248,8 +254,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           <button
             onClick={() => onModeChange('file')}
             className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${mode === 'file'
-                ? 'bg-white text-blue-600 shadow-md'
-                : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-white text-blue-600 shadow-md'
+              : 'text-gray-600 hover:text-gray-900'
               }`}
           >
             <Upload className="w-4 h-4" />

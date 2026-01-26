@@ -98,6 +98,7 @@ public class ShortenedUrl {
 
     // Advanced Features
     private DeepLinkConfig deepLinkConfig;
+    private LeadLockConfig leadLockConfig;
     private SmartLinkPreview smartLinkPreview;
     private GeoConfig geoConfig;
 
@@ -112,6 +113,72 @@ public class ShortenedUrl {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+    }
+
+    public static class LeadLockConfig {
+        private boolean enabled;
+        private String leadType = "WHATSAPP"; // WHATSAPP, EMAIL, BOTH
+        private String message;
+        private boolean otpEnabled;
+        private boolean askOnce = true;
+        private boolean autoRedirect = true;
+        private String redirectUrl;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getLeadType() {
+            return leadType;
+        }
+
+        public void setLeadType(String leadType) {
+            this.leadType = leadType;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public boolean isOtpEnabled() {
+            return otpEnabled;
+        }
+
+        public void setOtpEnabled(boolean otpEnabled) {
+            this.otpEnabled = otpEnabled;
+        }
+
+        public boolean isAskOnce() {
+            return askOnce;
+        }
+
+        public void setAskOnce(boolean askOnce) {
+            this.askOnce = askOnce;
+        }
+
+        public boolean isAutoRedirect() {
+            return autoRedirect;
+        }
+
+        public void setAutoRedirect(boolean autoRedirect) {
+            this.autoRedirect = autoRedirect;
+        }
+
+        public String getRedirectUrl() {
+            return redirectUrl;
+        }
+
+        public void setRedirectUrl(String redirectUrl) {
+            this.redirectUrl = redirectUrl;
         }
     }
 
@@ -605,6 +672,14 @@ public class ShortenedUrl {
 
     public void setDeepLinkConfig(DeepLinkConfig deepLinkConfig) {
         this.deepLinkConfig = deepLinkConfig;
+    }
+
+    public LeadLockConfig getLeadLockConfig() {
+        return leadLockConfig;
+    }
+
+    public void setLeadLockConfig(LeadLockConfig leadLockConfig) {
+        this.leadLockConfig = leadLockConfig;
     }
 
     public SmartLinkPreview getSmartLinkPreview() {

@@ -148,6 +148,25 @@ public class RedirectController {
                 }
             }
 
+            // --- FEATURE: LEAD LOCK (Industry Grade) ---
+            if (url.getLeadLockConfig() != null && url.getLeadLockConfig().isEnabled()) {
+                // Check if user has already unlocked this link (via cookie or valid session)
+                // For now, we redirect to frontend "Unlock Page" which handles the form and
+                // validation.
+                // The frontend will call a verify API, which will return the final target URL
+                // (or we set a cookie).
+
+                // If allow-list cookie is missing (simplified for demo):
+                boolean unlocked = hasUnlockCookie(request, shortCode);
+                if (!unlocked) {
+                    // Redirect to Frontend Unlock Page
+                    // Frontend Route: /unlock/:shortCode
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create("/unlock/" + shortCode))
+                            .build();
+                }
+            }
+
             // 6. Final Redirect (302 Found)
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(targetUrl))
@@ -223,6 +242,17 @@ public class RedirectController {
         }
 
         return null;
+    }
+
+    private boolean hasUnlockCookie(HttpServletRequest request, String shortCode) {
+        if (request.getCookies() == null)
+            return false;
+        for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+            if (("unlocked_" + shortCode).equals(cookie.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

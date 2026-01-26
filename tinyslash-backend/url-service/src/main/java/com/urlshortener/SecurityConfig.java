@@ -43,6 +43,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/database/**").permitAll()
                                                 .requestMatchers("/api/domains/**").permitAll()
                                                 .requestMatchers("/api/monitoring/**").permitAll()
+                                                // Lead Lock Public Endpoints
+                                                .requestMatchers("/api/v1/leads/unlock/**").permitAll()
                                                 // Redirect endpoints - CRITICAL for custom domains
                                                 .requestMatchers("/{shortCode}").permitAll()
                                                 .requestMatchers("/debug/{shortCode}").permitAll()
@@ -71,6 +73,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/support/**").authenticated()
                                                 .requestMatchers("/api/v1/admin/employees/**").authenticated()
                                                 .requestMatchers("/api/v1/admin/admins/**").authenticated()
+                                                .requestMatchers("/api/v1/leads/**").authenticated()
                                                 // All other requests
                                                 .anyRequest().permitAll())
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

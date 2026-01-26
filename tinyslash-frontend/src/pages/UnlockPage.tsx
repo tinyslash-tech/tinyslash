@@ -10,6 +10,7 @@ const UnlockPage = () => {
   // Form State
   const [whatsapp, setWhatsapp] = useState('');
   const [email, setEmail] = useState('');
+  const [otpInput, setOtpInput] = useState('');
 
   // Mock Config (This would come from API in real implementation)
   const config = {
@@ -18,27 +19,88 @@ const UnlockPage = () => {
     otpEnabled: true
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Use process.env.REACT_APP_API_URL or default to localhost
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API verification
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const body = {
+        leadType: config.type,
+        whatsapp: whatsapp || undefined,
+        email: email || undefined
+      };
+
+      // Call Init Endpoint
+      // Check if OTP enabled in config (frontend knows config or fetches it?)
+      // Ideally we fetch config first. For now we assume config is known or partially mocked.
+      // But initiateUnlock handles OTP generation.
+
       if (config.otpEnabled) {
+        const res = await fetch(`${API_BASE}/v1/leads/unlock/${shortCode}/init`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) throw new Error("Failed to send verify");
         setStep(2);
       } else {
-        alert("Redirecting to content...");
+        // Direct Verify (No OTP)
+        const verifyRes = await fetch(`${API_BASE}/v1/leads/unlock/${shortCode}/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...body, otp: null }) // No OTP
+        });
+        const data = await verifyRes.json();
+        if (data.redirectUrl) {
+          // Set cookie
+          document.cookie = `${data.token}=true; path=/; max-age=86400`;
+          window.location.href = data.redirectUrl;
+        }
       }
-    }, 1500);
+    } catch (err) {
+      alert('Error: ' + err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      alert('OTP Verified! Redirecting...');
-      // Logic to set cookie and redirect to original URL
-    }, 1500);
+    // Collect OTP from inputs (simplified for now to single input or prompt)
+    // For UI simplicity let's assume '1234' or user entered value.
+    // We need a state for OTP.
+
+    try {
+      const body = {
+        whatsapp: whatsapp || undefined,
+        email: email || undefined,
+        otp: otpInput
+      };
+
+      const res = await fetch(`${API_BASE}/v1/leads/unlock/${shortCode}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.redirectUrl) {
+        // Set cookie
+        document.cookie = `${data.token}=true; path=/; max-age=86400`;
+        window.location.href = data.redirectUrl;
+      } else {
+        alert("Invalid OTP");
+      }
+    } catch (err) {
+      alert("Verification failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -117,9 +179,14 @@ const UnlockPage = () => {
               </div>
 
               <div className="flex justify-center space-x-2">
-                {[1, 2, 3, 4].map((_, i) => (
-                  <input key={i} type="text" maxLength={1} className="w-12 h-12 text-center text-xl border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-                ))}
+                <input
+                  type="text"
+                  maxLength={4}
+                  placeholder="1 2 3 4"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value)}
+                  className="w-32 h-12 text-center text-xl border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 tracking-widest"
+                />
               </div>
 
               <button

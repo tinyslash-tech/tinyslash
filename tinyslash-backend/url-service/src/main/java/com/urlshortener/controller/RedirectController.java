@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -139,6 +140,14 @@ public class RedirectController {
                 }
             }
 
+            // --- FEATURE: GEO-LINGUISTIC ROUTING ---
+            if (url.getGeoConfig() != null && url.getGeoConfig().isEnabled()) {
+                String geoUrl = getMatchedGeoUrl(url.getGeoConfig(), request);
+                if (geoUrl != null && !geoUrl.isEmpty()) {
+                    targetUrl = geoUrl;
+                }
+            }
+
             // 6. Final Redirect (302 Found)
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(targetUrl))
@@ -214,6 +223,100 @@ public class RedirectController {
         }
 
         return null;
+    }
+
+    /**
+     * FEATURE: Geo-Linguistic Redirects
+     * Resolves best matching URL based on:
+     * 1. Country + State + Language (Exact Match)
+     * 2. State + Language
+     * 3. State Only
+     * 4. Country Only
+     */
+    private String getMatchedGeoUrl(ShortenedUrl.GeoConfig config, HttpServletRequest request) {
+        if (config == null || !config.isEnabled() || config.getRules() == null || config.getRules().isEmpty()) {
+            return null;
+        }
+
+        // 1. Detect Context
+        String ip = getClientIpAddress(request);
+        Map<String, String> location = resolveLocation(ip, request);
+        String country = location.getOrDefault("country", "IN"); // Default to IN for demo
+        String state = location.getOrDefault("state", "");
+        String language = resolveLanguage(request);
+
+        // 2. Iterate Rules (Priority Order matching)
+        // Pass 1: Exact Match (Country + State + Language)
+        for (ShortenedUrl.GeoConfig.GeoRule rule : config.getRules()) {
+            if (matches(rule.getCountry(), country) &&
+                    matches(rule.getState(), state) &&
+                    matches(rule.getLanguage(), language)) {
+                return rule.getUrl();
+            }
+        }
+
+        // Pass 2: State + Language (Ignore Country if State matches)
+        for (ShortenedUrl.GeoConfig.GeoRule rule : config.getRules()) {
+            if (matches(rule.getState(), state) && matches(rule.getLanguage(), language)) {
+                return rule.getUrl();
+            }
+        }
+
+        // Pass 3: State Only
+        for (ShortenedUrl.GeoConfig.GeoRule rule : config.getRules()) {
+            if (matches(rule.getState(), state) && isEmpty(rule.getLanguage())) {
+                return rule.getUrl();
+            }
+        }
+
+        // Pass 4: Language Only (Global fallback for language)
+        for (ShortenedUrl.GeoConfig.GeoRule rule : config.getRules()) {
+            if (isEmpty(rule.getState()) && matches(rule.getLanguage(), language)) {
+                return rule.getUrl();
+            }
+        }
+
+        return config.getDefaultUrl();
+    }
+
+    private boolean matches(String ruleValue, String actualValue) {
+        if (ruleValue == null || ruleValue.isEmpty())
+            return true; // Wildcard
+        return ruleValue.equalsIgnoreCase(actualValue);
+    }
+
+    private boolean isEmpty(String value) {
+        return value == null || value.isEmpty();
+    }
+
+    private Map<String, String> resolveLocation(String ip, HttpServletRequest request) {
+        Map<String, String> loc = new java.util.HashMap<>();
+
+        // 1. Cloudflare / Edge Headers (Industry Standard)
+        String cfCountry = request.getHeader("CF-IPCountry");
+        if (cfCountry != null) {
+            loc.put("country", cfCountry);
+        }
+
+        // 2. Mock State Detection for India (since we lack local DB)
+        String debugState = request.getHeader("X-Debug-State");
+        if (debugState != null) {
+            loc.put("state", debugState);
+        }
+
+        return loc;
+    }
+
+    private String resolveLanguage(HttpServletRequest request) {
+        String acceptLang = request.getHeader("Accept-Language");
+        if (acceptLang != null && !acceptLang.isEmpty()) {
+            String topLang = acceptLang.split(",")[0].trim();
+            if (topLang.contains("-")) {
+                return topLang.split("-")[0];
+            }
+            return topLang;
+        }
+        return "en";
     }
 
     private String getClientIpAddress(HttpServletRequest request) {

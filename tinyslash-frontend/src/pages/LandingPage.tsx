@@ -85,8 +85,9 @@ const LandingPage: React.FC = () => {
         })}
       </script>
       <SEO
-        title="Home"
-        description="TinySlash - The ultimate URL shortener and QR code generator for business and individuals. Track clicks, manage links, and grow your audience."
+        title="TinySlash | Best URL Shortener & Branded Link Platform for India"
+        description="Shorten, share, and track your links with TinySlash. The best TinyURL & Bitly alternative for custom branded links, dynamic QR codes, and secure trust badges. Start for free today!"
+        keywords="URL shortener, link shortener, short URLs, custom URL shortener, branded links, link management platform, TinyURL alternative, Bitly alternative, QR code generator, dynamic QR codes, link analytics, click tracking, secure URL shortener India, free branded links for developers"
       />
       <PublicHeader />
 
@@ -112,9 +113,9 @@ const LandingPage: React.FC = () => {
               variants={fadeIn}
               className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight mb-8 leading-[1.1]"
             >
-              Shorten links. <br className="hidden md:block" />
+              India's Best URL Shortener & <br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                Expand possibilities.
+                Link Management Platform
               </span>
             </motion.h1>
 

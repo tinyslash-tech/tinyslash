@@ -16,8 +16,8 @@ const About: React.FC = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -47,7 +47,7 @@ const About: React.FC = () => {
               About <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">TinySlash</span>
             </h1>
             <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
-              Revolutionizing link management with smart technology and user-centric design
+              Proudly made in India. TinySlash is the safe URL shortener with a trust badge, offering verified short links for Indian startups and developers.
             </p>
           </motion.div>
         </div>
@@ -56,7 +56,7 @@ const About: React.FC = () => {
       {/* Our Story */}
       <section className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl shadow-lg p-8 sm:p-12"
             initial="initial"
             whileInView="animate"
@@ -74,16 +74,16 @@ const About: React.FC = () => {
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">The Vision</h3>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  In today's digital world, links are everywhere. But managing them shouldn't be complicated or expensive. 
-                  We created TinySlash to democratize link management - making powerful tools accessible to everyone, 
+                  In today's digital world, links are everywhere. But managing them shouldn't be complicated or expensive.
+                  We created TinySlash to democratize link management - making powerful tools accessible to everyone,
                   from individual creators to growing businesses.
                 </p>
                 <p className="text-gray-600 leading-relaxed">
-                  Our mission is simple: provide the most intuitive, feature-rich link management platform 
+                  Our mission is simple: provide the most intuitive, feature-rich link management platform
                   that grows with your needs, without breaking the bank.
                 </p>
               </div>
-              
+
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-8">
                 <div className="grid grid-cols-2 gap-6 text-center">
                   <div>
@@ -134,8 +134,8 @@ const About: React.FC = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Satish Kumar</h3>
                 <p className="text-blue-600 font-medium mb-4">Co-Founder & CEO</p>
                 <p className="text-gray-600 leading-relaxed">
-                  Visionary entrepreneur with 8+ years in tech startups. Passionate about creating 
-                  user-centric products that solve real problems. Previously led product teams at 
+                  Visionary entrepreneur with 8+ years in tech startups. Passionate about creating
+                  user-centric products that solve real problems. Previously led product teams at
                   major Indian tech companies.
                 </p>
                 <div className="flex justify-center space-x-4 mt-6">
@@ -158,8 +158,8 @@ const About: React.FC = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Shankar Reddy</h3>
                 <p className="text-purple-600 font-medium mb-4">Co-Founder & CTO</p>
                 <p className="text-gray-600 leading-relaxed">
-                  Full-stack engineer and tech architect with expertise in scalable systems. 
-                  Passionate about clean code and innovative solutions. Previously worked at 
+                  Full-stack engineer and tech architect with expertise in scalable systems.
+                  Passionate about clean code and innovative solutions. Previously worked at
                   leading fintech and e-commerce companies.
                 </p>
                 <div className="flex justify-center space-x-4 mt-6">
@@ -201,7 +201,7 @@ const About: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">User-First</h3>
                 <p className="text-gray-600">
-                  Every feature we build starts with understanding our users' needs. 
+                  Every feature we build starts with understanding our users' needs.
                   Simple, intuitive, and powerful.
                 </p>
               </div>
@@ -212,7 +212,7 @@ const About: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Quality</h3>
                 <p className="text-gray-600">
-                  We believe in building products that last. Quality code, reliable infrastructure, 
+                  We believe in building products that last. Quality code, reliable infrastructure,
                   and exceptional user experience.
                 </p>
               </div>
@@ -223,7 +223,7 @@ const About: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Innovation</h3>
                 <p className="text-gray-600">
-                  We're constantly pushing boundaries with features like file-to-link conversion 
+                  We're constantly pushing boundaries with features like file-to-link conversion
                   and advanced analytics.
                 </p>
               </div>

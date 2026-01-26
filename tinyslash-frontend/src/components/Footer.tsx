@@ -12,14 +12,14 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center mb-6">
-              <img src="/logo.webp" alt="Tinyslash Logo" className="w-10 h-10 object-contain mr-2" />
+              <img src="/logo.webp" alt="Tinyslash Logo" className="w-10 h-10 object-contain mr-2" width="40" height="40" />
               <span className="text-2xl font-bold">
                 <span className="text-white">Tiny</span>
                 <span className="text-[#36a1ce]">Slash</span>
               </span>
             </div>
             <p className="text-gray-300 text-lg mb-6 leading-relaxed">
-              The smartest URL shortener for modern businesses. Create, manage, and track your links with powerful analytics.
+              Safe URL shortener with trust badge. The best link shortener for Indian startups and developers offering free branded links and secure URL shortening in India.
             </p>
             <div className="space-y-4">
               <div className="flex items-center text-gray-300">

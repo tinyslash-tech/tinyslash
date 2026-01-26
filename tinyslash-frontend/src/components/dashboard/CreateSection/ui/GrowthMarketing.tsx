@@ -150,6 +150,37 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
     </div>
   );
 
+  /* --- India-First Data Maps --- */
+  const INDIA_STATES = [
+    { code: 'TN', name: 'Tamil Nadu', lang: 'ta' },
+    { code: 'KL', name: 'Kerala', lang: 'ml' },
+    { code: 'KA', name: 'Karnataka', lang: 'kn' },
+    { code: 'AP', name: 'Andhra Pradesh', lang: 'te' },
+    { code: 'TG', name: 'Telangana', lang: 'te' },
+    { code: 'MH', name: 'Maharashtra', lang: 'mr' },
+    { code: 'GJ', name: 'Gujarat', lang: 'gu' },
+    { code: 'WB', name: 'West Bengal', lang: 'bn' },
+    { code: 'PB', name: 'Punjab', lang: 'pa' },
+    { code: 'RJ', name: 'Rajasthan', lang: 'hi' },
+    { code: 'UP', name: 'Uttar Pradesh', lang: 'hi' },
+    { code: 'MP', name: 'Madhya Pradesh', lang: 'hi' },
+    { code: 'DL', name: 'Delhi', lang: 'hi' },
+    { code: 'OTHER', name: 'Other State', lang: 'en' }
+  ];
+
+  const LANGUAGES = [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'Hindi' },
+    { code: 'ta', name: 'Tamil' },
+    { code: 'te', name: 'Telugu' },
+    { code: 'kn', name: 'Kannada' },
+    { code: 'ml', name: 'Malayalam' },
+    { code: 'mr', name: 'Marathi' },
+    { code: 'gu', name: 'Gujarati' },
+    { code: 'bn', name: 'Bengali' },
+    { code: 'pa', name: 'Punjabi' }
+  ];
+
   const renderGeoRedirects = () => (
     <div className="border border-gray-200 rounded-lg overflow-hidden mt-3">
       <button
@@ -167,7 +198,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
                 <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
               )}
             </h4>
-            <p className="text-sm text-gray-500">Show different pages based on location (India States)</p>
+            <p className="text-sm text-gray-500">Route users based on Location + Language (e.g., Tamil Nadu users → Tamil Page)</p>
           </div>
         </div>
         <span className="text-gray-400 text-sm">{expandedSection === 'geo' ? 'Collapse' : 'Expand'}</span>
@@ -188,12 +219,12 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
           )}
 
           <div className={`${!featureAccess.canUseGeoRedirect ? 'opacity-50 pointer-events-none' : ''}`}>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">State Rules</label>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium text-gray-700">Routing Rules</label>
               <button
                 onClick={() => setGeoConfig({
                   ...geoConfig,
-                  rules: [...geoConfig.rules, { state: '', url: '' }]
+                  rules: [...geoConfig.rules, { country: 'IN', state: '', language: '', url: '' }]
                 })}
                 className="text-xs text-blue-600 font-medium hover:text-blue-800 flex items-center"
               >
@@ -201,60 +232,109 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
               </button>
             </div>
 
-            {geoConfig.rules.map((rule, idx) => (
-              <div key={idx} className="flex space-x-2 mb-2">
-                <select
-                  value={rule.state}
-                  onChange={(e) => {
-                    const newRules = [...geoConfig.rules];
-                    newRules[idx].state = e.target.value;
-                    setGeoConfig({ ...geoConfig, rules: newRules });
-                  }}
-                  className="w-1/3 px-2 py-1.5 border border-gray-300 rounded text-sm"
-                >
-                  <option value="">Select State</option>
-                  <option value="TN">Tamil Nadu</option>
-                  <option value="MH">Maharashtra</option>
-                  <option value="KA">Karnataka</option>
-                  <option value="DL">Delhi</option>
-                  {/* Add more states as needed */}
-                </select>
-                <input
-                  type="url"
-                  placeholder="https://site.com/regional"
-                  value={rule.url}
-                  onChange={(e) => {
-                    const newRules = [...geoConfig.rules];
-                    newRules[idx].url = e.target.value;
-                    setGeoConfig({ ...geoConfig, rules: newRules });
-                  }}
-                  className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm"
-                />
-                <button
-                  onClick={() => {
-                    const newRules = geoConfig.rules.filter((_, i) => i !== idx);
-                    setGeoConfig({ ...geoConfig, rules: newRules });
-                  }}
-                  className="p-1.5 text-red-500 hover:bg-red-50 rounded"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+            <div className="space-y-3">
+              {geoConfig.rules.map((rule, idx) => (
+                <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm animate-fadeIn">
+                  {/* Row 1: Selectors */}
+                  <div className="flex gap-2 mb-2">
+                    {/* Country (Fixed to IN for now as per req, but built for scale) */}
+                    <select
+                      value={rule.country}
+                      disabled={true}
+                      className="w-20 px-2 py-1.5 border border-gray-200 bg-gray-50 text-gray-500 rounded text-xs font-medium"
+                    >
+                      <option value="IN">🇮🇳 IN</option>
+                    </select>
+
+                    {/* State Selector */}
+                    <select
+                      value={rule.state}
+                      onChange={(e) => {
+                        const selectedState = INDIA_STATES.find(s => s.code === e.target.value);
+                        const newRules = [...geoConfig.rules];
+                        newRules[idx].state = e.target.value;
+
+                        // Smart Auto-Fill Language
+                        if (selectedState && !newRules[idx].language) {
+                          newRules[idx].language = selectedState.lang;
+                        }
+                        setGeoConfig({ ...geoConfig, rules: newRules });
+                      }}
+                      className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select State</option>
+                      {INDIA_STATES.map(state => (
+                        <option key={state.code} value={state.code}>{state.name}</option>
+                      ))}
+                    </select>
+
+                    {/* Language Selector */}
+                    <select
+                      value={rule.language}
+                      onChange={(e) => {
+                        const newRules = [...geoConfig.rules];
+                        newRules[idx].language = e.target.value;
+                        setGeoConfig({ ...geoConfig, rules: newRules });
+                      }}
+                      className="w-32 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Language</option>
+                      {LANGUAGES.map(lang => (
+                        <option key={lang.code} value={lang.code}>{lang.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Row 2: URL & Action */}
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://site.com/regional-page"
+                      value={rule.url}
+                      onChange={(e) => {
+                        const newRules = [...geoConfig.rules];
+                        newRules[idx].url = e.target.value;
+                        setGeoConfig({ ...geoConfig, rules: newRules });
+                      }}
+                      className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => {
+                        const newRules = geoConfig.rules.filter((_, i) => i !== idx);
+                        setGeoConfig({ ...geoConfig, rules: newRules });
+                      }}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                      title="Remove Rule"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {geoConfig.rules.length === 0 && (
-              <p className="text-xs text-center text-gray-500 py-2 border border-dashed rounded mb-2">No rules added. Click "Add Rule" to start.</p>
+              <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg mb-4 bg-gray-50/50">
+                <Globe className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">No geo-rules active.</p>
+                <p className="text-xs text-gray-400">Add a rule to redirect users based on location.</p>
+              </div>
             )}
 
-            <div className="mt-3">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Fallback URL (Default)</label>
-              <input
-                type="url"
-                placeholder="https://site.com/en (Default if no match)"
-                value={geoConfig.defaultUrl || ''}
-                onChange={(e) => setGeoConfig({ ...geoConfig, defaultUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Fallback Destination (Default)</label>
+              <div className="flex items-center">
+                <div className="bg-gray-100 border border-gray-300 border-r-0 rounded-l-lg px-3 py-2 text-gray-500 text-sm">
+                  Global
+                </div>
+                <input
+                  type="url"
+                  placeholder="https://site.com/en (Default if no match)"
+                  value={geoConfig.defaultUrl || ''}
+                  onChange={(e) => setGeoConfig({ ...geoConfig, defaultUrl: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
           </div>
         </div>

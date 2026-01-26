@@ -46,6 +46,7 @@ import QrCodes from './pages/QrCodes';
 import FileToLink from './pages/FileToLink';
 import FAQ from './pages/FAQ';
 import Contact from './pages/Contact';
+import NotFound from './pages/NotFound';
 
 import SocialMedia from './pages/solutions/SocialMedia';
 import DigitalMarketing from './pages/solutions/DigitalMarketing';
@@ -251,6 +252,9 @@ const AppContent: React.FC = () => {
 
             <Route path="/file/:fileId" element={<FileViewer />} />
             <Route path="/redirect/:shortCode" element={<RedirectPage />} />
+
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster position="top-right" />
         </div>

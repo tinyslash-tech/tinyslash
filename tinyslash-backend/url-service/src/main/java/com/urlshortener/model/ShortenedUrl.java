@@ -99,6 +99,7 @@ public class ShortenedUrl {
     // Advanced Features
     private DeepLinkConfig deepLinkConfig;
     private SmartLinkPreview smartLinkPreview;
+    private GeoConfig geoConfig;
 
     // Inner Classes for Configuration
     public static class DeepLinkConfig {
@@ -150,6 +151,75 @@ public class ShortenedUrl {
 
         public void setImage(String image) {
             this.image = image;
+        }
+    }
+
+    public static class GeoConfig {
+        private boolean enabled;
+        private String defaultUrl;
+        private java.util.List<GeoRule> rules = new java.util.ArrayList<>();
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getDefaultUrl() {
+            return defaultUrl;
+        }
+
+        public void setDefaultUrl(String defaultUrl) {
+            this.defaultUrl = defaultUrl;
+        }
+
+        public java.util.List<GeoRule> getRules() {
+            return rules;
+        }
+
+        public void setRules(java.util.List<GeoRule> rules) {
+            this.rules = rules;
+        }
+
+        public static class GeoRule {
+            private String country;
+            private String state;
+            private String language;
+            private String url;
+
+            public String getCountry() {
+                return country;
+            }
+
+            public void setCountry(String country) {
+                this.country = country;
+            }
+
+            public String getState() {
+                return state;
+            }
+
+            public void setState(String state) {
+                this.state = state;
+            }
+
+            public String getLanguage() {
+                return language;
+            }
+
+            public void setLanguage(String language) {
+                this.language = language;
+            }
+
+            public String getUrl() {
+                return url;
+            }
+
+            public void setUrl(String url) {
+                this.url = url;
+            }
         }
     }
 
@@ -543,5 +613,13 @@ public class ShortenedUrl {
 
     public void setSmartLinkPreview(SmartLinkPreview smartLinkPreview) {
         this.smartLinkPreview = smartLinkPreview;
+    }
+
+    public GeoConfig getGeoConfig() {
+        return geoConfig;
+    }
+
+    public void setGeoConfig(GeoConfig geoConfig) {
+        this.geoConfig = geoConfig;
     }
 }

@@ -33,7 +33,9 @@ export interface SmartLinkPreview {
 }
 
 export interface GeoRule {
+  country: string;
   state: string;
+  language: string;
   url: string;
 }
 

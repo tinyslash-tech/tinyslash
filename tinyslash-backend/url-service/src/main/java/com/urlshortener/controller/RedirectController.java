@@ -23,6 +23,9 @@ public class RedirectController {
     @Autowired(required = false)
     private AnalyticsService analyticsService;
 
+    @Autowired
+    private com.urlshortener.service.TrustVerificationService trustService;
+
     /**
      * Strict Domain Resolution (FIX 1)
      * No guessing. No rewriting. Host header is the source of truth.
@@ -148,6 +151,24 @@ public class RedirectController {
                 }
             }
 
+            // --- FEATURE: TRUST BADGE (High Trust Interstitial) ---
+            // Check if Owner is Verified
+            Optional<com.urlshortener.model.TrustVerification> trustOpt = trustService
+                    .getApprovedVerification(url.getUserId());
+            if (trustOpt.isPresent()) {
+                com.urlshortener.model.TrustVerification trust = trustOpt.get();
+                // Check if not expired
+                if (trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
+                    boolean trustViewed = hasTrustCookie(request, shortCode);
+                    if (!trustViewed) {
+                        // Redirect to Trust Page
+                        return ResponseEntity.status(HttpStatus.FOUND)
+                                .location(URI.create("/verified/" + shortCode))
+                                .build();
+                    }
+                }
+            }
+
             // --- FEATURE: LEAD LOCK (Industry Grade) ---
             if (url.getLeadLockConfig() != null && url.getLeadLockConfig().isEnabled()) {
                 // Check if user has already unlocked this link (via cookie or valid session)
@@ -242,6 +263,17 @@ public class RedirectController {
         }
 
         return null;
+    }
+
+    private boolean hasTrustCookie(HttpServletRequest request, String shortCode) {
+        if (request.getCookies() == null)
+            return false;
+        for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+            if (("trusted_" + shortCode).equals(cookie.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean hasUnlockCookie(HttpServletRequest request, String shortCode) {

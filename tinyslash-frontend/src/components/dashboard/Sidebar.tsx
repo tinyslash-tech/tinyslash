@@ -18,7 +18,8 @@ import {
   ChevronRight,
   ChevronLeft,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  Shield // Added Shield icon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -32,7 +33,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
-type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
+type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
 type CreateMode = 'url' | 'qr' | 'file';
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
@@ -57,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
     }
     else if (path.includes('/dashboard/links')) setActiveSection('links');
     else if (path.includes('/dashboard/leads')) setActiveSection('leads');
+    else if (path.includes('/dashboard/trust-badge')) setActiveSection('trust-badge');
     else if (path.includes('/dashboard/qr-codes')) setActiveSection('qr-codes');
     else if (path.includes('/dashboard/file-links')) setActiveSection('file-to-url');
     else if (path.includes('/dashboard/analytics')) setActiveSection('analytics');
@@ -110,6 +112,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           icon: Users,
           isPro: true,
           badge: !isPro ? 'PRO' : undefined
+        },
+        {
+          id: 'trust-badge' as SidebarSection,
+          label: 'Trust Badge',
+          icon: Shield,
         }
       ]
     },
@@ -164,6 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
       case 'qr-codes': navigate('/dashboard/qr-codes'); break;
       case 'file-to-url': navigate('/dashboard/file-links'); break;
       case 'leads': navigate('/dashboard/leads'); break;
+      case 'trust-badge': navigate('/dashboard/trust-badge'); break;
       case 'analytics': navigate('/dashboard/analytics'); break;
       case 'domains': navigate('/dashboard/domains'); break;
       case 'team-members': navigate('/dashboard/team/members'); break;

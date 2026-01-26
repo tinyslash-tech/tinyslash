@@ -42,6 +42,7 @@ import Apply from './pages/Apply';
 
 import Leads from './pages/dashboard/Leads';
 import UnlockPage from './pages/UnlockPage';
+import VerifiedPage from './pages/VerifiedPage';
 
 // New Sitelinks Pages
 import ShortLinks from './pages/ShortLinks';
@@ -156,6 +157,14 @@ const AppContent: React.FC = () => {
               </AuthRedirect>
             } />
 
+            <Route path="/dashboard/trust-badge" element={
+              <AuthRedirect requireAuth={true}>
+                <DashboardLayout>
+                  <UnifiedDashboard />
+                </DashboardLayout>
+              </AuthRedirect>
+            } />
+
             {/* Individual Analytics Routes */}
             <Route path="/dashboard/links/analytics/:shortCode" element={
               <AuthRedirect requireAuth={true}>
@@ -263,6 +272,7 @@ const AppContent: React.FC = () => {
 
             <Route path="/file/:fileId" element={<FileViewer />} />
             <Route path="/unlock/:shortCode" element={<UnlockPage />} />
+            <Route path="/verified/:shortCode" element={<VerifiedPage />} />
             <Route path="/redirect/:shortCode" element={<RedirectPage />} />
 
             {/* 404 Route */}

@@ -5,7 +5,6 @@ import {
   Home,
   Menu,
   X,
-  Plus,
   QrCode,
   Upload,
   BarChart3,
@@ -13,7 +12,8 @@ import {
   Settings,
   LogOut,
   Crown,
-  LayoutDashboard
+  LayoutDashboard,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -228,8 +228,18 @@ const Header: React.FC = () => {
                         </button>
                       </div>
 
-                      {/* Analytics - Lower Priority */}
+                      {/* Analytics & Trust */}
                       <div className="py-2 border-b border-gray-100">
+                        <button
+                          onClick={() => {
+                            navigate('/dashboard/trust-badge');
+                            setMobileMenuOpen(false);
+                          }}
+                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <Shield className="w-4 h-4 mr-3 text-blue-600" />
+                          Verify Business (Trust Badge)
+                        </button>
                         <button
                           onClick={() => handleNavigation('/dashboard/analytics')}
                           className="w-full flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"

@@ -13,8 +13,9 @@ import FileToUrlManager from './dashboard/FileToUrlManager';
 import AnalyticsSection from './dashboard/AnalyticsSection';
 import CustomDomainManager from './CustomDomainManager';
 import Leads from '../pages/dashboard/Leads';
+import TrustBadge from '../pages/dashboard/TrustBadge';
 
-type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
+type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
 type CreateMode = 'url' | 'qr' | 'file';
 
 const UnifiedDashboard: React.FC = () => {
@@ -41,6 +42,8 @@ const UnifiedDashboard: React.FC = () => {
       setActiveSection('links');
     } else if (path.includes('/dashboard/leads')) {
       setActiveSection('leads');
+    } else if (path.includes('/dashboard/trust-badge')) {
+      setActiveSection('trust-badge');
     } else if (path.includes('/dashboard/qr-codes')) {
       setActiveSection('qr-codes');
     } else if (path.includes('/dashboard/file-links')) {
@@ -112,6 +115,8 @@ const UnifiedDashboard: React.FC = () => {
         return <FileToUrlManager onCreateClick={() => handleCreateClick('file')} />;
       case 'leads':
         return <Leads />;
+      case 'trust-badge':
+        return <TrustBadge />;
       case 'analytics':
         if (user?.plan?.includes('PRO') || user?.plan?.includes('BUSINESS')) {
           return <AnalyticsSection />;

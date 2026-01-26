@@ -23,13 +23,18 @@ const Header: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const createMenuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMobileMenuOpen(false);
+      }
+      if (createMenuRef.current && !createMenuRef.current.contains(event.target as Node)) {
+        setCreateMenuOpen(false);
       }
     };
 
@@ -47,6 +52,7 @@ const Header: React.FC = () => {
   const handleCreateClick = (mode: 'url' | 'qr' | 'file') => {
     navigate('/dashboard', { state: { activeSection: 'create', createMode: mode } });
     setMobileMenuOpen(false);
+    setCreateMenuOpen(false);
   };
 
   const handleNavigation = (path: string, state?: any) => {
@@ -63,7 +69,7 @@ const Header: React.FC = () => {
             to={isAuthenticated ? "/dashboard" : "/"}
             className="flex items-center space-x-2 flex-shrink-0"
           >
-            <img src="/logo.png" alt="Tinyslash Logo" className="w-8 h-8 object-contain" />
+            <img src="/logo.webp" alt="Tinyslash Logo" className="w-8 h-8 object-contain" />
             <span className="text-lg sm:text-xl font-bold">
               <span className="text-black">Tiny</span>
               <span className="text-[#36a1ce]">Slash</span>
@@ -73,9 +79,72 @@ const Header: React.FC = () => {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6">
             {isAuthenticated ? (
-              <div className="relative">
-                <ProfileDropdown />
-              </div>
+              <>
+                <div className="relative" ref={createMenuRef}>
+                  <button
+                    onClick={() => setCreateMenuOpen(!createMenuOpen)}
+                    className="flex items-center space-x-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="font-medium">Create New</span>
+                  </button>
+
+                  <AnimatePresence>
+                    {createMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 overflow-hidden"
+                      >
+                        <button
+                          onClick={() => handleCreateClick('url')}
+                          className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        >
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <LinkIcon className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium">Short Link</p>
+                            <p className="text-xs text-gray-500">Create shortened URLs</p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => handleCreateClick('qr')}
+                          className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                        >
+                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                            <QrCode className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium">QR Code</p>
+                            <p className="text-xs text-gray-500">Generate custom QR codes</p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => handleCreateClick('file')}
+                          className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors"
+                        >
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <Upload className="w-4 h-4 text-green-600" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium">File to URL</p>
+                            <p className="text-xs text-gray-500">Upload files & create links</p>
+                          </div>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="relative">
+                  <ProfileDropdown />
+                </div>
+              </>
             ) : (
               <Link
                 to="/"

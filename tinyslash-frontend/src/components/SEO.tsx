@@ -9,6 +9,7 @@ interface SEOProps {
   type?: string;
   image?: string;
   url?: string;
+  keywords?: string; // Added keywords prop
 }
 
 export const SEO: React.FC<SEOProps> = ({
@@ -18,7 +19,8 @@ export const SEO: React.FC<SEOProps> = ({
   name = 'TinySlash',
   type = 'website',
   image = '/logo.png', // Default image
-  url = window.location.href
+  url = window.location.href,
+  keywords // Added keywords prop usage
 }) => {
   const siteTitle = fullTitle ? fullTitle : (title ? `${title} | ${name}` : name);
   const metaDescription = description || "TinySlash - The most powerful URL shortener and QR code generator for your business.";
@@ -28,6 +30,7 @@ export const SEO: React.FC<SEOProps> = ({
       {/* Standard metadata tags */}
       <title>{siteTitle}</title>
       <meta name='description' content={metaDescription} />
+      {keywords && <meta name="keywords" content={keywords} />}
 
       {/* Facebook tags */}
       <meta property="og:type" content={type} />

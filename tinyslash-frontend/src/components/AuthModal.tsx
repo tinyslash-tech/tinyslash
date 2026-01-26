@@ -145,7 +145,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
             {/* Header */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <img src="/logo.png" alt="Tinyslash Logo" className="w-full h-full object-contain" />
+                <img src="/logo.webp" alt="Tinyslash Logo" className="w-full h-full object-contain" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 {mode === 'login' ? 'Welcome Back' : 'Create Account'}

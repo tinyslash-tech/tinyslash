@@ -40,7 +40,7 @@ const PublicHeader: React.FC = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
-              <img src="/logo.png" alt="Tinyslash Logo" className="w-10 h-10 object-contain" />
+              <img src="/logo.webp" alt="Tinyslash Logo" className="w-10 h-10 object-contain" />
               <span className="text-xl font-bold tracking-tight">
                 <span className="text-gray-900">Tiny</span>
                 <span className="text-[#36a1ce]">Slash</span>

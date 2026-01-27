@@ -100,6 +100,14 @@ export interface ShortenedLink {
   deepLinkConfig?: DeepLinkConfig;
   leadLockConfig?: LeadLockConfig;
   trustBadgeConfig?: TrustBadgeConfig;
+  smartActionConfig?: SmartActionConfig;
+}
+
+export interface SmartActionConfig {
+  enabled: boolean;
+  whatsapp: { enabled: boolean; number: string; message: string };
+  instagram: { enabled: boolean; url: string };
+  website: { enabled: boolean; url: string; label: string };
 }
 
 export const DEFAULT_DOMAIN = 'tinyslash.com';

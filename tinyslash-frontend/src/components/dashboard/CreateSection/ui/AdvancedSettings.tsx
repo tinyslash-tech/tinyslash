@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Zap, Lock, Sparkles, Eye, EyeOff, ChevronDown, ChevronUp, Settings } from 'lucide-react';
-import { DEFAULT_DOMAIN, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig, CreateMode } from '../types';
+import { DEFAULT_DOMAIN, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig, SmartActionConfig, CreateMode } from '../types';
 import { GrowthMarketing } from './GrowthMarketing';
 import { SecurityTrust } from './SecurityTrust';
 
@@ -44,6 +44,8 @@ interface AdvancedSettingsProps {
   setLeadLockConfig: (config: LeadLockConfig) => void;
   trustBadgeConfig: TrustBadgeConfig;
   setTrustBadgeConfig: (config: TrustBadgeConfig) => void;
+  smartActionConfig: SmartActionConfig;
+  setSmartActionConfig: (config: SmartActionConfig) => void;
 
   // Context Props
   featureAccess: any;
@@ -77,6 +79,8 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   setLeadLockConfig,
   trustBadgeConfig,
   setTrustBadgeConfig,
+  smartActionConfig,
+  setSmartActionConfig,
   featureAccess,
   upgradeModal
 }) => {
@@ -246,7 +250,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
       </AccordionSection>
 
       {/* 2. Growth & Marketing */}
-      {mode !== 'qr' && (
+      {mode === 'qr' && (
         <AccordionSection
           title="Growth & Marketing"
           icon={Sparkles}
@@ -263,8 +267,11 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
             setDeepLinkConfig={setDeepLinkConfig}
             leadLockConfig={leadLockConfig}
             setLeadLockConfig={setLeadLockConfig}
+            smartActionConfig={smartActionConfig}
+            setSmartActionConfig={setSmartActionConfig}
             featureAccess={featureAccess}
             upgradeModal={upgradeModal}
+            mode={mode}
           />
         </AccordionSection>
       )}

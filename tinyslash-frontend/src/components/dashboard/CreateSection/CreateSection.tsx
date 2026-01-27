@@ -10,7 +10,7 @@ import { useUpgradeModal } from '../../../context/ModalContext';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 
 // Types & Hooks
-import { CreateMode, DEFAULT_DOMAIN, QRCustomization, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from './types';
+import { CreateMode, DEFAULT_DOMAIN, QRCustomization, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig, SmartActionConfig } from './types';
 import { useCustomDomains } from './hooks/useCustomDomains';
 import { useSecurityUI } from './hooks/useSecurityUI';
 import { useCreateHandler } from './hooks/useCreateHandler';
@@ -66,6 +66,12 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     autoRedirect: true
   });
   const [trustBadgeConfig, setTrustBadgeConfig] = useState<TrustBadgeConfig>({ enabled: false, requested: false });
+  const [smartActionConfig, setSmartActionConfig] = useState<SmartActionConfig>({
+    enabled: false,
+    whatsapp: { enabled: false, number: '', message: '' },
+    instagram: { enabled: false, url: '' },
+    website: { enabled: false, url: '', label: '' }
+  });
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -144,7 +150,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     geoConfig,
     deepLinkConfig,
     leadLockConfig,
-    trustBadgeConfig
+    trustBadgeConfig,
+    smartActionConfig
   });
 
   // Lifecycle
@@ -349,6 +356,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
             setLeadLockConfig={setLeadLockConfig}
             trustBadgeConfig={trustBadgeConfig}
             setTrustBadgeConfig={setTrustBadgeConfig}
+            smartActionConfig={smartActionConfig}
+            setSmartActionConfig={setSmartActionConfig}
             featureAccess={featureAccess}
             upgradeModal={upgradeModal}
           />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import * as QRCode from 'qrcode'; // Need for final generation
 import { toast } from 'react-hot-toast';
 import { createShortUrl, createQrCode, updateQrCode, uploadFileToBackend } from '../../../../services/api';
-import { DEFAULT_DOMAIN, ShortenedLink, CreateMode, QRCustomization, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from '../types';
+import { DEFAULT_DOMAIN, ShortenedLink, CreateMode, QRCustomization, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig, SmartActionConfig } from '../types';
 
 interface UseCreateHandlerProps {
   user: any;
@@ -34,6 +34,7 @@ interface UseCreateHandlerProps {
   deepLinkConfig: DeepLinkConfig;
   leadLockConfig: LeadLockConfig;
   trustBadgeConfig: TrustBadgeConfig;
+  smartActionConfig: SmartActionConfig;
 }
 
 export const useCreateHandler = (props: UseCreateHandlerProps) => {
@@ -64,7 +65,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     geoConfig,
     deepLinkConfig,
     leadLockConfig,
-    trustBadgeConfig
+    trustBadgeConfig,
+    smartActionConfig
   } = props;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -225,7 +227,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         geoConfig: featureAccess.canUseGeoRedirect ? geoConfig : undefined,
         deepLinkConfig: featureAccess.canUseDeepLinks ? deepLinkConfig : undefined,
         leadLockConfig: featureAccess.canUseLeadLock ? leadLockConfig : undefined,
-        trustBadgeConfig: featureAccess.canUseTrustBadge ? trustBadgeConfig : undefined
+        trustBadgeConfig: featureAccess.canUseTrustBadge ? trustBadgeConfig : undefined,
+        smartActionConfig
       };
 
       try {
@@ -251,7 +254,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
           geoConfig: newLink.geoConfig,
           deepLinkConfig: newLink.deepLinkConfig,
           leadLockConfig: newLink.leadLockConfig,
-          trustBadgeConfig: newLink.trustBadgeConfig
+          trustBadgeConfig: newLink.trustBadgeConfig,
+          smartActionConfig: newLink.smartActionConfig
         };
 
         if (mode === 'url') {

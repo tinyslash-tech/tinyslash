@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Share2, Globe, Smartphone, Lock, Plus, Trash2, HelpCircle } from 'lucide-react';
-import { SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig } from '../types';
+import { Share2, Globe, Smartphone, Lock, Plus, Trash2, HelpCircle, LayoutGrid, MessageCircle, Instagram, Globe2 } from 'lucide-react';
+import { SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, SmartActionConfig, CreateMode } from '../types';
 
 interface GrowthMarketingProps {
   smartLinkPreview: SmartLinkPreview;
@@ -11,8 +11,11 @@ interface GrowthMarketingProps {
   setDeepLinkConfig: (config: DeepLinkConfig) => void;
   leadLockConfig: LeadLockConfig;
   setLeadLockConfig: (config: LeadLockConfig) => void;
+  smartActionConfig: SmartActionConfig;
+  setSmartActionConfig: (config: SmartActionConfig) => void;
   featureAccess: any;
   upgradeModal: any;
+  mode?: CreateMode;
 }
 
 export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
@@ -24,8 +27,11 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
   setDeepLinkConfig,
   leadLockConfig,
   setLeadLockConfig,
+  smartActionConfig,
+  setSmartActionConfig,
   featureAccess,
-  upgradeModal
+  upgradeModal,
+  mode
 }) => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -38,6 +44,167 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
   };
 
   // --- Render Helpers ---
+
+  const renderSmartAction = () => (
+    <div className="border border-gray-200 rounded-lg overflow-hidden mt-3">
+      <button
+        onClick={() => toggleSection('smartAction')}
+        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 text-left transition-colors"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
+            <LayoutGrid className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900 flex items-center">
+              Smart Action QR ⭐
+            </h4>
+            <p className="text-sm text-gray-500">Let users choose what to do (WhatsApp, Instagram, Website)</p>
+          </div>
+        </div>
+        <span className="text-gray-400 text-sm">{expandedSection === 'smartAction' ? 'Collapse' : 'Expand'}</span>
+      </button>
+
+      {expandedSection === 'smartAction' && (
+        <div className="p-4 bg-gray-50 border-t border-gray-200 space-y-4 animate-fadeIn">
+          <div className="flex items-center space-x-2 mb-4">
+            <input
+              type="checkbox"
+              id="enable-smart-action"
+              checked={smartActionConfig.enabled}
+              onChange={(e) => setSmartActionConfig({ ...smartActionConfig, enabled: e.target.checked })}
+              className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+            />
+            <label htmlFor="enable-smart-action" className="text-sm font-bold text-gray-900">Enable Smart Action Page</label>
+          </div>
+
+          {smartActionConfig.enabled && (
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <MessageCircle className="w-4 h-4 mr-2 text-green-500" /> WhatsApp Action
+                </h5>
+                <div className="space-y-3 pl-6 border-l-2 border-gray-100 ml-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={smartActionConfig.whatsapp.enabled}
+                      onChange={(e) => setSmartActionConfig({
+                        ...smartActionConfig,
+                        whatsapp: { ...smartActionConfig.whatsapp, enabled: e.target.checked }
+                      })}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="text-sm text-gray-600">Show "Chat on WhatsApp" button</span>
+                  </label>
+                  {smartActionConfig.whatsapp.enabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
+                      <input
+                        type="text"
+                        placeholder="Phone (e.g. 919876543210)"
+                        value={smartActionConfig.whatsapp.number}
+                        onChange={(e) => setSmartActionConfig({
+                          ...smartActionConfig,
+                          whatsapp: { ...smartActionConfig.whatsapp, number: e.target.value }
+                        })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Pre-filled Message (Optional)"
+                        value={smartActionConfig.whatsapp.message}
+                        onChange={(e) => setSmartActionConfig({
+                          ...smartActionConfig,
+                          whatsapp: { ...smartActionConfig.whatsapp, message: e.target.value }
+                        })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Instagram className="w-4 h-4 mr-2 text-pink-500" /> Instagram Action
+                </h5>
+                <div className="space-y-3 pl-6 border-l-2 border-gray-100 ml-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={smartActionConfig.instagram.enabled}
+                      onChange={(e) => setSmartActionConfig({
+                        ...smartActionConfig,
+                        instagram: { ...smartActionConfig.instagram, enabled: e.target.checked }
+                      })}
+                      className="rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+                    />
+                    <span className="text-sm text-gray-600">Show "Visit Instagram" button</span>
+                  </label>
+                  {smartActionConfig.instagram.enabled && (
+                    <input
+                      type="url"
+                      placeholder="Instagram Profile URL"
+                      value={smartActionConfig.instagram.url}
+                      onChange={(e) => setSmartActionConfig({
+                        ...smartActionConfig,
+                        instagram: { ...smartActionConfig.instagram, url: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm animate-fadeIn"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Globe2 className="w-4 h-4 mr-2 text-blue-500" /> Website Action
+                </h5>
+                <div className="space-y-3 pl-6 border-l-2 border-gray-100 ml-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={smartActionConfig.website.enabled}
+                      onChange={(e) => setSmartActionConfig({
+                        ...smartActionConfig,
+                        website: { ...smartActionConfig.website, enabled: e.target.checked }
+                      })}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-600">Show "Visit Website" button</span>
+                  </label>
+                  {smartActionConfig.website.enabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
+                      <input
+                        type="text"
+                        placeholder="Button Label (e.g. Visit Shop)"
+                        value={smartActionConfig.website.label}
+                        onChange={(e) => setSmartActionConfig({
+                          ...smartActionConfig,
+                          website: { ...smartActionConfig.website, label: e.target.value }
+                        })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                      <input
+                        type="url"
+                        placeholder="Website URL"
+                        value={smartActionConfig.website.url}
+                        onChange={(e) => setSmartActionConfig({
+                          ...smartActionConfig,
+                          website: { ...smartActionConfig.website, url: e.target.value }
+                        })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   const renderSmartLinkPreview = () => (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -193,7 +360,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
           </div>
           <div>
             <h4 className="font-medium text-gray-900 flex items-center">
-              Geo-Linguistic Routing
+              {mode === 'qr' ? 'Location-Smart QR' : 'Geo-Linguistic Routing'}
               {!featureAccess.canUseGeoRedirect && (
                 <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
               )}
@@ -354,7 +521,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
           </div>
           <div>
             <h4 className="font-medium text-gray-900 flex items-center">
-              App Deep-Linking
+              {mode === 'qr' ? 'App-Open QR' : 'App Deep-Linking'}
               {!featureAccess.canUseDeepLinks && (
                 <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
               )}
@@ -431,7 +598,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
           </div>
           <div>
             <h4 className="font-medium text-gray-900 flex items-center">
-              Lead-Lock Access
+              {mode === 'qr' ? 'Lead Capture QR' : 'Lead-Lock Access'}
               {!featureAccess.canUseLeadLock && (
                 <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">PRO</span>
               )}
@@ -480,8 +647,8 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
                         key={type}
                         onClick={() => setLeadLockConfig({ ...leadLockConfig, leadType: type as any })}
                         className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${leadLockConfig.leadType === type
-                            ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
-                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                           }`}
                       >
                         {type === 'BOTH' ? 'WhatsApp & Email' : type.charAt(0) + type.slice(1).toLowerCase()}
@@ -562,6 +729,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
 
   return (
     <div className="space-y-4">
+      {mode === 'qr' && renderSmartAction()}
       {renderSmartLinkPreview()}
       {renderGeoRedirects()}
       {renderDeepLink()}

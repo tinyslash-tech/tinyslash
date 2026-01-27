@@ -30,6 +30,7 @@ interface QRCustomization {
   centerTextColor?: string;
   centerTextBackgroundColor?: string;
   centerTextBold?: boolean;
+  trustBadge?: boolean;
 }
 
 interface QRCodeGeneratorProps {
@@ -76,7 +77,8 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     centerTextFontFamily: 'Arial',
     centerTextColor: '#000000',
     centerTextBackgroundColor: '#FFFFFF',
-    centerTextBold: true
+    centerTextBold: true,
+    trustBadge: false
   };
 
   const config = { ...defaultCustomization, ...customization };
@@ -106,8 +108,10 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
       const cellSize = (config.size - (frameMargin * 2)) / moduleCount;
 
       // Set Canvas Size
+      // Add extra height for Trust Badge if enabled
+      const badgeHeight = config.trustBadge ? 40 : 0;
       canvas.width = config.size;
-      canvas.height = config.size;
+      canvas.height = config.size + badgeHeight;
 
       // 2. Draw Background
       ctx.fillStyle = config.backgroundColor;
@@ -154,15 +158,17 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
         addCenterText(ctx, canvas);
       }
 
+      // 8. Add Trust Badge
+      if (config.trustBadge) {
+        addTrustBadge(ctx, canvas);
+      }
+
     } catch (error) {
       console.error('QR Code generation error:', error);
     }
   };
 
   const drawModule = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, pattern: string, isFinder: boolean) => {
-    // Finder Patterns should be cleaner? Let's check.
-    // For now we apply pattern to everything.
-
     ctx.beginPath();
     switch (pattern) {
       case 'dots':
@@ -244,7 +250,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
 
   const applyFrameStyle = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
     const width = canvas.width;
-    const height = canvas.height;
+    const height = config.size; // Only use QR height for frames
     const color = config.frameColor || config.foregroundColor;
 
     ctx.lineWidth = 4;
@@ -328,9 +334,9 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
       return new Promise<void>((resolve) => {
         img.onload = () => {
           const logoSizePercent = (config.logoSize || 20) / 100;
-          const logoSize = Math.min(canvas.width, canvas.height) * logoSizePercent;
+          const logoSize = config.size * logoSizePercent;
           const x = (canvas.width - logoSize) / 2;
-          const y = (canvas.height - logoSize) / 2;
+          const y = (config.size - logoSize) / 2;
           const cornerRadius = config.logoCornerRadius || 0;
 
           ctx.save();
@@ -372,13 +378,51 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     const textHeight = fontSize || 16;
 
     const x = canvas.width / 2;
-    const y = canvas.height / 2;
+    const y = config.size / 2;
 
     ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
     ctx.fillRect(x - textWidth / 2 - 5, y - textHeight / 2 - 2, textWidth + 10, textHeight + 4);
 
     ctx.fillStyle = config.centerTextColor || '#000000';
     ctx.fillText(config.centerText || '', x, y);
+  };
+
+  const addTrustBadge = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+    const width = canvas.width;
+    const height = canvas.height;
+    const badgeHeight = 40;
+    const y = height - badgeHeight;
+
+    ctx.fillStyle = '#059669'; // green-600
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const text = "Secure By Tinyslash";
+    ctx.fillText(text, width / 2, y + badgeHeight / 2);
+
+    const textWidth = ctx.measureText(text).width;
+    const iconSize = 12;
+    const iconX = (width / 2) - (textWidth / 2) - iconSize - 6;
+    const iconY = y + badgeHeight / 2 - iconSize / 2;
+
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    // Shield shape
+    ctx.moveTo(iconX + iconSize / 2, iconY + iconSize);
+    ctx.bezierCurveTo(iconX, iconY + iconSize / 1.5, iconX, iconY + iconSize / 3, iconX, iconY);
+    ctx.lineTo(iconX + iconSize, iconY);
+    ctx.bezierCurveTo(iconX + iconSize, iconY + iconSize / 3, iconX + iconSize, iconY + iconSize / 1.5, iconX + iconSize / 2, iconY + iconSize);
+    ctx.stroke();
+
+    // Checkmark
+    ctx.beginPath();
+    ctx.moveTo(iconX + 3, iconY + 5);
+    ctx.lineTo(iconX + 5, iconY + 8);
+    ctx.lineTo(iconX + 9, iconY + 3);
+    ctx.stroke();
   };
 
   if (!value) return null;

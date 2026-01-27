@@ -40,14 +40,13 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     if (!canvasRef.current || !originalUrl) return;
 
     try {
-      // If we simply want to clone the preview, we can do this. 
-      // BUT for high-res download we regenerate.
       const QRCode = await import('qrcode');
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
       const qrWidth = qrCustomization?.size || 300;
+      const badgeHeight = qrCustomization?.trustBadge ? 40 : 0;
 
       const qrData = QRCode.create(originalUrl, {
         errorCorrectionLevel: qrCustomization?.errorCorrectionLevel || 'M'
@@ -59,7 +58,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       const cellSize = (qrWidth - (frameMargin * 2)) / moduleCount;
 
       canvas.width = qrWidth;
-      canvas.height = qrWidth;
+      canvas.height = qrWidth + badgeHeight;
 
       ctx.fillStyle = qrCustomization?.backgroundColor || '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -98,6 +97,10 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
 
       if (qrCustomization?.centerText && qrCustomization.centerText.trim()) {
         addCenterText(ctx, canvas, qrCustomization);
+      }
+
+      if (qrCustomization?.trustBadge) {
+        addTrustBadge(ctx, canvas);
       }
 
     } catch (error) {
@@ -192,7 +195,8 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
 
     // Default Frame Logic
     const width = canvas.width;
-    const height = canvas.height;
+    const height = customization.size || width; // Should be just QR height, not canvas.height (which includes badge)
+
     ctx.lineWidth = 4;
     ctx.strokeStyle = foregroundColor;
     ctx.fillStyle = foregroundColor;
@@ -299,9 +303,10 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       return new Promise<void>((resolve) => {
         img.onload = () => {
           const logoSizePercent = (customization.logoSize || 20) / 100;
-          const logoSize = Math.min(canvas.width, canvas.height) * logoSizePercent;
+          const qrSize = customization.size || canvas.width;
+          const logoSize = qrSize * logoSizePercent;
           const x = (canvas.width - logoSize) / 2;
-          const y = (canvas.height - logoSize) / 2;
+          const y = (qrSize - logoSize) / 2;
           const cornerRadius = customization.logoCornerRadius || 0;
 
           ctx.save();
@@ -343,13 +348,51 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     const textHeight = fontSize;
 
     const x = canvas.width / 2;
-    const y = canvas.height / 2;
+    const y = (customization.size || canvas.width) / 2;
 
     ctx.fillStyle = customization.centerTextBackgroundColor || '#FFFFFF';
     ctx.fillRect(x - textWidth / 2 - 5, y - textHeight / 2 - 2, textWidth + 10, textHeight + 4);
 
     ctx.fillStyle = customization.centerTextColor || '#000000';
     ctx.fillText(customization.centerText!, x, y);
+  };
+
+  const addTrustBadge = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+    const width = canvas.width;
+    const height = canvas.height;
+    const badgeHeight = 40;
+    const y = height - badgeHeight;
+
+    ctx.fillStyle = '#059669'; // green-600
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const text = "Secure By Tinyslash";
+    ctx.fillText(text, width / 2, y + badgeHeight / 2);
+
+    const textWidth = ctx.measureText(text).width;
+    const iconSize = 12;
+    const iconX = (width / 2) - (textWidth / 2) - iconSize - 6;
+    const iconY = y + badgeHeight / 2 - iconSize / 2;
+
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    // Shield shape
+    ctx.moveTo(iconX + iconSize / 2, iconY + iconSize);
+    ctx.bezierCurveTo(iconX, iconY + iconSize / 1.5, iconX, iconY + iconSize / 3, iconX, iconY);
+    ctx.lineTo(iconX + iconSize, iconY);
+    ctx.bezierCurveTo(iconX + iconSize, iconY + iconSize / 3, iconX + iconSize, iconY + iconSize / 1.5, iconX + iconSize / 2, iconY + iconSize);
+    ctx.stroke();
+
+    // Checkmark
+    ctx.beginPath();
+    ctx.moveTo(iconX + 3, iconY + 5);
+    ctx.lineTo(iconX + 5, iconY + 8);
+    ctx.lineTo(iconX + 9, iconY + 3);
+    ctx.stroke();
   };
 
   const copyToClipboard = async () => {

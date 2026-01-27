@@ -31,6 +31,7 @@ export interface QRCustomization {
   gradientType: 'none' | 'linear' | 'radial';
   gradientDirection: 'to-right' | 'to-bottom' | 'to-top-right' | 'to-bottom-right';
   secondaryColor: string;
+  trustBadge?: boolean;
 }
 
 // --- New Feature Interfaces ---

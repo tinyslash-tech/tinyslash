@@ -10,4 +10,8 @@ public interface LeadRepository extends MongoRepository<Lead, String> {
   List<Lead> findByOwnerUserId(String ownerUserId);
 
   long countByLinkId(String linkId);
+
+  List<Lead> findByQrCodeId(String qrCodeId);
+
+  long countByQrCodeId(String qrCodeId);
 }

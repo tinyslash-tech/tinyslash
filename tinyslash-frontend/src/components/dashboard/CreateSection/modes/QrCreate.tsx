@@ -24,8 +24,16 @@ export const QrCreate: React.FC<QrCreateProps> = ({
       </label>
       <div className="relative">
         {isEditMode && (
-          <div className="mb-2 text-sm text-blue-600 font-medium">
-            ✏️ Editing existing QR code
+          <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-800">
+            <div className="flex items-start">
+              <span className="text-xl mr-2">⚡️</span>
+              <div>
+                <h4 className="font-semibold mb-1">Dynamic QR Code</h4>
+                <p className="text-indigo-700 leading-relaxed">
+                  This QR code is <strong>dynamic</strong>. Updating the destination will <strong>instantly apply</strong> to all existing QR prints. You do not need to reprint or redistribute.
+                </p>
+              </div>
+            </div>
           </div>
         )}
         <input

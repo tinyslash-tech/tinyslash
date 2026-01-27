@@ -47,6 +47,27 @@ public class QrCodeController {
             String scopeType = (String) request.getOrDefault("scopeType", "USER");
             String scopeId = (String) request.getOrDefault("scopeId", userId);
 
+            // Parse Advanced Configs
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            QrCode configContainer = new QrCode();
+
+            if (request.containsKey("geoConfig")) {
+                configContainer.setGeoConfig(mapper.convertValue(request.get("geoConfig"),
+                        com.urlshortener.model.ShortenedUrl.GeoConfig.class));
+            }
+            if (request.containsKey("deepLinkConfig")) {
+                configContainer.setDeepLinkConfig(mapper.convertValue(request.get("deepLinkConfig"),
+                        com.urlshortener.model.ShortenedUrl.DeepLinkConfig.class));
+            }
+            if (request.containsKey("leadLockConfig")) {
+                configContainer.setLeadLockConfig(mapper.convertValue(request.get("leadLockConfig"),
+                        com.urlshortener.model.ShortenedUrl.LeadLockConfig.class));
+            }
+            if (request.containsKey("smartActionConfig")) {
+                configContainer.setSmartActionConfig(
+                        mapper.convertValue(request.get("smartActionConfig"), QrCode.SmartActionConfig.class));
+            }
+
             if (content == null || content.trim().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Content is required");
@@ -79,7 +100,7 @@ public class QrCodeController {
                     content, contentType != null ? contentType : "TEXT", userId,
                     title, description, style, foregroundColor, backgroundColor,
                     size != null ? size : 300, format != null ? format : "PNG",
-                    scopeType, scopeId);
+                    scopeType, scopeId, configContainer);
 
             Map<String, Object> qrData = new HashMap<>();
             qrData.put("id", qrCode.getId());
@@ -251,6 +272,25 @@ public class QrCodeController {
                 updates.setSize((Integer) request.get("size"));
             if (request.containsKey("format"))
                 updates.setFormat((String) request.get("format"));
+
+            // Parse Advanced Configs Updates
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            if (request.containsKey("geoConfig")) {
+                updates.setGeoConfig(mapper.convertValue(request.get("geoConfig"),
+                        com.urlshortener.model.ShortenedUrl.GeoConfig.class));
+            }
+            if (request.containsKey("deepLinkConfig")) {
+                updates.setDeepLinkConfig(mapper.convertValue(request.get("deepLinkConfig"),
+                        com.urlshortener.model.ShortenedUrl.DeepLinkConfig.class));
+            }
+            if (request.containsKey("leadLockConfig")) {
+                updates.setLeadLockConfig(mapper.convertValue(request.get("leadLockConfig"),
+                        com.urlshortener.model.ShortenedUrl.LeadLockConfig.class));
+            }
+            if (request.containsKey("smartActionConfig")) {
+                updates.setSmartActionConfig(
+                        mapper.convertValue(request.get("smartActionConfig"), QrCode.SmartActionConfig.class));
+            }
 
             QrCode updated = qrCodeService.updateQrCode(qrCodeId, userId, updates);
 

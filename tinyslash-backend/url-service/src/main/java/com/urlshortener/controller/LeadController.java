@@ -50,12 +50,45 @@ public class LeadController {
     }
   }
 
+  @PostMapping("/unlock-qr/{qrCodeId}/init")
+  public ResponseEntity<?> initiateQrUnlock(@PathVariable String qrCodeId, @RequestBody LeadCaptureRequest request) {
+    try {
+      leadService.initiateQrUnlock(qrCodeId, request);
+      return ResponseEntity.ok(Map.of("message", "OTP Sent successfully", "status", "success"));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+  }
+
+  @PostMapping("/unlock-qr/{qrCodeId}/verify")
+  public ResponseEntity<?> verifyQrUnlock(@PathVariable String qrCodeId,
+      @RequestBody LeadVerifyRequest request,
+      HttpServletRequest httpRequest) {
+    try {
+      String ip = httpRequest.getRemoteAddr();
+      String userAgent = httpRequest.getHeader("User-Agent");
+
+      String redirectUrl = leadService.verifyQrUnlock(qrCodeId, request, ip, userAgent);
+
+      return ResponseEntity.ok(Map.of(
+          "status", "verified",
+          "redirectUrl", redirectUrl,
+          "token", "unlocked_qr_" + qrCodeId));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+  }
+
   @GetMapping
   public ResponseEntity<List<Lead>> getLeads(@RequestParam String userId,
-      @RequestParam(required = false) String linkId) {
+      @RequestParam(required = false) String linkId,
+      @RequestParam(required = false) String qrCodeId) {
     // Validation: Ensure userId matches authenticated user
     if (linkId != null && !linkId.isEmpty()) {
       return ResponseEntity.ok(leadService.getLeadsForLink(linkId));
+    }
+    if (qrCodeId != null && !qrCodeId.isEmpty()) {
+      return ResponseEntity.ok(leadService.getLeadsForQrCode(qrCodeId));
     }
     return ResponseEntity.ok(leadService.getLeadsForUser(userId));
   }

@@ -16,6 +16,11 @@ public class Lead {
   @Indexed
   private String ownerUserId;
 
+  @Indexed
+  private String qrCodeId;
+
+  private String source = "LINK"; // LINK or QR
+
   private String email;
   private String whatsapp;
   private String leadType; // EMAIL or WHATSAPP
@@ -154,5 +159,21 @@ public class Lead {
 
   public void setCreatedAt(LocalDateTime createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public String getQrCodeId() {
+    return qrCodeId;
+  }
+
+  public void setQrCodeId(String qrCodeId) {
+    this.qrCodeId = qrCodeId;
+  }
+
+  public String getSource() {
+    return source;
+  }
+
+  public void setSource(String source) {
+    this.source = source;
   }
 }

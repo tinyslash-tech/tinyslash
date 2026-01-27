@@ -183,7 +183,36 @@ export const QRCustomizationPanel: React.FC<QRCustomizationPanelProps> = ({
         </div>
       </AccordionItem>
 
-      {/* 2. Logo Configuration */}
+      {/* 2. Data Patterns */}
+      <AccordionItem id="patterns" title="Data Patterns & Shapes" icon={Box}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Module Style</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'square', name: 'Square (Default)', icon: '⬛' },
+                { id: 'dots', name: 'Dots', icon: '●' },
+                { id: 'rounded-modules', name: 'Rounded', icon: '▢' },
+                { id: 'diamond', name: 'Diamond', icon: '◆' },
+                { id: 'star', name: 'Stars', icon: '★' },
+                { id: 'fluid', name: 'Fluid', icon: '🌊' }
+              ].map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setQrCustomization(prev => ({ ...prev, pattern: p.id as any }))}
+                  className={`p-3 border rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${qrCustomization.pattern === p.id ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold' : 'hover:bg-gray-50'}`}
+                >
+                  <span className="text-xl">{p.icon}</span>
+                  <span className="text-xs">{p.name}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">These patterns change the shape of the data points.</p>
+          </div>
+        </div>
+      </AccordionItem>
+
+      {/* 3. Logo Configuration */}
       <AccordionItem id="logo" title="Logo Settings" icon={ImageIcon}>
         <div className="space-y-4">
           {!qrCustomization.logo ? (

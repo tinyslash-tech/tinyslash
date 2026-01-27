@@ -7,7 +7,7 @@ interface QRCustomization {
   size?: number;
   errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
   margin?: number;
-  pattern?: 'square';
+  pattern?: 'square' | 'dots' | 'rounded-modules' | 'diamond' | 'star' | 'fluid';
   cornerStyle?: 'square';
   frameStyle?: 'none' | 'simple' | 'scan-me' | 'scan-me-black' | 'branded' | 'modern' | 'classic' | 'rounded' | 'desi-mandala' | 'desi-floral' | 'desi-diya';
   frameColor?: string;
@@ -95,71 +95,141 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Ensure margin for frames
-      const frameMargin = config.frameStyle !== 'none' ? 4 : config.margin;
-
-      // Generate basic QR code first
-      await QRCode.toCanvas(canvas, value, {
-        width: config.size,
-        margin: frameMargin,
-        color: {
-          dark: config.foregroundColor,
-          light: config.backgroundColor
-        },
+      // 1. Create QR Data
+      const qrData = QRCode.create(value, {
         errorCorrectionLevel: config.errorCorrectionLevel
       });
 
-      // Apply advanced customizations
-      await applyCustomizations(ctx, canvas);
+      const modules = qrData.modules;
+      const moduleCount = modules.size;
+      const frameMargin = config.frameStyle !== 'none' ? 4 : config.margin;
+      const cellSize = (config.size - (frameMargin * 2)) / moduleCount;
+
+      // Set Canvas Size
+      canvas.width = config.size;
+      canvas.height = config.size;
+
+      // 2. Draw Background
+      ctx.fillStyle = config.backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 3. Prepare Gradient
+      let fillStyle: string | CanvasGradient = config.foregroundColor;
+      if (config.gradientType !== 'none') {
+        fillStyle = createGradient(ctx, canvas, config);
+      }
+      ctx.fillStyle = fillStyle;
+      ctx.strokeStyle = fillStyle;
+
+      // 4. Draw Modules
+      const isFinder = (r: number, c: number) => {
+        if (r < 7 && c < 7) return true;
+        if (r < 7 && c >= moduleCount - 7) return true;
+        if (r >= moduleCount - 7 && c < 7) return true;
+        return false;
+      };
+
+      for (let r = 0; r < moduleCount; r++) {
+        for (let c = 0; c < moduleCount; c++) {
+          if ((modules as any).data[r * moduleCount + c]) {
+            const x = frameMargin + c * cellSize;
+            const y = frameMargin + r * cellSize;
+            drawModule(ctx, x, y, cellSize, config.pattern, isFinder(r, c));
+          }
+        }
+      }
+
+      // 5. Apply Frame Style
+      if (config.frameStyle !== 'none') {
+        applyFrameStyle(ctx, canvas);
+      }
+
+      // 6. Add Logo
+      if (config.logo && config.logo.trim()) {
+        await addLogo(ctx, canvas);
+      }
+
+      // 7. Add Center Text
+      if (config.centerText && config.centerText.trim()) {
+        addCenterText(ctx, canvas);
+      }
 
     } catch (error) {
       console.error('QR Code generation error:', error);
     }
   };
 
-  const applyCustomizations = async (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    // Apply gradient if specified
-    if (config.gradientType !== 'none') {
-      applyGradient(ctx, canvas);
-    }
+  const drawModule = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, pattern: string, isFinder: boolean) => {
+    // Finder Patterns should be cleaner? Let's check.
+    // For now we apply pattern to everything.
 
-    // Apply frame style
-    if (config.frameStyle !== 'none') {
-      applyFrameStyle(ctx, canvas);
-    }
+    ctx.beginPath();
+    switch (pattern) {
+      case 'dots':
+        const center = size / 2;
+        const radius = (size / 2) * 0.9;
+        ctx.arc(x + center, y + center, radius, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'rounded-modules':
+        const roundSize = size * 0.9; // gap
+        const offset = (size - roundSize) / 2;
+        if (ctx.roundRect) ctx.roundRect(x + offset, y + offset, roundSize, roundSize, size * 0.3);
+        else ctx.rect(x + offset, y + offset, roundSize, roundSize);
+        ctx.fill();
+        break;
+      case 'diamond':
+        ctx.moveTo(x + size / 2, y);
+        ctx.lineTo(x + size, y + size / 2);
+        ctx.lineTo(x + size / 2, y + size);
+        ctx.lineTo(x, y + size / 2);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      case 'star':
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const spikes = 5;
+        const outerRadius = size / 2;
+        const innerRadius = size / 4;
+        let rot = Math.PI / 2 * 3;
+        let step = Math.PI / spikes;
 
-    // Add logo if specified
-    if (config.logo && config.logo.trim()) {
-      await addLogo(ctx, canvas);
-    }
+        ctx.moveTo(cx, cy - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+          let startX = cx + Math.cos(rot) * outerRadius;
+          let startY = cy + Math.sin(rot) * outerRadius;
+          ctx.lineTo(startX, startY);
+          rot += step;
 
-    // Add center text if specified
-    if (config.centerText && config.centerText.trim()) {
-      addCenterText(ctx, canvas);
+          startX = cx + Math.cos(rot) * innerRadius;
+          startY = cy + Math.sin(rot) * innerRadius;
+          ctx.lineTo(startX, startY);
+          rot += step;
+        }
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      case 'fluid':
+        ctx.arc(x + size / 2, y + size / 2, size / 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'square':
+      default:
+        ctx.fillRect(x, y, Math.ceil(size), Math.ceil(size));
+        break;
     }
   };
 
-  const applyGradient = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-
+  const createGradient = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, config: Required<QRCustomization>) => {
     let gradient: CanvasGradient;
-
     if (config.gradientType === 'linear') {
       switch (config.gradientDirection) {
-        case 'to-right':
-          gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-          break;
-        case 'to-bottom':
-          gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-          break;
-        case 'to-top-right':
-          gradient = ctx.createLinearGradient(0, canvas.height, canvas.width, 0);
-          break;
-        case 'to-bottom-right':
-        default:
-          gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-          break;
+        case 'to-right': gradient = ctx.createLinearGradient(0, 0, canvas.width, 0); break;
+        case 'to-bottom': gradient = ctx.createLinearGradient(0, 0, 0, canvas.height); break;
+        case 'to-top-right': gradient = ctx.createLinearGradient(0, canvas.height, canvas.width, 0); break;
+        case 'to-bottom-right': default: gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height); break;
       }
     } else {
       gradient = ctx.createRadialGradient(
@@ -167,22 +237,15 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
         canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) / 2
       );
     }
-
     gradient.addColorStop(0, config.gradientStartColor);
     gradient.addColorStop(1, config.gradientEndColor);
-
-    // Apply gradient to dark pixels only
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = 'source-over';
+    return gradient;
   };
 
   const applyFrameStyle = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
     const width = canvas.width;
     const height = canvas.height;
     const color = config.frameColor || config.foregroundColor;
-    const padding = 10;
 
     ctx.lineWidth = 4;
     ctx.strokeStyle = color;
@@ -210,7 +273,6 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
           ctx.fillStyle = color;
         }
 
-        // Text
         ctx.font = `bold 16px Arial`;
         ctx.fillStyle = isBlack ? '#FFFFFF' : color;
         ctx.textAlign = 'center';
@@ -221,7 +283,6 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
       case 'desi-mandala':
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
-        // Draw corners
         const drawMandalaCorner = (x: number, y: number, rotation: number) => {
           ctx.save();
           ctx.translate(x, y);
@@ -229,7 +290,6 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
           ctx.beginPath();
           ctx.arc(0, 0, 30, 0, Math.PI / 2);
           ctx.stroke();
-          // Floral petals
           ctx.beginPath();
           ctx.ellipse(15, 15, 10, 5, Math.PI / 4, 0, 2 * Math.PI);
           ctx.stroke();
@@ -243,14 +303,10 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
         break;
 
       case 'desi-floral':
-        ctx.fillStyle = color; // For dots
+        ctx.fillStyle = color;
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
-
-        // Simple border
         ctx.strokeRect(10, 10, width - 20, height - 20);
-
-        // Dots pattern on border
         const spacing = 20;
         for (let i = 10; i < width - 10; i += spacing) {
           ctx.beginPath(); ctx.arc(i, 10, 2, 0, Math.PI * 2); ctx.fill();
@@ -280,34 +336,21 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
           ctx.save();
           ctx.globalAlpha = config.logoOpacity ?? 1;
 
-          // Create clipping path for logo with corner radius
           ctx.beginPath();
           if (cornerRadius > 0 && ctx.roundRect) {
             ctx.roundRect(x, y, logoSize, logoSize, cornerRadius);
           } else {
             ctx.rect(x, y, logoSize, logoSize);
           }
-
           ctx.clip();
 
-          // Background behind logo
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(x, y, logoSize, logoSize);
 
-          // Draw the logo image
           ctx.drawImage(img, x, y, logoSize, logoSize);
-
-          // Stroke
-          // if (config.logoStroke && config.logoStroke > 0) {
-          //   ctx.lineWidth = config.logoStroke;
-          //   ctx.strokeStyle = config.logoStrokeColor || '#FFFFFF';
-          //   ctx.stroke();
-          // }
-
           ctx.restore();
           resolve();
         };
-
         img.onerror = () => resolve();
         img.src = config.logo!;
       });
@@ -331,11 +374,9 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     const x = canvas.width / 2;
     const y = canvas.height / 2;
 
-    // Add background for text
     ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
     ctx.fillRect(x - textWidth / 2 - 5, y - textHeight / 2 - 2, textWidth + 10, textHeight + 4);
 
-    // Add text
     ctx.fillStyle = config.centerTextColor || '#000000';
     ctx.fillText(config.centerText || '', x, y);
   };

@@ -20,7 +20,7 @@ export interface QRCustomization {
   centerTextBackgroundColor: string;
   centerTextBold: boolean;
 
-  pattern: 'square';
+  pattern: 'square' | 'dots' | 'rounded-modules' | 'diamond' | 'star' | 'fluid';
   cornerStyle: 'square';
   frameStyle: 'none' | 'simple' | 'scan-me' | 'scan-me-black' | 'branded' | 'modern' | 'classic' | 'rounded' | 'desi-mandala' | 'desi-floral' | 'desi-diya';
   frameColor?: string;

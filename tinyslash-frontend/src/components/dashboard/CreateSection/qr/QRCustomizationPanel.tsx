@@ -26,6 +26,7 @@ export const QRCustomizationPanel: React.FC<QRCustomizationPanelProps> = ({
   };
 
   const desiPresets = [
+    { name: 'Classic', foreground: '#000000', background: '#FFFFFF' },
     { name: 'Saffron', foreground: '#FF9933', background: '#FFF5E6' },
     { name: 'Peacock', foreground: '#005F6A', background: '#E0F7FA' },
     { name: 'Magenta', foreground: '#C2185B', background: '#FCE4EC' },

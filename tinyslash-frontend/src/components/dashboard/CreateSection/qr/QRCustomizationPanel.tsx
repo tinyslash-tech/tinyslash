@@ -209,6 +209,28 @@ export const QRCustomizationPanel: React.FC<QRCustomizationPanelProps> = ({
             </div>
             <p className="text-xs text-gray-500 mt-2">These patterns change the shape of the data points.</p>
           </div>
+
+          <div className="pt-4 border-t border-gray-100">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Error Correction (Accuracy)</label>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { id: 'L', label: 'Low', desc: '~7%' },
+                { id: 'M', label: 'Med', desc: '~15%' },
+                { id: 'Q', label: 'High', desc: '~25%' },
+                { id: 'H', label: 'Best', desc: '~30%' }
+              ].map(level => (
+                <button
+                  key={level.id}
+                  onClick={() => setQrCustomization(prev => ({ ...prev, errorCorrectionLevel: level.id as any }))}
+                  className={`p-2 border rounded-lg flex flex-col items-center justify-center transition-all ${qrCustomization.errorCorrectionLevel === level.id ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold' : 'hover:bg-gray-50'}`}
+                >
+                  <span className="text-sm font-semibold">{level.label}</span>
+                  <span className="text-[10px] text-gray-500">{level.desc}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Higher accuracy adds redundancy, allowing the QR to be scanned even if damaged or covered by a logo.</p>
+          </div>
         </div>
       </AccordionItem>
 

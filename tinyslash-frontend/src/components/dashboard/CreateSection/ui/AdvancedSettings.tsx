@@ -132,78 +132,84 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Domain Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Domain</label>
-            <div className="relative">
-              <select
-                value={selectedDomain}
-                onChange={(e) => {
-                  if (e.target.value === 'ADD_CUSTOM_DOMAIN') {
-                    e.preventDefault();
-                    setSelectedDomain(DEFAULT_DOMAIN);
-                    if (!featureAccess.canUseCustomDomain) {
-                      upgradeModal.open('Custom Domains', 'Unlock custom domains...', false);
+          {mode !== 'qr' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Domain</label>
+              <div className="relative">
+                <select
+                  value={selectedDomain}
+                  onChange={(e) => {
+                    if (e.target.value === 'ADD_CUSTOM_DOMAIN') {
+                      e.preventDefault();
+                      setSelectedDomain(DEFAULT_DOMAIN);
+                      if (!featureAccess.canUseCustomDomain) {
+                        upgradeModal.open('Custom Domains', 'Unlock custom domains...', false);
+                      } else {
+                        window.location.href = '/dashboard?section=domains&action=onboard';
+                      }
                     } else {
-                      window.location.href = '/dashboard?section=domains&action=onboard';
+                      setSelectedDomain(e.target.value);
                     }
-                  } else {
-                    setSelectedDomain(e.target.value);
-                  }
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                {customDomains.map(domain => (
-                  <option key={domain} value={domain}>{domain}</option>
-                ))}
-                <option value="ADD_CUSTOM_DOMAIN" className="text-blue-600 font-medium">+ Add Custom Domain</option>
-              </select>
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  {customDomains.map(domain => (
+                    <option key={domain} value={domain}>{domain}</option>
+                  ))}
+                  <option value="ADD_CUSTOM_DOMAIN" className="text-blue-600 font-medium">+ Add Custom Domain</option>
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Custom Alias */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">Custom Alias</label>
-              {!featureAccess.canUseCustomAlias && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Custom Alias', '...', false)}>
-                  <Zap className="w-3 h-3 mr-1" /> Pro
-                </span>
-              )}
+          {mode !== 'qr' && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Custom Alias</label>
+                {!featureAccess.canUseCustomAlias && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Custom Alias', '...', false)}>
+                    <Zap className="w-3 h-3 mr-1" /> Pro
+                  </span>
+                )}
+              </div>
+              <input
+                type="text"
+                placeholder={featureAccess.canUseCustomAlias ? "my-custom-link" : "Pro only"}
+                value={customAlias}
+                onChange={(e) => !featureAccess.canUseCustomAlias ? upgradeModal.open('Custom Alias', '...', false) : setCustomAlias(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                disabled={!featureAccess.canUseCustomAlias}
+              />
             </div>
-            <input
-              type="text"
-              placeholder={featureAccess.canUseCustomAlias ? "my-custom-link" : "Pro only"}
-              value={customAlias}
-              onChange={(e) => !featureAccess.canUseCustomAlias ? upgradeModal.open('Custom Alias', '...', false) : setCustomAlias(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              disabled={!featureAccess.canUseCustomAlias}
-            />
-          </div>
+          )}
 
           {/* Password Protection */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              {!featureAccess.canUsePasswordProtection && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Password', '...', false)}>
-                  <Lock className="w-3 h-3 mr-1" /> Pro
-                </span>
-              )}
+          {mode !== 'qr' && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                {!featureAccess.canUsePasswordProtection && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer" onClick={() => upgradeModal.open('Password', '...', false)}>
+                    <Lock className="w-3 h-3 mr-1" /> Pro
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={featureAccess.canUsePasswordProtection ? "Optional" : "Pro only"}
+                  value={password}
+                  onChange={(e) => !featureAccess.canUsePasswordProtection ? upgradeModal.open('Password', '...', false) : setPassword(e.target.value)}
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg"
+                  disabled={!featureAccess.canUsePasswordProtection}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" disabled={!featureAccess.canUsePasswordProtection}>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder={featureAccess.canUsePasswordProtection ? "Optional" : "Pro only"}
-                value={password}
-                onChange={(e) => !featureAccess.canUsePasswordProtection ? upgradeModal.open('Password', '...', false) : setPassword(e.target.value)}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg"
-                disabled={!featureAccess.canUsePasswordProtection}
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" disabled={!featureAccess.canUsePasswordProtection}>
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Expiration Days */}
           <div>
@@ -220,10 +226,12 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
             />
           </div>
 
-          {/* Max Clicks */}
+          {/* Max Clicks/Scans */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">Max Clicks</label>
+              <label className="block text-sm font-medium text-gray-700">
+                {mode === 'qr' ? 'Max Scans' : 'Max Clicks'}
+              </label>
             </div>
             <input
               type="number"

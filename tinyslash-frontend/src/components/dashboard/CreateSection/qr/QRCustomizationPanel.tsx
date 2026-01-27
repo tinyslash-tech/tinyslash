@@ -327,7 +327,9 @@ export const QRCustomizationPanel: React.FC<QRCustomizationPanelProps> = ({
                 <label className="block text-xs font-medium text-gray-600 mb-1">Frame Color</label>
                 <div className="flex items-center space-x-2">
                   <input type="color" value={qrCustomization.frameColor || qrCustomization.foregroundColor} onChange={e => setQrCustomization(prev => ({ ...prev, frameColor: e.target.value }))} className="w-6 h-6 rounded border" />
-                  <span className="text-xs text-gray-500">Auto-match foreground if not set</span>
+                  <button onClick={() => setQrCustomization(prev => ({ ...prev, frameColor: undefined }))} className="text-xs text-blue-600 hover:underline">
+                    Reset to Auto
+                  </button>
                 </div>
               </div>
               {(qrCustomization.frameStyle.includes('scan-me') || qrCustomization.frameStyle === 'modern') && (
@@ -361,24 +363,76 @@ export const QRCustomizationPanel: React.FC<QRCustomizationPanelProps> = ({
             />
           </div>
           {qrCustomization.centerText && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Size</label>
-                <input
-                  type="number" min="8" max="40"
-                  value={qrCustomization.centerTextFontSize}
-                  onChange={e => setQrCustomization(prev => ({ ...prev, centerTextFontSize: parseInt(e.target.value) }))}
-                  className="w-full px-2 py-1 border rounded"
-                />
+            <div className="space-y-4 pt-4 border-t border-gray-100">
+              {/* Font & Size */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Font</label>
+                  <select
+                    value={qrCustomization.centerTextFontFamily || 'Arial'}
+                    onChange={e => setQrCustomization(prev => ({ ...prev, centerTextFontFamily: e.target.value }))}
+                    className="w-full px-2 py-1.5 border rounded text-sm"
+                  >
+                    <option value="Arial">Arial</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times</option>
+                    <option value="Courier New">Courier</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Impact">Impact</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Size ({qrCustomization.centerTextFontSize || 16}px)</label>
+                  <input
+                    type="range" min="10" max="60"
+                    value={qrCustomization.centerTextFontSize || 16}
+                    onChange={e => setQrCustomization(prev => ({ ...prev, centerTextFontSize: parseInt(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Color</label>
-                <input
-                  type="color"
-                  value={qrCustomization.centerTextColor}
-                  onChange={e => setQrCustomization(prev => ({ ...prev, centerTextColor: e.target.value }))}
-                  className="w-full h-8 px-1 py-1 border rounded"
-                />
+
+              {/* Appearance */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Text Color</label>
+                  <div className="flex items-center space-x-2">
+                    <input type="color" value={qrCustomization.centerTextColor || '#000000'} onChange={e => setQrCustomization(prev => ({ ...prev, centerTextColor: e.target.value }))} className="w-8 h-8 p-0 rounded border cursor-pointer" />
+                    <input type="number" min="0" max="1" step="0.1" title="Opacity" value={qrCustomization.centerTextOpacity ?? 1} onChange={e => setQrCustomization(prev => ({ ...prev, centerTextOpacity: parseFloat(e.target.value) }))} className="w-12 text-xs border rounded p-1" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Background Color</label>
+                  <div className="flex items-center space-x-2">
+                    <input type="color" value={qrCustomization.centerTextBackgroundColor || '#FFFFFF'} onChange={e => setQrCustomization(prev => ({ ...prev, centerTextBackgroundColor: e.target.value }))} className="w-8 h-8 p-0 rounded border cursor-pointer" />
+                    <input type="number" min="0" max="1" step="0.1" title="Opacity" value={qrCustomization.centerTextBackgroundOpacity ?? 1} onChange={e => setQrCustomization(prev => ({ ...prev, centerTextBackgroundOpacity: parseFloat(e.target.value) }))} className="w-12 text-xs border rounded p-1" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Radius & Misc */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Corner Radius ({qrCustomization.centerTextBackgroundRadius || 0}px)</label>
+                  <input
+                    type="range" min="0" max="20"
+                    value={qrCustomization.centerTextBackgroundRadius || 0}
+                    onChange={e => setQrCustomization(prev => ({ ...prev, centerTextBackgroundRadius: parseInt(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center pt-5">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={qrCustomization.centerTextBold}
+                      onChange={e => setQrCustomization(prev => ({ ...prev, centerTextBold: e.target.checked }))}
+                      className="rounded text-blue-600"
+                    />
+                    <span className="text-sm text-gray-700">Bold Text</span>
+                  </label>
+                </div>
               </div>
             </div>
           )}

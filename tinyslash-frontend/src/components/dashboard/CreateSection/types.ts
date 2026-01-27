@@ -32,6 +32,11 @@ export interface QRCustomization {
   gradientDirection: 'to-right' | 'to-bottom' | 'to-top-right' | 'to-bottom-right';
   secondaryColor: string;
   trustBadge?: boolean;
+
+  // Advanced Text Options
+  centerTextOpacity?: number;
+  centerTextBackgroundOpacity?: number;
+  centerTextBackgroundRadius?: number;
 }
 
 // --- New Feature Interfaces ---

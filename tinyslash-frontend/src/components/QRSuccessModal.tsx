@@ -29,10 +29,9 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Generate QR code when modal opens
   useEffect(() => {
     if (isOpen && originalUrl && canvasRef.current) {
-      setTimeout(generateQR, 0); // Short delay to ensure ref is ready
+      setTimeout(generateQR, 0);
     }
   }, [isOpen, originalUrl]);
 
@@ -45,32 +44,27 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // === CONFIGURATION FOR HIGH QUALITY OUTPUT ===
-      const downloadSize = 1200; // 4x standard size for clarity
-      const padding = 60; // White "Card" border
+      const downloadSize = 1200;
+      const padding = 60;
+
       const qrSize = downloadSize - (padding * 2);
 
-      const badgeHeight = qrCustomization?.trustBadge ? 140 : 0; // Scaled up for 1200px
+      const badgeHeight = qrCustomization?.trustBadge ? 140 : 0;
 
       const config: any = {
         ...qrCustomization,
         size: qrSize
       };
 
-      // Set Canvas Dimensions
       canvas.width = downloadSize;
       canvas.height = downloadSize + badgeHeight;
 
-      // 1. Draw "Card" Background (White)
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 2. Draw QR Background Area (Respecting user config)
-      // This is the background INSIDE the padding
       ctx.fillStyle = config.backgroundColor || '#FFFFFF';
       ctx.fillRect(padding, padding, qrSize, qrSize);
 
-      // 3. Generate Modules
       const qrData = QRCode.create(originalUrl, {
         errorCorrectionLevel: config.errorCorrectionLevel || 'M'
       });
@@ -78,14 +72,10 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       const modules = qrData.modules;
       const moduleCount = modules.size;
 
-      // Fix: Scale margin significantly for 1200px. 
-      // 4px in preview (200px) ~= 24px in 1200px.
-      // But we need more for frames to not touch modules. Use 40-50px.
       const frameMargin = (config.frameStyle && config.frameStyle !== 'none') ? 50 : (config.margin ? config.margin * 4 : 20);
 
       const cellSize = (qrSize - (frameMargin * 2)) / moduleCount;
 
-      // 4. Prepare Foreground Style (Gradient or Solid)
       let fillStyle: string | CanvasGradient = config.foregroundColor || '#000000';
       if (config.gradientType && config.gradientType !== 'none') {
         fillStyle = createGradient(ctx, qrSize, padding, config as any);
@@ -132,7 +122,6 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
   };
 
   const createGradient = (ctx: CanvasRenderingContext2D, size: number, padding: number, config: QRCustomization) => {
-    // Create gradient relative to the QR area, not the whole canvas
     let gradient: CanvasGradient;
     const x = padding;
     const y = padding;
@@ -218,21 +207,19 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
   };
 
   const applyFrameStyle = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, config: QRCustomization, padding: number, qrSize: number) => {
-    // Frames are drawn relative to padding
-    const width = qrSize; // It wraps the QR content
+    const width = qrSize;
     const height = qrSize;
     ctx.save();
     ctx.translate(padding, padding);
 
     const color = config.frameColor || config.foregroundColor || '#000000';
-    ctx.lineWidth = 16; // Robust border
+    ctx.lineWidth = 16;
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
-    ctx.lineJoin = 'round'; // Softer corners
+    ctx.lineJoin = 'round';
 
     switch (config.frameStyle) {
       case 'simple':
-        // border just inside the allocate area
         ctx.strokeRect(8, 8, width - 16, height - 16);
         break;
       case 'rounded':
@@ -242,23 +229,15 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
         ctx.stroke();
         break;
       case 'scan-me':
-        // Top and Sides
         ctx.beginPath();
-        // Path: Start bottom-left, up, right, down to bottom-right (leave bottom open for text?) 
-        // Or Top/Bottom bars? 
-        // Standard Scan Me: Box with text at bottom inside or truncating line.
-        // Let's do: Full box, but bottom part is text.
-
         ctx.strokeRect(8, 8, width - 16, height - 16);
 
-        // Text Box at bottom center
         ctx.font = 'bold 80px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const text = config.frameText || 'SCAN ME';
         const textWidth = ctx.measureText(text).width + 60;
 
-        // Clear line for text
         const textHeight = 80;
         const bottomY = height - 8;
         ctx.clearRect((width / 2) - (textWidth / 2), bottomY - 20, textWidth, 40);
@@ -267,8 +246,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
         break;
 
       case 'scan-me-black':
-        // Black block at bottom
-        ctx.strokeRect(8, 8, width - 16, height - 16); // Main border
+        ctx.strokeRect(8, 8, width - 16, height - 16);
 
         const barHeight = 120;
         ctx.fillStyle = '#000000';
@@ -290,19 +268,13 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
         break;
 
       case 'desi-mandala':
-        // Simplistic corners for high-res
         ctx.lineWidth = 8;
         ctx.strokeStyle = color;
         const cornerSize = 100;
-        // TL
         ctx.beginPath(); ctx.arc(20, 20, cornerSize, 0, Math.PI / 2); ctx.stroke();
-        // TR
         ctx.beginPath(); ctx.arc(width - 20, 20, cornerSize, Math.PI / 2, Math.PI); ctx.stroke();
-        // BR
         ctx.beginPath(); ctx.arc(width - 20, height - 20, cornerSize, Math.PI, 3 * Math.PI / 2); ctx.stroke();
-        // BL
         ctx.beginPath(); ctx.arc(20, height - 20, cornerSize, 3 * Math.PI / 2, 2 * Math.PI); ctx.stroke();
-
         ctx.strokeRect(40, 40, width - 80, height - 80);
         break;
     }
@@ -319,7 +291,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
           const logoSize = qrSize * logoSizePercent;
           const x = padding + (qrSize - logoSize) / 2;
           const y = padding + (qrSize - logoSize) / 2;
-          const cornerRadius = (customization.logoCornerRadius || 0) * 4; // Scale radius
+          const cornerRadius = (customization.logoCornerRadius || 0) * 4;
 
           ctx.save();
           ctx.globalAlpha = customization.logoOpacity ?? 1;
@@ -343,7 +315,6 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
   };
 
   const addCenterText = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, config: QRCustomization, padding: number, qrSize: number) => {
-    // Scale font size
     const fontSize = (config.centerTextFontSize || 16) * 4;
     const fontWeight = config.centerTextBold ? 'bold' : 'normal';
 
@@ -358,29 +329,51 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     const x = canvas.width / 2;
     const y = padding + qrSize / 2;
 
-    ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
-    ctx.fillRect(x - textWidth / 2 - 20, y - textHeight / 2 - 10, textWidth + 40, textHeight + 20);
+    ctx.save();
 
+    // Background
+    const bgOpacity = config.centerTextBackgroundOpacity ?? 1;
+    ctx.globalAlpha = bgOpacity;
+    ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
+
+    const padX = 20 * 2;
+    const padY = 10 * 2;
+    const bgX = x - textWidth / 2 - padX;
+    const bgY = y - textHeight / 2 - padY;
+    const bgW = textWidth + (padX * 2);
+    const bgH = textHeight + (padY * 2);
+    const radius = (config.centerTextBackgroundRadius || 0) * 4;
+
+    if (radius > 0 && ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(bgX, bgY, bgW, bgH, radius);
+      ctx.fill();
+    } else {
+      ctx.fillRect(bgX, bgY, bgW, bgH);
+    }
+
+    // Text
+    ctx.globalAlpha = config.centerTextOpacity ?? 1;
     ctx.fillStyle = config.centerTextColor || '#000000';
     ctx.fillText(config.centerText!, x, y);
+
+    ctx.restore();
   };
 
   const addTrustBadge = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, padding: number, qrSize: number, downloadSize: number, badgeHeight: number) => {
-    const y = downloadSize; // Start after the square part (1200px)
-    // Use the extra height area
+    const y = downloadSize;
 
-    ctx.fillStyle = '#059669'; // green-600
-    ctx.font = 'bold 48px Arial'; // Scaled font
+    ctx.fillStyle = '#059669';
+    ctx.font = 'bold 48px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const text = "Secure By Tinyslash";
-    // Draw text in middle of badge area
-    const centerY = y + (badgeHeight / 2) - 10; // offset slightly up
+    const centerY = y + (badgeHeight / 2) - 10;
     ctx.fillText(text, downloadSize / 2, centerY);
 
     const textWidth = ctx.measureText(text).width;
-    const iconSize = 48; // Scaled icon
+    const iconSize = 48;
     const iconX = (downloadSize / 2) - (textWidth / 2) - iconSize - 24;
     const iconY = centerY - iconSize / 2;
 
@@ -388,14 +381,12 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     ctx.lineWidth = 6;
     ctx.beginPath();
 
-    // Shield shape scaled
     ctx.moveTo(iconX + iconSize / 2, iconY + iconSize);
     ctx.bezierCurveTo(iconX, iconY + iconSize / 1.5, iconX, iconY + iconSize / 3, iconX, iconY);
     ctx.lineTo(iconX + iconSize, iconY);
     ctx.bezierCurveTo(iconX + iconSize, iconY + iconSize / 3, iconX + iconSize, iconY + iconSize / 1.5, iconX + iconSize / 2, iconY + iconSize);
     ctx.stroke();
 
-    // Checkmark
     ctx.beginPath();
     ctx.moveTo(iconX + 12, iconY + 20);
     ctx.lineTo(iconX + 20, iconY + 32);
@@ -431,8 +422,6 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
           link.download = `qr-code-${Date.now()}.jpg`;
         }
       } else if (format === 'svg') {
-        // SVG export is complex with canvas custom drawing. 
-        // For now, prompt usage of PNG/JPG for high quality.
         toast.error('High-quality SVG not supported with custom render yet. Using PNG.');
         link.href = canvas.toDataURL('image/png');
         link.download = `qr-code-${Date.now()}.png`;
@@ -472,7 +461,6 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
 
             <div className="flex justify-center mb-6">
               <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-gray-200 shadow-sm overflow-hidden">
-                {/* Display scaled down version of the high-res canvas */}
                 <canvas
                   ref={canvasRef}
                   className="block w-full h-auto"
@@ -504,7 +492,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
                   Download JPG
                 </button>
                 <button
-                  onClick={() => downloadQR('png')} // Fallback to PNG for now as SVG is hard
+                  onClick={() => downloadQR('png')}
                   disabled={isDownloading}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >

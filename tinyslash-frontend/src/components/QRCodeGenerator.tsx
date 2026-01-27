@@ -31,6 +31,11 @@ interface QRCustomization {
   centerTextBackgroundColor?: string;
   centerTextBold?: boolean;
   trustBadge?: boolean;
+
+  // Advanced Text Options
+  centerTextOpacity?: number;
+  centerTextBackgroundOpacity?: number;
+  centerTextBackgroundRadius?: number;
 }
 
 interface QRCodeGeneratorProps {
@@ -78,7 +83,10 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     centerTextColor: '#000000',
     centerTextBackgroundColor: '#FFFFFF',
     centerTextBold: true,
-    trustBadge: false
+    trustBadge: false,
+    centerTextOpacity: 1,
+    centerTextBackgroundOpacity: 1,
+    centerTextBackgroundRadius: 0
   };
 
   const config = { ...defaultCustomization, ...customization };
@@ -178,7 +186,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
         ctx.fill();
         break;
       case 'rounded-modules':
-        const roundSize = size * 0.9; // gap
+        const roundSize = size * 0.9;
         const offset = (size - roundSize) / 2;
         if (ctx.roundRect) ctx.roundRect(x + offset, y + offset, roundSize, roundSize, size * 0.3);
         else ctx.rect(x + offset, y + offset, roundSize, roundSize);
@@ -369,7 +377,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     const fontSize = config.centerTextSize;
     const fontWeight = config.centerTextBold ? 'bold' : 'normal';
 
-    ctx.font = `${fontWeight} ${fontSize}px ${config.centerTextFontFamily}`;
+    ctx.font = `${fontWeight} ${fontSize}px ${config.centerTextFontFamily || 'Arial'}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -380,11 +388,35 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     const x = canvas.width / 2;
     const y = config.size / 2;
 
-    ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
-    ctx.fillRect(x - textWidth / 2 - 5, y - textHeight / 2 - 2, textWidth + 10, textHeight + 4);
+    ctx.save();
 
+    // Background
+    const bgOpacity = config.centerTextBackgroundOpacity ?? 1;
+    ctx.globalAlpha = bgOpacity;
+    ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
+
+    const padX = 10;
+    const padY = 4;
+    const bgX = x - textWidth / 2 - padX;
+    const bgY = y - textHeight / 2 - padY;
+    const bgW = textWidth + (padX * 2);
+    const bgH = textHeight + (padY * 2);
+    const radius = config.centerTextBackgroundRadius || 0;
+
+    if (radius > 0 && ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(bgX, bgY, bgW, bgH, radius);
+      ctx.fill();
+    } else {
+      ctx.fillRect(bgX, bgY, bgW, bgH);
+    }
+
+    // Text
+    ctx.globalAlpha = config.centerTextOpacity ?? 1;
     ctx.fillStyle = config.centerTextColor || '#000000';
     ctx.fillText(config.centerText || '', x, y);
+
+    ctx.restore();
   };
 
   const addTrustBadge = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {

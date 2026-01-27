@@ -3,27 +3,7 @@ import { X, Download, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
-interface QRCustomization {
-  foregroundColor?: string;
-  backgroundColor?: string;
-  size?: number;
-  errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
-  margin?: number;
-  frameStyle?: 'none' | 'simple' | 'scan-me' | 'scan-me-black' | 'branded' | 'modern' | 'classic' | 'rounded';
-  gradientType?: 'none' | 'linear' | 'radial';
-  gradientDirection?: 'to-right' | 'to-bottom' | 'to-top-right' | 'to-bottom-right';
-  gradientStartColor?: string;
-  gradientEndColor?: string;
-  logo?: string;
-  logoSize?: number;
-  logoCornerRadius?: number;
-  centerText?: string;
-  centerTextSize?: number;
-  centerTextFontFamily?: string;
-  centerTextColor?: string;
-  centerTextBackgroundColor?: string;
-  centerTextBold?: boolean;
-}
+import { QRCustomization } from './dashboard/CreateSection/types';
 
 interface QRSuccessModalProps {
   isOpen: boolean;
@@ -58,7 +38,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
 
   const generateQR = async () => {
     if (!canvasRef.current || !originalUrl) return;
-    
+
     try {
       // Try to copy existing canvas first (if it has the right customizations)
       if (qrCanvas && qrCanvas.width > 0) {
@@ -70,7 +50,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
           return;
         }
       }
-      
+
       // Generate new QR code with customizations
       const QRCode = await import('qrcode');
       const canvas = canvasRef.current;
@@ -103,7 +83,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     // Apply gradient if specified
     if (customization.gradientType !== 'none') {
       let gradient: CanvasGradient;
-      
+
       if (customization.gradientType === 'linear') {
         switch (customization.gradientDirection) {
           case 'to-right':
@@ -128,7 +108,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       }
 
       gradient.addColorStop(0, customization.foregroundColor || '#000000');
-      gradient.addColorStop(1, customization.gradientStartColor || customization.foregroundColor || '#000000');
+      gradient.addColorStop(1, customization.secondaryColor || customization.foregroundColor || '#000000');
 
       ctx.globalCompositeOperation = 'source-atop';
       ctx.fillStyle = gradient;
@@ -156,7 +136,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     const frameStyle = customization.frameStyle;
     const foregroundColor = customization.foregroundColor || '#000000';
     const backgroundColor = customization.backgroundColor || '#FFFFFF';
-    
+
     switch (frameStyle) {
       case 'simple':
         ctx.strokeStyle = foregroundColor;
@@ -223,6 +203,54 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
         }
         ctx.stroke();
         break;
+
+      case 'desi-mandala':
+        ctx.strokeStyle = foregroundColor;
+        ctx.lineWidth = 2;
+        // Draw corners
+        const drawMandalaCorner = (x: number, y: number, rotation: number) => {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rotation * Math.PI / 180);
+          ctx.beginPath();
+          ctx.arc(0, 0, 30, 0, Math.PI / 2);
+          ctx.stroke();
+          // Floral petals
+          ctx.beginPath();
+          ctx.ellipse(15, 15, 10, 5, Math.PI / 4, 0, 2 * Math.PI);
+          ctx.stroke();
+          ctx.restore();
+        };
+        const width = canvas.width;
+        const height = canvas.height;
+        drawMandalaCorner(5, 5, 0);
+        drawMandalaCorner(width - 5, 5, 90);
+        drawMandalaCorner(width - 5, height - 5, 180);
+        drawMandalaCorner(5, height - 5, 270);
+        ctx.strokeRect(15, 15, width - 30, height - 30);
+        break;
+
+      case 'desi-floral':
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = foregroundColor; // For dots
+        ctx.strokeStyle = foregroundColor;
+        ctx.lineWidth = 3;
+
+        // Simple border
+        ctx.strokeRect(10, 10, w - 20, h - 20);
+
+        // Dots pattern on border
+        const spacing = 20;
+        for (let i = 10; i < w - 10; i += spacing) {
+          ctx.beginPath(); ctx.arc(i, 10, 2, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(i, h - 10, 2, 0, Math.PI * 2); ctx.fill();
+        }
+        for (let i = 10; i < h - 10; i += spacing) {
+          ctx.beginPath(); ctx.arc(10, i, 2, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(w - 10, i, 2, 0, Math.PI * 2); ctx.fill();
+        }
+        break;
     }
   };
 
@@ -230,7 +258,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     try {
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      
+
       return new Promise<void>((resolve) => {
         img.onload = () => {
           const logoSizePercent = (customization.logoSize || 20) / 100;
@@ -238,10 +266,10 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
           const x = (canvas.width - logoSize) / 2;
           const y = (canvas.height - logoSize) / 2;
           const cornerRadius = customization.logoCornerRadius || 0;
-          
+
           // Save the current context state
           ctx.save();
-          
+
           // Create clipping path for logo with corner radius
           ctx.beginPath();
           if (cornerRadius > 0 && ctx.roundRect) {
@@ -264,23 +292,23 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
             // Square logo (no corner radius)
             ctx.rect(x, y, logoSize, logoSize);
           }
-          
+
           // Clip to the path
           ctx.clip();
-          
+
           // Add white background for logo
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(x - 2, y - 2, logoSize + 4, logoSize + 4);
-          
+
           // Draw the logo image
           ctx.drawImage(img, x, y, logoSize, logoSize);
-          
+
           // Restore the context state
           ctx.restore();
-          
+
           resolve();
         };
-        
+
         img.onerror = () => resolve();
         img.src = customization.logo!;
       });
@@ -290,24 +318,24 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
   };
 
   const addCenterText = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, customization: QRCustomization) => {
-    const fontSize = customization.centerTextSize || 16;
+    const fontSize = customization.centerTextFontSize || 16;
     const fontWeight = customization.centerTextBold ? 'bold' : 'normal';
-    
+
     ctx.font = `${fontWeight} ${fontSize}px ${customization.centerTextFontFamily || 'Arial'}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
+
     const textMetrics = ctx.measureText(customization.centerText!);
     const textWidth = textMetrics.width;
     const textHeight = fontSize;
-    
+
     const x = canvas.width / 2;
     const y = canvas.height / 2;
-    
+
     // Add background for text
     ctx.fillStyle = customization.centerTextBackgroundColor || '#FFFFFF';
     ctx.fillRect(x - textWidth / 2 - 5, y - textHeight / 2 - 2, textWidth + 10, textHeight + 4);
-    
+
     // Add text
     ctx.fillStyle = customization.centerTextColor || '#000000';
     ctx.fillText(customization.centerText!, x, y);
@@ -324,19 +352,19 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
 
   const downloadQR = async (format: 'png' | 'jpg' | 'svg') => {
     if (!canvasRef.current) return;
-    
+
     setIsDownloading(true);
-    
+
     try {
       const canvas = canvasRef.current;
       const link = document.createElement('a');
-      
+
       if (format === 'jpg') {
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = canvas.width;
         tempCanvas.height = canvas.height;
-        
+
         if (tempCtx) {
           tempCtx.fillStyle = '#FFFFFF';
           tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
@@ -357,7 +385,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
         link.href = canvas.toDataURL('image/png');
         link.download = `qr-code-${Date.now()}.png`;
       }
-      
+
       link.click();
       toast.success(`Downloaded as ${format.toUpperCase()}!`);
     } catch (error) {
@@ -372,7 +400,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-          
+
           <motion.div
             className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-4 sm:p-6"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -392,12 +420,12 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
             {/* QR Code Preview */}
             <div className="flex justify-center mb-6">
               <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-gray-200 shadow-sm">
-                <canvas 
+                <canvas
                   ref={canvasRef}
                   className="block w-full h-auto max-w-[250px] max-h-[250px]"
-                  style={{ 
-                    width: 'min(250px, calc(100vw - 120px))', 
-                    height: 'min(250px, calc(100vw - 120px))' 
+                  style={{
+                    width: 'min(250px, calc(100vw - 120px))',
+                    height: 'min(250px, calc(100vw - 120px))'
                   }}
                 />
               </div>
@@ -413,7 +441,7 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
                 <Download className="w-4 h-4 mr-2" />
                 {isDownloading ? 'Downloading...' : 'Download PNG'}
               </button>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => downloadQR('jpg')}

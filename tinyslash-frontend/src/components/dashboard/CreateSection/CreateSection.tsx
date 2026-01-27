@@ -264,21 +264,23 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           </button>
         </div>
       </div>
-      <div className="flex flex-col lg:flex-row p-6 lg:p-8 gap-8">
+      <div className="flex flex-col lg:flex-row p-6 lg:p-8 gap-8 items-start relative">
 
         {/* Sticky QR Preview (only for QR mode) */}
         {mode === 'qr' && (
-          <QRPreview
-            qrText={qrText}
-            qrCustomization={qrCustomization}
-            canvasRef={canvasRef}
-            downloadQR={downloadQR}
-            copyToClipboard={copyToClipboard}
-          />
+          <div className="lg:sticky lg:top-24 lg:w-80 lg:flex-shrink-0 z-10 order-1 lg:order-2">
+            <QRPreview
+              qrText={qrText}
+              qrCustomization={qrCustomization}
+              canvasRef={canvasRef}
+              downloadQR={downloadQR}
+              copyToClipboard={copyToClipboard}
+            />
+          </div>
         )}
 
         {/* Main Form Section */}
-        <div className={`flex-1 space-y-6 ${mode === 'qr' ? 'order-2' : 'max-w-3xl mx-auto'}`}>
+        <div className={`flex-1 space-y-6 ${mode === 'qr' ? 'order-2 lg:order-1' : 'max-w-3xl mx-auto'}`}>
           {/* Input Mode Components */}
           <div className="space-y-6">
             {mode === 'url' && (

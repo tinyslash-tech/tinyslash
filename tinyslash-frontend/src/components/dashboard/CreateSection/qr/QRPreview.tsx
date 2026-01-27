@@ -48,8 +48,8 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
   };
 
   return (
-    <div className="lg:w-80 lg:flex-shrink-0 order-1 lg:order-1">
-      <div className="bg-white rounded-2xl p-4 lg:p-6 text-center border border-gray-200 shadow-sm sticky top-16 sm:top-20 z-20 mb-6 lg:mb-0 max-h-[calc(100vh-5rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <div className="w-full">
+      <div className="bg-white rounded-2xl p-4 lg:p-6 text-center border border-gray-200 shadow-sm mb-6 lg:mb-0">
         <div className="mb-4">
           <h3 className="text-base lg:text-lg font-semibold text-gray-900 flex items-center justify-center">
             <Eye className="w-4 h-4 lg:w-5 lg:h-5 mr-2 text-blue-600" />

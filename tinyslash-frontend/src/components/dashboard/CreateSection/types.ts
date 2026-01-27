@@ -9,15 +9,25 @@ export interface QRCustomization {
   logo?: string;
   logoSize?: number;
   logoCornerRadius?: number;
+  logoOpacity?: number;
+  logoStroke?: number;
+  logoStrokeColor?: string;
+
   centerText?: string;
   centerTextFontSize: number;
   centerTextFontFamily: string;
   centerTextColor: string;
   centerTextBackgroundColor: string;
   centerTextBold: boolean;
+
   pattern: 'square';
   cornerStyle: 'square';
-  frameStyle: 'none' | 'simple' | 'scan-me' | 'scan-me-black' | 'branded' | 'modern' | 'classic' | 'rounded';
+  frameStyle: 'none' | 'simple' | 'scan-me' | 'scan-me-black' | 'branded' | 'modern' | 'classic' | 'rounded' | 'desi-mandala' | 'desi-floral' | 'desi-diya';
+  frameColor?: string;
+  frameText?: string;
+  frameTextSize?: number;
+  frameTextColor?: string;
+
   gradientType: 'none' | 'linear' | 'radial';
   gradientDirection: 'to-right' | 'to-bottom' | 'to-top-right' | 'to-bottom-right';
   secondaryColor: string;

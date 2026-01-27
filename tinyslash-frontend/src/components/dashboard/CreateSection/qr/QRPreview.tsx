@@ -96,22 +96,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
               </div>
             </div>
-            <div className="flex justify-center space-x-2">
-              <button
-                onClick={downloadQR}
-                className="flex items-center space-x-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Download className="w-3 h-3" />
-                <span>Download</span>
-              </button>
-              <button
-                onClick={handleCopy}
-                className="flex items-center space-x-1 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <Copy className="w-3 h-3" />
-                <span>Copy</span>
-              </button>
-            </div>
+
           </div>
         ) : (
           <div className="py-8">

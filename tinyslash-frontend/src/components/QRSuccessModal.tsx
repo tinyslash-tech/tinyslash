@@ -77,7 +77,12 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
 
       const modules = qrData.modules;
       const moduleCount = modules.size;
-      const frameMargin = (config.frameStyle && config.frameStyle !== 'none') ? 2 : (config.margin || 2);
+
+      // Fix: Scale margin significantly for 1200px. 
+      // 4px in preview (200px) ~= 24px in 1200px.
+      // But we need more for frames to not touch modules. Use 40-50px.
+      const frameMargin = (config.frameStyle && config.frameStyle !== 'none') ? 50 : (config.margin ? config.margin * 4 : 20);
+
       const cellSize = (qrSize - (frameMargin * 2)) / moduleCount;
 
       // 4. Prepare Foreground Style (Gradient or Solid)
@@ -216,38 +221,89 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     // Frames are drawn relative to padding
     const width = qrSize; // It wraps the QR content
     const height = qrSize;
-    // We need to translate context or offset coordinates
-    // Let's use save/restore and translate
     ctx.save();
     ctx.translate(padding, padding);
 
-    const color = config.frameColor || config.foregroundColor;
-    ctx.lineWidth = 4 * 4; // Scale line width (1200px / 300px = 4x)
+    const color = config.frameColor || config.foregroundColor || '#000000';
+    ctx.lineWidth = 16; // Robust border
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
+    ctx.lineJoin = 'round'; // Softer corners
 
     switch (config.frameStyle) {
       case 'simple':
-        ctx.strokeRect(20, 20, width - 40, height - 40);
+        // border just inside the allocate area
+        ctx.strokeRect(8, 8, width - 16, height - 16);
         break;
-      case 'scan-me':
-        ctx.textAlign = 'center';
-        // SCALED FONT
-        ctx.font = 'bold 64px Arial';
-        ctx.fillStyle = color;
-        ctx.fillText('SCAN ME', width / 2, height - 30);
-        break;
-      // ... simplified other frames for brevity, assuming similar scaling needed
-      // but 'simple' is most important. 
-      // For full robust frames, we'd need to scale every coordinate.
-      // Given user request "side border same like preview", simple clean padding is key.
-
-      // Let's handle generic 'rounded'
       case 'rounded':
         ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(20, 20, width - 40, height - 40, 60);
-        else ctx.rect(20, 20, width - 40, height - 40);
+        if (ctx.roundRect) ctx.roundRect(8, 8, width - 16, height - 16, 60);
+        else ctx.rect(8, 8, width - 16, height - 16);
         ctx.stroke();
+        break;
+      case 'scan-me':
+        // Top and Sides
+        ctx.beginPath();
+        // Path: Start bottom-left, up, right, down to bottom-right (leave bottom open for text?) 
+        // Or Top/Bottom bars? 
+        // Standard Scan Me: Box with text at bottom inside or truncating line.
+        // Let's do: Full box, but bottom part is text.
+
+        ctx.strokeRect(8, 8, width - 16, height - 16);
+
+        // Text Box at bottom center
+        ctx.font = 'bold 80px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const text = config.frameText || 'SCAN ME';
+        const textWidth = ctx.measureText(text).width + 60;
+
+        // Clear line for text
+        const textHeight = 80;
+        const bottomY = height - 8;
+        ctx.clearRect((width / 2) - (textWidth / 2), bottomY - 20, textWidth, 40);
+
+        ctx.fillText(text, width / 2, bottomY);
+        break;
+
+      case 'scan-me-black':
+        // Black block at bottom
+        ctx.strokeRect(8, 8, width - 16, height - 16); // Main border
+
+        const barHeight = 120;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, height - barHeight, width, barHeight);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 70px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(config.frameText || 'SCAN ME', width / 2, height - (barHeight / 2) + 10);
+        break;
+
+      case 'modern':
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, config.secondaryColor || color);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 24;
+        ctx.strokeRect(12, 12, width - 24, height - 24);
+        break;
+
+      case 'desi-mandala':
+        // Simplistic corners for high-res
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = color;
+        const cornerSize = 100;
+        // TL
+        ctx.beginPath(); ctx.arc(20, 20, cornerSize, 0, Math.PI / 2); ctx.stroke();
+        // TR
+        ctx.beginPath(); ctx.arc(width - 20, 20, cornerSize, Math.PI / 2, Math.PI); ctx.stroke();
+        // BR
+        ctx.beginPath(); ctx.arc(width - 20, height - 20, cornerSize, Math.PI, 3 * Math.PI / 2); ctx.stroke();
+        // BL
+        ctx.beginPath(); ctx.arc(20, height - 20, cornerSize, 3 * Math.PI / 2, 2 * Math.PI); ctx.stroke();
+
+        ctx.strokeRect(40, 40, width - 80, height - 80);
         break;
     }
     ctx.restore();

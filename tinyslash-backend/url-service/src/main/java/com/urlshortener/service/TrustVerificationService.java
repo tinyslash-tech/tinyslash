@@ -23,9 +23,19 @@ public class TrustVerificationService {
     User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
     // Simplified Plan Check (assume string contains)
     // In real app, check structured plan data
-    // boolean eligible = user.getPlan() != null && (user.getPlan().contains("PRO")
-    // || user.getPlan().contains("BUSINESS"));
-    // if (!eligible) throw new RuntimeException("Eligible Plan Required");
+    // Simplified Plan Check
+    boolean hasPlan = user.getPlan() != null &&
+        (user.getPlan().toUpperCase().contains("PRO") ||
+            user.getPlan().toUpperCase().contains("BUSINESS"));
+
+    // Also check subscriptionPlan (new field often used)
+    boolean hasSubscription = user.getSubscriptionPlan() != null &&
+        (user.getSubscriptionPlan().toUpperCase().contains("PRO") ||
+            user.getSubscriptionPlan().toUpperCase().contains("BUSINESS"));
+
+    if (!hasPlan && !hasSubscription) {
+      throw new RuntimeException("Eligible Plan Required (Pro or Business)");
+    }
 
     application.setUserId(userId);
     application.setStatus(TrustVerification.VerificationStatus.PENDING_REVIEW);

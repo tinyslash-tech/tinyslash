@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Zap, Lock, Sparkles, Eye, EyeOff, ChevronDown, ChevronUp, Settings } from 'lucide-react';
-import { DEFAULT_DOMAIN, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig } from '../types';
+import { DEFAULT_DOMAIN, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig, CreateMode } from '../types';
+import { GrowthMarketing } from './GrowthMarketing';
 import { SecurityTrust } from './SecurityTrust';
 
 interface AdvancedSettingsProps {
+  mode?: CreateMode;
   // Domain Props
   selectedDomain: string;
   setSelectedDomain: (domain: string) => void;
@@ -49,6 +51,7 @@ interface AdvancedSettingsProps {
 }
 
 export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
+  mode,
   selectedDomain,
   setSelectedDomain,
   customDomains,
@@ -78,6 +81,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   upgradeModal
 }) => {
   const [isBasicOpen, setIsBasicOpen] = useState(false);
+  const [isGrowthOpen, setIsGrowthOpen] = useState(false);
   const [isSecurityOpen, setIsSecurityOpen] = useState(false);
 
   // Reusable Accordion Section
@@ -233,7 +237,29 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
         </div>
       </AccordionSection>
 
-
+      {/* 2. Growth & Marketing */}
+      {mode !== 'qr' && (
+        <AccordionSection
+          title="Growth & Marketing"
+          icon={Sparkles}
+          isOpen={isGrowthOpen}
+          setIsOpen={setIsGrowthOpen}
+          headerColorClass="text-purple-600"
+        >
+          <GrowthMarketing
+            smartLinkPreview={smartLinkPreview}
+            setSmartLinkPreview={setSmartLinkPreview}
+            geoConfig={geoConfig}
+            setGeoConfig={setGeoConfig}
+            deepLinkConfig={deepLinkConfig}
+            setDeepLinkConfig={setDeepLinkConfig}
+            leadLockConfig={leadLockConfig}
+            setLeadLockConfig={setLeadLockConfig}
+            featureAccess={featureAccess}
+            upgradeModal={upgradeModal}
+          />
+        </AccordionSection>
+      )}
 
       {/* 3. Security & Trust */}
       <AccordionSection

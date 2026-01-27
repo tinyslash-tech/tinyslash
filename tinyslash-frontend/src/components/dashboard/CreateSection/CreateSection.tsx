@@ -322,37 +322,36 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           )}
 
           {/* Advanced Settings */}
-          {(mode !== 'file') && (
-            <AdvancedSettings
-              selectedDomain={selectedDomain}
-              setSelectedDomain={setSelectedDomain}
-              customDomains={customDomains}
-              customAlias={customAlias}
-              setCustomAlias={setCustomAlias}
-              password={password}
-              setPassword={setPassword}
-              showPassword={showPassword}
-              setShowPassword={setShowPassword}
-              expirationDays={expirationDays}
-              setExpirationDays={setExpirationDays}
-              maxClicks={maxClicks}
-              setMaxClicks={setMaxClicks}
-              isOneTime={isOneTime}
-              setIsOneTime={setIsOneTime}
-              smartLinkPreview={smartLinkPreview}
-              setSmartLinkPreview={setSmartLinkPreview}
-              geoConfig={geoConfig}
-              setGeoConfig={setGeoConfig}
-              deepLinkConfig={deepLinkConfig}
-              setDeepLinkConfig={setDeepLinkConfig}
-              leadLockConfig={leadLockConfig}
-              setLeadLockConfig={setLeadLockConfig}
-              trustBadgeConfig={trustBadgeConfig}
-              setTrustBadgeConfig={setTrustBadgeConfig}
-              featureAccess={featureAccess}
-              upgradeModal={upgradeModal}
-            />
-          )}
+          <AdvancedSettings
+            mode={mode}
+            selectedDomain={selectedDomain}
+            setSelectedDomain={setSelectedDomain}
+            customDomains={customDomains}
+            customAlias={customAlias}
+            setCustomAlias={setCustomAlias}
+            password={password}
+            setPassword={setPassword}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            expirationDays={expirationDays}
+            setExpirationDays={setExpirationDays}
+            maxClicks={maxClicks}
+            setMaxClicks={setMaxClicks}
+            isOneTime={isOneTime}
+            setIsOneTime={setIsOneTime}
+            smartLinkPreview={smartLinkPreview}
+            setSmartLinkPreview={setSmartLinkPreview}
+            geoConfig={geoConfig}
+            setGeoConfig={setGeoConfig}
+            deepLinkConfig={deepLinkConfig}
+            setDeepLinkConfig={setDeepLinkConfig}
+            leadLockConfig={leadLockConfig}
+            setLeadLockConfig={setLeadLockConfig}
+            trustBadgeConfig={trustBadgeConfig}
+            setTrustBadgeConfig={setTrustBadgeConfig}
+            featureAccess={featureAccess}
+            upgradeModal={upgradeModal}
+          />
 
           {/* Create Button */}
           <CreateButton

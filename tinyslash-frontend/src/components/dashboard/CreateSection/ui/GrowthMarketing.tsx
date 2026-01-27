@@ -730,7 +730,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
   return (
     <div className="space-y-4">
       {mode === 'qr' && renderSmartAction()}
-      {renderSmartLinkPreview()}
+      {mode !== 'qr' && renderSmartLinkPreview()}
       {renderGeoRedirects()}
       {renderDeepLink()}
       {renderLeadLock()}

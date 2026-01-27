@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -23,6 +25,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.util.Base64;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.client.j2se.MatrixToImageConfig;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
 @Service
 public class QrCodeService {
@@ -49,7 +59,7 @@ public class QrCodeService {
             String foregroundColor, String backgroundColor,
             int size, String format) {
         return createQrCode(content, contentType, userId, title, description, style,
-                foregroundColor, backgroundColor, size, format, "USER", userId);
+                foregroundColor, backgroundColor, size, format, "USER", userId, null);
     }
 
     public QrCode createQrCode(String content, String contentType, String userId,

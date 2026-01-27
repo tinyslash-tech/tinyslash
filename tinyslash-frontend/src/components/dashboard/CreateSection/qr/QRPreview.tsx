@@ -85,7 +85,8 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
                     centerTextFontFamily: qrCustomization.centerTextFontFamily,
                     centerTextColor: qrCustomization.centerTextColor,
                     centerTextBackgroundColor: qrCustomization.centerTextBackgroundColor,
-                    centerTextBold: qrCustomization.centerTextBold
+                    centerTextBold: qrCustomization.centerTextBold,
+                    trustBadge: qrCustomization.trustBadge
                   }}
                 // ref={previewCanvasRef} // QRCodeGenerator might not forward ref properly based on original file checks
                 // If QRCodeGenerator is custom, we rely on canvasRef from parent mostly for download

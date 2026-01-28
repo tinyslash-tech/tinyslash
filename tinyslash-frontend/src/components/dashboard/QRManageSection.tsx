@@ -41,10 +41,32 @@ interface QRCodeData {
     foregroundColor: string;
     backgroundColor: string;
     logoUrl?: string;
-    style: 'square' | 'rounded' | 'dots' | 'classy';
+    style: 'square' | 'rounded' | 'dots' | 'classy' | string; // Allow string for pattern mapping
     size: number;
     errorCorrection: 'L' | 'M' | 'Q' | 'H';
     trustBadge?: boolean;
+    // Advanced Customization
+    pattern?: string;
+    frameStyle?: string;
+    frameColor?: string;
+    frameText?: string;
+    frameTextColor?: string;
+    gradientType?: string;
+    gradientDirection?: string;
+    secondaryColor?: string;
+    centerText?: string;
+    centerTextColor?: string;
+    logoSize?: number;
+    logoOpacity?: number;
+    logoCornerRadius?: number;
+    centerTextFontSize?: number;
+    centerTextFontFamily?: string;
+    centerTextBackgroundColor?: string;
+    centerTextBold?: boolean;
+    centerTextOpacity?: number;
+    centerTextBackgroundOpacity?: number;
+    centerTextBackgroundRadius?: number;
+    margin?: number;
   };
   isPro: boolean;
   trackingEnabled: boolean;
@@ -145,7 +167,29 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
       style: qr.style || 'square',
       size: qr.size || 256,
       errorCorrection: qr.errorCorrectionLevel || 'M',
-      trustBadge: qr.trustBadge
+      trustBadge: qr.trustBadge,
+      // Map advanced fields
+      pattern: qr.pattern || qr.style || 'square',
+      frameStyle: qr.frameStyle || 'none',
+      frameColor: qr.frameColor,
+      frameText: qr.frameText,
+      frameTextColor: qr.frameTextColor,
+      gradientType: qr.gradientType || 'none',
+      gradientDirection: qr.gradientDirection,
+      secondaryColor: qr.secondaryColor,
+      centerText: qr.centerText,
+      centerTextColor: qr.centerTextColor,
+      logoSize: qr.logoSize,
+      logoOpacity: qr.logoOpacity,
+      logoCornerRadius: qr.logoCornerRadius,
+      centerTextFontSize: qr.centerTextFontSize,
+      centerTextFontFamily: qr.centerTextFontFamily,
+      centerTextBackgroundColor: qr.centerTextBackgroundColor,
+      centerTextBold: qr.centerTextBold,
+      centerTextOpacity: qr.centerTextOpacity,
+      centerTextBackgroundOpacity: qr.centerTextBackgroundOpacity,
+      centerTextBackgroundRadius: qr.centerTextBackgroundRadius,
+      margin: qr.margin
     },
     isPro: false,
     trackingEnabled: true,

@@ -19,6 +19,28 @@ export interface QRPreviewData {
     size?: number;
     errorCorrection?: string;
     trustBadge?: boolean;
+    // Advanced Customization
+    pattern?: string;
+    frameStyle?: string;
+    frameColor?: string;
+    frameText?: string;
+    frameTextColor?: string;
+    gradientType?: string;
+    gradientDirection?: string;
+    secondaryColor?: string;
+    centerText?: string;
+    centerTextColor?: string;
+    logoSize?: number;
+    logoOpacity?: number;
+    logoCornerRadius?: number;
+    centerTextFontSize?: number;
+    centerTextFontFamily?: string;
+    centerTextBackgroundColor?: string;
+    centerTextBold?: boolean;
+    centerTextOpacity?: number;
+    centerTextBackgroundOpacity?: number;
+    centerTextBackgroundRadius?: number;
+    margin?: number;
   };
   qrCodeImage?: string;
 }
@@ -80,7 +102,26 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
         logo: customization.logoUrl, // Map logoUrl to logo
         size: qrSize,
         margin: 1,
-        trustBadge: customization.trustBadge // Pass trustBadge
+        trustBadge: customization.trustBadge, // Pass trustBadge
+        // Advanced
+        frameStyle: customization.frameStyle,
+        frameColor: customization.frameColor,
+        frameText: customization.frameText,
+        gradientType: customization.gradientType,
+        gradientDirection: customization.gradientDirection,
+        secondaryColor: customization.secondaryColor,
+        centerText: customization.centerText,
+        centerTextColor: customization.centerTextColor,
+        centerTextFontSize: customization.centerTextFontSize,
+        centerTextFontFamily: customization.centerTextFontFamily,
+        centerTextBackgroundColor: customization.centerTextBackgroundColor,
+        centerTextBold: customization.centerTextBold,
+        centerTextOpacity: customization.centerTextOpacity,
+        centerTextBackgroundOpacity: customization.centerTextBackgroundOpacity,
+        centerTextBackgroundRadius: customization.centerTextBackgroundRadius,
+        logoSize: customization.logoSize,
+        logoOpacity: customization.logoOpacity,
+        logoCornerRadius: customization.logoCornerRadius,
       };
 
       // Calculate Badge Height
@@ -91,12 +132,14 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
       canvas.height = downloadSize + badgeHeight;
 
       // Fill Background
-      ctx.fillStyle = config.backgroundColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height); // White canvas base
+
+      ctx.fillStyle = config.backgroundColor || '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height - badgeHeight); // QR Background
 
       // Generate Base QR Data
       // For dynamic QRs, we use the shortUrl if available. If not, fallback to url. 
-      // Ensure we have SOME content.
       const qrValue = (qr.isDynamic && qr.shortUrl) ? qr.shortUrl : (qr.url || 'https://tinyslash.com');
 
       if (!qrValue) {
@@ -110,44 +153,225 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
 
       const modules = qrData.modules;
       const moduleCount = modules.size;
-      // Calculate cell size based on drawing area (inside padding)
-      const drawingSize = qrSize;
-      const cellSize = drawingSize / moduleCount;
 
-      ctx.fillStyle = config.foregroundColor;
+      const frameMargin = (config.frameStyle && config.frameStyle !== 'none') ? 50 : 20;
+      const cellSize = (qrSize - (frameMargin * 2)) / moduleCount;
+
+      // Prepare fill style (solid or gradient)
+      let fillStyle: string | CanvasGradient = config.foregroundColor || '#000000';
+      if (config.gradientType && config.gradientType !== 'none') {
+        fillStyle = createGradient(ctx, qrSize, padding, config);
+      }
+      ctx.fillStyle = fillStyle;
+      ctx.strokeStyle = fillStyle;
+
+      const isFinder = (r: number, c: number) => {
+        if (r < 7 && c < 7) return true;
+        if (r < 7 && c >= moduleCount - 7) return true;
+        if (r >= moduleCount - 7 && c < 7) return true;
+        return false;
+      };
 
       // Draw Modules
       for (let r = 0; r < moduleCount; r++) {
         for (let c = 0; c < moduleCount; c++) {
           if ((modules as any).data[r * moduleCount + c]) {
-            const x = padding + c * cellSize;
-            const y = padding + r * cellSize;
+            const x = padding + frameMargin + c * cellSize;
+            const y = padding + frameMargin + r * cellSize;
 
-            // Simple draw for now - can expand to support all patterns if logic is imported
-            // Using standard rect for robustness unless we port the full drawer
-            ctx.fillRect(x, y, Math.ceil(cellSize), Math.ceil(cellSize));
+            drawModule(ctx, x, y, cellSize, config.pattern || 'square', isFinder(r, c));
           }
         }
+      }
+
+      // Draw Frame
+      if (config.frameStyle && config.frameStyle !== 'none') {
+        applyFrameStyle(ctx, canvas, config, padding, qrSize);
       }
 
       // Draw Logo if present
       if (config.logo) {
         try {
-          await addLogo(ctx, config.logo, padding, drawingSize);
+          await addLogo(ctx, config.logo, config, padding, qrSize);
         } catch (e) {
           console.warn("Failed to load logo", e);
         }
       }
 
+      // Draw Center Text if present
+      if (config.centerText) {
+        addCenterText(ctx, canvas, config, padding, qrSize);
+      }
+
       // Draw Trust Badge if enabled
       if (config.trustBadge) {
-        addTrustBadge(ctx, canvas, padding, drawingSize, downloadSize, 140);
+        addTrustBadge(ctx, canvas, padding, qrSize, downloadSize, 140);
       }
 
     } catch (error) {
       console.error('QR generation failed:', error);
       toast.error('Failed to generate preview');
     }
+  };
+
+  const createGradient = (ctx: CanvasRenderingContext2D, size: number, padding: number, config: any) => {
+    let gradient: CanvasGradient;
+    const x = padding;
+    const y = padding;
+    const w = size;
+    const h = size;
+
+    if (config.gradientType === 'linear') {
+      switch (config.gradientDirection) {
+        case 'to-right': gradient = ctx.createLinearGradient(x, y, x + w, y); break;
+        case 'to-bottom': gradient = ctx.createLinearGradient(x, y, x, y + h); break;
+        case 'to-top-right': gradient = ctx.createLinearGradient(x, y + h, x + w, y); break;
+        case 'to-bottom-right': default: gradient = ctx.createLinearGradient(x, y, x + w, y + h); break;
+      }
+    } else {
+      gradient = ctx.createRadialGradient(
+        x + w / 2, y + h / 2, 0,
+        x + w / 2, y + h / 2, w / 2
+      );
+    }
+    gradient.addColorStop(0, config.foregroundColor || '#000000');
+    gradient.addColorStop(1, config.secondaryColor || config.foregroundColor || '#000000');
+    return gradient;
+  };
+
+  const drawModule = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, pattern: string, isFinder: boolean) => {
+    ctx.beginPath();
+    switch (pattern) {
+      case 'dots':
+        const center = size / 2;
+        const radius = (size / 2) * 0.9;
+        ctx.arc(x + center, y + center, radius, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'rounded-modules':
+        const roundSize = size * 0.9;
+        const offset = (size - roundSize) / 2;
+        if (ctx.roundRect) ctx.roundRect(x + offset, y + offset, roundSize, roundSize, size * 0.3);
+        else ctx.rect(x + offset, y + offset, roundSize, roundSize);
+        ctx.fill();
+        break;
+      case 'diamond':
+        ctx.moveTo(x + size / 2, y);
+        ctx.lineTo(x + size, y + size / 2);
+        ctx.lineTo(x + size / 2, y + size);
+        ctx.lineTo(x, y + size / 2);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      case 'star':
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const spikes = 5;
+        const outerRadius = size / 2;
+        const innerRadius = size / 4;
+        let rot = Math.PI / 2 * 3;
+        let step = Math.PI / spikes;
+
+        ctx.moveTo(cx, cy - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+          let startX = cx + Math.cos(rot) * outerRadius;
+          let startY = cy + Math.sin(rot) * outerRadius;
+          ctx.lineTo(startX, startY);
+          rot += step;
+
+          startX = cx + Math.cos(rot) * innerRadius;
+          startY = cy + Math.sin(rot) * innerRadius;
+          ctx.lineTo(startX, startY);
+          rot += step;
+        }
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      case 'fluid':
+        ctx.arc(x + size / 2, y + size / 2, size / 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'square':
+      default:
+        ctx.fillRect(x, y, Math.ceil(size), Math.ceil(size));
+        break;
+    }
+  };
+
+  const applyFrameStyle = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, config: any, padding: number, qrSize: number) => {
+    const width = qrSize;
+    const height = qrSize;
+    ctx.save();
+    ctx.translate(padding, padding);
+
+    const color = config.frameColor || config.foregroundColor || '#000000';
+    ctx.lineWidth = 16;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineJoin = 'round';
+
+    switch (config.frameStyle) {
+      case 'simple':
+        ctx.strokeRect(8, 8, width - 16, height - 16);
+        break;
+      case 'rounded':
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(8, 8, width - 16, height - 16, 60);
+        else ctx.rect(8, 8, width - 16, height - 16);
+        ctx.stroke();
+        break;
+      case 'scan-me':
+        ctx.beginPath();
+        ctx.strokeRect(8, 8, width - 16, height - 16);
+
+        ctx.font = 'bold 80px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const text = config.frameText || 'SCAN ME';
+        const textWidth = ctx.measureText(text).width + 60;
+
+        const textHeight = 80;
+        const bottomY = height - 8;
+        ctx.clearRect((width / 2) - (textWidth / 2), bottomY - 20, textWidth, 40);
+
+        ctx.fillText(text, width / 2, bottomY);
+        break;
+
+      case 'scan-me-black':
+        ctx.strokeRect(8, 8, width - 16, height - 16);
+
+        const barHeight = 120;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, height - barHeight, width, barHeight);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 70px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(config.frameText || 'SCAN ME', width / 2, height - (barHeight / 2) + 10);
+        break;
+
+      case 'modern':
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, config.secondaryColor || color);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 24;
+        ctx.strokeRect(12, 12, width - 24, height - 24);
+        break;
+
+      case 'desi-mandala':
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = color;
+        const cornerSize = 100;
+        ctx.beginPath(); ctx.arc(20, 20, cornerSize, 0, Math.PI / 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(width - 20, 20, cornerSize, Math.PI / 2, Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(width - 20, height - 20, cornerSize, Math.PI, 3 * Math.PI / 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(20, height - 20, cornerSize, 3 * Math.PI / 2, 2 * Math.PI); ctx.stroke();
+        ctx.strokeRect(40, 40, width - 80, height - 80);
+        break;
+    }
+    ctx.restore();
   };
 
   const addTrustBadge = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, padding: number, qrSize: number, downloadSize: number, badgeHeight: number) => {
@@ -200,17 +424,25 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
     ctx.stroke();
   };
 
-  const addLogo = async (ctx: CanvasRenderingContext2D, logoUrl: string, padding: number, qrSize: number) => {
+  const addLogo = async (ctx: CanvasRenderingContext2D, logoUrl: string, config: any, padding: number, qrSize: number) => {
     return new Promise<void>((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
-        const logoSize = qrSize * 0.2; // 20% size
+        const logoSizePercent = (config.logoSize || 20) / 100;
+        const logoSize = qrSize * logoSizePercent;
         const x = padding + (qrSize - logoSize) / 2;
         const y = padding + (qrSize - logoSize) / 2;
+        const cornerRadius = (config.logoCornerRadius || 0) * 4;
 
         ctx.save();
-        // Draw white background for logo
+        ctx.globalAlpha = config.logoOpacity ?? 1;
+        ctx.beginPath();
+        if (cornerRadius > 0 && ctx.roundRect) {
+          ctx.roundRect(x, y, logoSize, logoSize, cornerRadius);
+        } else { ctx.rect(x, y, logoSize, logoSize); }
+        ctx.clip();
+
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(x, y, logoSize, logoSize);
         ctx.drawImage(img, x, y, logoSize, logoSize);
@@ -220,6 +452,52 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
       img.onerror = () => resolve();
       img.src = logoUrl;
     });
+  };
+
+  const addCenterText = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, config: any, padding: number, qrSize: number) => {
+    const fontSize = (config.centerTextFontSize || 16) * 4;
+    const fontWeight = config.centerTextBold ? 'bold' : 'normal';
+
+    ctx.font = `${fontWeight} ${fontSize}px ${config.centerTextFontFamily || 'Arial'}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const textMetrics = ctx.measureText(config.centerText!);
+    const textWidth = textMetrics.width;
+    const textHeight = fontSize;
+
+    const x = canvas.width / 2;
+    const y = padding + qrSize / 2;
+
+    ctx.save();
+
+    // Background
+    const bgOpacity = config.centerTextBackgroundOpacity ?? 1;
+    ctx.globalAlpha = bgOpacity;
+    ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
+
+    const padX = 20 * 2;
+    const padY = 10 * 2;
+    const bgX = x - textWidth / 2 - padX;
+    const bgY = y - textHeight / 2 - padY;
+    const bgW = textWidth + (padX * 2);
+    const bgH = textHeight + (padY * 2);
+    const radius = (config.centerTextBackgroundRadius || 0) * 4;
+
+    if (radius > 0 && ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(bgX, bgY, bgW, bgH, radius);
+      ctx.fill();
+    } else {
+      ctx.fillRect(bgX, bgY, bgW, bgH);
+    }
+
+    // Text
+    ctx.globalAlpha = config.centerTextOpacity ?? 1;
+    ctx.fillStyle = config.centerTextColor || '#000000';
+    ctx.fillText(config.centerText!, x, y);
+
+    ctx.restore();
   };
 
   const downloadQR = async (format: 'png' | 'jpg' | 'svg') => {

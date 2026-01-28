@@ -59,6 +59,28 @@ public class QrCode {
     private String eyeStyle = "SQUARE"; // SQUARE, CIRCLE, ROUNDED
     private String dataPattern = "SQUARE"; // SQUARE, CIRCLE, ROUNDED, DOT
 
+    // Advanced Customization
+    private boolean trustBadge;
+    private String frameColor;
+    private String frameText;
+    private String frameTextColor;
+    private String gradientType;
+    private String gradientDirection;
+    private String secondaryColor;
+    private String centerText;
+    private String centerTextColor;
+    private Integer logoSize;
+    private Double logoOpacity;
+    private Integer logoCornerRadius;
+    private Integer centerTextFontSize;
+    private String centerTextFontFamily;
+    private String centerTextBackgroundColor;
+    private boolean centerTextBold;
+    private Double centerTextOpacity;
+    private Double centerTextBackgroundOpacity;
+    private Integer centerTextBackgroundRadius;
+    private Integer margin;
+
     // QR Code file information
     private String qrImageUrl; // URL to access the QR code image
     private String qrImagePath; // File path where QR code is stored
@@ -541,6 +563,166 @@ public class QrCode {
 
     public void setScopeId(String scopeId) {
         this.scopeId = scopeId;
+    }
+
+    public boolean isTrustBadge() {
+        return trustBadge;
+    }
+
+    public void setTrustBadge(boolean trustBadge) {
+        this.trustBadge = trustBadge;
+    }
+
+    public String getFrameColor() {
+        return frameColor;
+    }
+
+    public void setFrameColor(String frameColor) {
+        this.frameColor = frameColor;
+    }
+
+    public String getFrameText() {
+        return frameText;
+    }
+
+    public void setFrameText(String frameText) {
+        this.frameText = frameText;
+    }
+
+    public String getFrameTextColor() {
+        return frameTextColor;
+    }
+
+    public void setFrameTextColor(String frameTextColor) {
+        this.frameTextColor = frameTextColor;
+    }
+
+    public String getGradientType() {
+        return gradientType;
+    }
+
+    public void setGradientType(String gradientType) {
+        this.gradientType = gradientType;
+    }
+
+    public String getGradientDirection() {
+        return gradientDirection;
+    }
+
+    public void setGradientDirection(String gradientDirection) {
+        this.gradientDirection = gradientDirection;
+    }
+
+    public String getSecondaryColor() {
+        return secondaryColor;
+    }
+
+    public void setSecondaryColor(String secondaryColor) {
+        this.secondaryColor = secondaryColor;
+    }
+
+    public String getCenterText() {
+        return centerText;
+    }
+
+    public void setCenterText(String centerText) {
+        this.centerText = centerText;
+    }
+
+    public String getCenterTextColor() {
+        return centerTextColor;
+    }
+
+    public void setCenterTextColor(String centerTextColor) {
+        this.centerTextColor = centerTextColor;
+    }
+
+    public Integer getLogoSize() {
+        return logoSize;
+    }
+
+    public void setLogoSize(Integer logoSize) {
+        this.logoSize = logoSize;
+    }
+
+    public Double getLogoOpacity() {
+        return logoOpacity;
+    }
+
+    public void setLogoOpacity(Double logoOpacity) {
+        this.logoOpacity = logoOpacity;
+    }
+
+    public Integer getLogoCornerRadius() {
+        return logoCornerRadius;
+    }
+
+    public void setLogoCornerRadius(Integer logoCornerRadius) {
+        this.logoCornerRadius = logoCornerRadius;
+    }
+
+    public Integer getCenterTextFontSize() {
+        return centerTextFontSize;
+    }
+
+    public void setCenterTextFontSize(Integer centerTextFontSize) {
+        this.centerTextFontSize = centerTextFontSize;
+    }
+
+    public String getCenterTextFontFamily() {
+        return centerTextFontFamily;
+    }
+
+    public void setCenterTextFontFamily(String centerTextFontFamily) {
+        this.centerTextFontFamily = centerTextFontFamily;
+    }
+
+    public String getCenterTextBackgroundColor() {
+        return centerTextBackgroundColor;
+    }
+
+    public void setCenterTextBackgroundColor(String centerTextBackgroundColor) {
+        this.centerTextBackgroundColor = centerTextBackgroundColor;
+    }
+
+    public boolean isCenterTextBold() {
+        return centerTextBold;
+    }
+
+    public void setCenterTextBold(boolean centerTextBold) {
+        this.centerTextBold = centerTextBold;
+    }
+
+    public Double getCenterTextOpacity() {
+        return centerTextOpacity;
+    }
+
+    public void setCenterTextOpacity(Double centerTextOpacity) {
+        this.centerTextOpacity = centerTextOpacity;
+    }
+
+    public Double getCenterTextBackgroundOpacity() {
+        return centerTextBackgroundOpacity;
+    }
+
+    public void setCenterTextBackgroundOpacity(Double centerTextBackgroundOpacity) {
+        this.centerTextBackgroundOpacity = centerTextBackgroundOpacity;
+    }
+
+    public Integer getCenterTextBackgroundRadius() {
+        return centerTextBackgroundRadius;
+    }
+
+    public void setCenterTextBackgroundRadius(Integer centerTextBackgroundRadius) {
+        this.centerTextBackgroundRadius = centerTextBackgroundRadius;
+    }
+
+    public Integer getMargin() {
+        return margin;
+    }
+
+    public void setMargin(Integer margin) {
+        this.margin = margin;
     }
 
     // Advanced Features for QR

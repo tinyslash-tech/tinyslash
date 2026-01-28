@@ -122,6 +122,31 @@ public class QrCodeService {
             qrCode.setDeepLinkConfig(configContainer.getDeepLinkConfig());
             qrCode.setLeadLockConfig(configContainer.getLeadLockConfig());
             qrCode.setSmartActionConfig(configContainer.getSmartActionConfig());
+
+            // Advanced Customization
+            qrCode.setTrustBadge(configContainer.isTrustBadge());
+            qrCode.setFrameColor(configContainer.getFrameColor());
+            qrCode.setFrameText(configContainer.getFrameText());
+            qrCode.setFrameTextColor(configContainer.getFrameTextColor());
+            qrCode.setGradientType(configContainer.getGradientType());
+            qrCode.setGradientDirection(configContainer.getGradientDirection());
+            qrCode.setSecondaryColor(configContainer.getSecondaryColor());
+            qrCode.setCenterText(configContainer.getCenterText());
+            qrCode.setCenterTextColor(configContainer.getCenterTextColor());
+            qrCode.setLogoSize(configContainer.getLogoSize());
+            qrCode.setLogoOpacity(configContainer.getLogoOpacity());
+            qrCode.setLogoCornerRadius(configContainer.getLogoCornerRadius());
+            qrCode.setCenterTextFontSize(configContainer.getCenterTextFontSize());
+            qrCode.setCenterTextFontFamily(configContainer.getCenterTextFontFamily());
+            qrCode.setCenterTextBackgroundColor(configContainer.getCenterTextBackgroundColor());
+            qrCode.setCenterTextBold(configContainer.isCenterTextBold());
+            qrCode.setCenterTextOpacity(configContainer.getCenterTextOpacity());
+            qrCode.setCenterTextBackgroundOpacity(configContainer.getCenterTextBackgroundOpacity());
+            qrCode.setCenterTextBackgroundRadius(configContainer.getCenterTextBackgroundRadius());
+            qrCode.setMargin(configContainer.getMargin());
+            if (configContainer.getFrameStyle() != null) {
+                qrCode.setFrameStyle(configContainer.getFrameStyle());
+            }
         }
 
         qrCode.setTitle(title);
@@ -314,6 +339,50 @@ public class QrCodeService {
             existing.setLeadLockConfig(updates.getLeadLockConfig());
         if (updates.getSmartActionConfig() != null)
             existing.setSmartActionConfig(updates.getSmartActionConfig());
+
+        // Update Advanced Customization
+        if (updates.isTrustBadge() != existing.isTrustBadge())
+            existing.setTrustBadge(updates.isTrustBadge());
+        if (updates.getFrameStyle() != null)
+            existing.setFrameStyle(updates.getFrameStyle());
+        if (updates.getFrameColor() != null)
+            existing.setFrameColor(updates.getFrameColor());
+        if (updates.getFrameText() != null)
+            existing.setFrameText(updates.getFrameText());
+        if (updates.getFrameTextColor() != null)
+            existing.setFrameTextColor(updates.getFrameTextColor());
+        if (updates.getGradientType() != null)
+            existing.setGradientType(updates.getGradientType());
+        if (updates.getGradientDirection() != null)
+            existing.setGradientDirection(updates.getGradientDirection());
+        if (updates.getSecondaryColor() != null)
+            existing.setSecondaryColor(updates.getSecondaryColor());
+        if (updates.getCenterText() != null)
+            existing.setCenterText(updates.getCenterText());
+        if (updates.getCenterTextColor() != null)
+            existing.setCenterTextColor(updates.getCenterTextColor());
+        if (updates.getLogoSize() != null)
+            existing.setLogoSize(updates.getLogoSize());
+        if (updates.getLogoOpacity() != null)
+            existing.setLogoOpacity(updates.getLogoOpacity());
+        if (updates.getLogoCornerRadius() != null)
+            existing.setLogoCornerRadius(updates.getLogoCornerRadius());
+        if (updates.getCenterTextFontSize() != null)
+            existing.setCenterTextFontSize(updates.getCenterTextFontSize());
+        if (updates.getCenterTextFontFamily() != null)
+            existing.setCenterTextFontFamily(updates.getCenterTextFontFamily());
+        if (updates.getCenterTextBackgroundColor() != null)
+            existing.setCenterTextBackgroundColor(updates.getCenterTextBackgroundColor());
+        if (updates.isCenterTextBold() != existing.isCenterTextBold())
+            existing.setCenterTextBold(updates.isCenterTextBold());
+        if (updates.getCenterTextOpacity() != null)
+            existing.setCenterTextOpacity(updates.getCenterTextOpacity());
+        if (updates.getCenterTextBackgroundOpacity() != null)
+            existing.setCenterTextBackgroundOpacity(updates.getCenterTextBackgroundOpacity());
+        if (updates.getCenterTextBackgroundRadius() != null)
+            existing.setCenterTextBackgroundRadius(updates.getCenterTextBackgroundRadius());
+        if (updates.getMargin() != null)
+            existing.setMargin(updates.getMargin());
 
         existing.setUpdatedAt(LocalDateTime.now());
 

@@ -80,6 +80,53 @@ public class QrCodeController {
                         mapper.convertValue(request.get("smartActionConfig"), QrCode.SmartActionConfig.class));
             }
 
+            // Advanced Configs Mapping
+            if (request.containsKey("trustBadge"))
+                configContainer.setTrustBadge((Boolean) request.get("trustBadge"));
+            if (request.containsKey("frameColor"))
+                configContainer.setFrameColor((String) request.get("frameColor"));
+            if (request.containsKey("frameText"))
+                configContainer.setFrameText((String) request.get("frameText"));
+            if (request.containsKey("frameTextColor"))
+                configContainer.setFrameTextColor((String) request.get("frameTextColor"));
+            if (request.containsKey("gradientType"))
+                configContainer.setGradientType((String) request.get("gradientType"));
+            if (request.containsKey("gradientDirection"))
+                configContainer.setGradientDirection((String) request.get("gradientDirection"));
+            if (request.containsKey("secondaryColor"))
+                configContainer.setSecondaryColor((String) request.get("secondaryColor"));
+            if (request.containsKey("centerText"))
+                configContainer.setCenterText((String) request.get("centerText"));
+            if (request.containsKey("centerTextColor"))
+                configContainer.setCenterTextColor((String) request.get("centerTextColor"));
+            if (request.containsKey("logoSize") && request.get("logoSize") instanceof Integer)
+                configContainer.setLogoSize((Integer) request.get("logoSize"));
+            if (request.containsKey("logoOpacity") && request.get("logoOpacity") instanceof Number)
+                configContainer.setLogoOpacity(((Number) request.get("logoOpacity")).doubleValue());
+            if (request.containsKey("logoCornerRadius") && request.get("logoCornerRadius") instanceof Integer)
+                configContainer.setLogoCornerRadius((Integer) request.get("logoCornerRadius"));
+            if (request.containsKey("centerTextFontSize") && request.get("centerTextFontSize") instanceof Integer)
+                configContainer.setCenterTextFontSize((Integer) request.get("centerTextFontSize"));
+            if (request.containsKey("centerTextFontFamily"))
+                configContainer.setCenterTextFontFamily((String) request.get("centerTextFontFamily"));
+            if (request.containsKey("centerTextBackgroundColor"))
+                configContainer.setCenterTextBackgroundColor((String) request.get("centerTextBackgroundColor"));
+            if (request.containsKey("centerTextBold"))
+                configContainer.setCenterTextBold((Boolean) request.get("centerTextBold"));
+            if (request.containsKey("centerTextOpacity") && request.get("centerTextOpacity") instanceof Number)
+                configContainer.setCenterTextOpacity(((Number) request.get("centerTextOpacity")).doubleValue());
+            if (request.containsKey("centerTextBackgroundOpacity")
+                    && request.get("centerTextBackgroundOpacity") instanceof Number)
+                configContainer.setCenterTextBackgroundOpacity(
+                        ((Number) request.get("centerTextBackgroundOpacity")).doubleValue());
+            if (request.containsKey("centerTextBackgroundRadius")
+                    && request.get("centerTextBackgroundRadius") instanceof Integer)
+                configContainer.setCenterTextBackgroundRadius((Integer) request.get("centerTextBackgroundRadius"));
+            if (request.containsKey("margin") && request.get("margin") instanceof Integer)
+                configContainer.setMargin((Integer) request.get("margin"));
+            if (request.containsKey("frameStyle"))
+                configContainer.setFrameStyle((String) request.get("frameStyle"));
+
             if (content == null || content.trim().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Content is required");
@@ -126,7 +173,32 @@ public class QrCodeController {
             qrData.put("style", qrCode.getStyle());
             qrData.put("size", qrCode.getSize());
             qrData.put("format", qrCode.getFormat());
+            qrData.put("size", qrCode.getSize());
+            qrData.put("format", qrCode.getFormat());
             qrData.put("createdAt", qrCode.getCreatedAt());
+
+            // Add Advanced Fields to Response
+            qrData.put("trustBadge", qrCode.isTrustBadge());
+            qrData.put("frameStyle", qrCode.getFrameStyle());
+            qrData.put("frameColor", qrCode.getFrameColor());
+            qrData.put("frameText", qrCode.getFrameText());
+            qrData.put("frameTextColor", qrCode.getFrameTextColor());
+            qrData.put("gradientType", qrCode.getGradientType());
+            qrData.put("gradientDirection", qrCode.getGradientDirection());
+            qrData.put("secondaryColor", qrCode.getSecondaryColor());
+            qrData.put("centerText", qrCode.getCenterText());
+            qrData.put("centerTextColor", qrCode.getCenterTextColor());
+            qrData.put("logoSize", qrCode.getLogoSize());
+            qrData.put("logoOpacity", qrCode.getLogoOpacity());
+            qrData.put("logoCornerRadius", qrCode.getLogoCornerRadius());
+            qrData.put("centerTextFontSize", qrCode.getCenterTextFontSize());
+            qrData.put("centerTextFontFamily", qrCode.getCenterTextFontFamily());
+            qrData.put("centerTextBackgroundColor", qrCode.getCenterTextBackgroundColor());
+            qrData.put("centerTextBold", qrCode.isCenterTextBold());
+            qrData.put("centerTextOpacity", qrCode.getCenterTextOpacity());
+            qrData.put("centerTextBackgroundOpacity", qrCode.getCenterTextBackgroundOpacity());
+            qrData.put("centerTextBackgroundRadius", qrCode.getCenterTextBackgroundRadius());
+            qrData.put("margin", qrCode.getMargin());
 
             // Track usage for subscription management
             if (userId != null) {
@@ -179,6 +251,30 @@ public class QrCodeController {
             qrData.put("backgroundColor", qrCode.getBackgroundColor());
             qrData.put("size", qrCode.getSize());
             qrData.put("format", qrCode.getFormat());
+
+            // Add Advanced Fields
+            qrData.put("trustBadge", qrCode.isTrustBadge());
+            qrData.put("frameStyle", qrCode.getFrameStyle());
+            qrData.put("frameColor", qrCode.getFrameColor());
+            qrData.put("frameText", qrCode.getFrameText());
+            qrData.put("frameTextColor", qrCode.getFrameTextColor());
+            qrData.put("gradientType", qrCode.getGradientType());
+            qrData.put("gradientDirection", qrCode.getGradientDirection());
+            qrData.put("secondaryColor", qrCode.getSecondaryColor());
+            qrData.put("centerText", qrCode.getCenterText());
+            qrData.put("centerTextColor", qrCode.getCenterTextColor());
+            qrData.put("logoSize", qrCode.getLogoSize());
+            qrData.put("logoOpacity", qrCode.getLogoOpacity());
+            qrData.put("logoCornerRadius", qrCode.getLogoCornerRadius());
+            qrData.put("centerTextFontSize", qrCode.getCenterTextFontSize());
+            qrData.put("centerTextFontFamily", qrCode.getCenterTextFontFamily());
+            qrData.put("centerTextBackgroundColor", qrCode.getCenterTextBackgroundColor());
+            qrData.put("centerTextBold", qrCode.isCenterTextBold());
+            qrData.put("centerTextOpacity", qrCode.getCenterTextOpacity());
+            qrData.put("centerTextBackgroundOpacity", qrCode.getCenterTextBackgroundOpacity());
+            qrData.put("centerTextBackgroundRadius", qrCode.getCenterTextBackgroundRadius());
+            qrData.put("margin", qrCode.getMargin());
+
             qrData.put("totalScans", qrCode.getTotalScans());
             qrData.put("uniqueScans", qrCode.getUniqueScans());
             qrData.put("todayScans", qrCode.getTodayScans());
@@ -230,6 +326,30 @@ public class QrCodeController {
                 qrData.put("backgroundColor", qr.getBackgroundColor());
                 qrData.put("size", qr.getSize());
                 qrData.put("format", qr.getFormat());
+
+                // Add Advanced Fields
+                qrData.put("trustBadge", qr.isTrustBadge());
+                qrData.put("frameStyle", qr.getFrameStyle());
+                qrData.put("frameColor", qr.getFrameColor());
+                qrData.put("frameText", qr.getFrameText());
+                qrData.put("frameTextColor", qr.getFrameTextColor());
+                qrData.put("gradientType", qr.getGradientType());
+                qrData.put("gradientDirection", qr.getGradientDirection());
+                qrData.put("secondaryColor", qr.getSecondaryColor());
+                qrData.put("centerText", qr.getCenterText());
+                qrData.put("centerTextColor", qr.getCenterTextColor());
+                qrData.put("logoSize", qr.getLogoSize());
+                qrData.put("logoOpacity", qr.getLogoOpacity());
+                qrData.put("logoCornerRadius", qr.getLogoCornerRadius());
+                qrData.put("centerTextFontSize", qr.getCenterTextFontSize());
+                qrData.put("centerTextFontFamily", qr.getCenterTextFontFamily());
+                qrData.put("centerTextBackgroundColor", qr.getCenterTextBackgroundColor());
+                qrData.put("centerTextBold", qr.isCenterTextBold());
+                qrData.put("centerTextOpacity", qr.getCenterTextOpacity());
+                qrData.put("centerTextBackgroundOpacity", qr.getCenterTextBackgroundOpacity());
+                qrData.put("centerTextBackgroundRadius", qr.getCenterTextBackgroundRadius());
+                qrData.put("margin", qr.getMargin());
+
                 qrData.put("totalScans", qr.getTotalScans());
                 qrData.put("uniqueScans", qr.getUniqueScans());
                 qrData.put("createdAt", qr.getCreatedAt());
@@ -303,6 +423,53 @@ public class QrCodeController {
                 updates.setSmartActionConfig(
                         mapper.convertValue(request.get("smartActionConfig"), QrCode.SmartActionConfig.class));
             }
+
+            // Advanced Configs Updates
+            if (request.containsKey("trustBadge"))
+                updates.setTrustBadge((Boolean) request.get("trustBadge"));
+            if (request.containsKey("frameColor"))
+                updates.setFrameColor((String) request.get("frameColor"));
+            if (request.containsKey("frameText"))
+                updates.setFrameText((String) request.get("frameText"));
+            if (request.containsKey("frameTextColor"))
+                updates.setFrameTextColor((String) request.get("frameTextColor"));
+            if (request.containsKey("gradientType"))
+                updates.setGradientType((String) request.get("gradientType"));
+            if (request.containsKey("gradientDirection"))
+                updates.setGradientDirection((String) request.get("gradientDirection"));
+            if (request.containsKey("secondaryColor"))
+                updates.setSecondaryColor((String) request.get("secondaryColor"));
+            if (request.containsKey("centerText"))
+                updates.setCenterText((String) request.get("centerText"));
+            if (request.containsKey("centerTextColor"))
+                updates.setCenterTextColor((String) request.get("centerTextColor"));
+            if (request.containsKey("logoSize") && request.get("logoSize") instanceof Integer)
+                updates.setLogoSize((Integer) request.get("logoSize"));
+            if (request.containsKey("logoOpacity") && request.get("logoOpacity") instanceof Number)
+                updates.setLogoOpacity(((Number) request.get("logoOpacity")).doubleValue());
+            if (request.containsKey("logoCornerRadius") && request.get("logoCornerRadius") instanceof Integer)
+                updates.setLogoCornerRadius((Integer) request.get("logoCornerRadius"));
+            if (request.containsKey("centerTextFontSize") && request.get("centerTextFontSize") instanceof Integer)
+                updates.setCenterTextFontSize((Integer) request.get("centerTextFontSize"));
+            if (request.containsKey("centerTextFontFamily"))
+                updates.setCenterTextFontFamily((String) request.get("centerTextFontFamily"));
+            if (request.containsKey("centerTextBackgroundColor"))
+                updates.setCenterTextBackgroundColor((String) request.get("centerTextBackgroundColor"));
+            if (request.containsKey("centerTextBold"))
+                updates.setCenterTextBold((Boolean) request.get("centerTextBold"));
+            if (request.containsKey("centerTextOpacity") && request.get("centerTextOpacity") instanceof Number)
+                updates.setCenterTextOpacity(((Number) request.get("centerTextOpacity")).doubleValue());
+            if (request.containsKey("centerTextBackgroundOpacity")
+                    && request.get("centerTextBackgroundOpacity") instanceof Number)
+                updates.setCenterTextBackgroundOpacity(
+                        ((Number) request.get("centerTextBackgroundOpacity")).doubleValue());
+            if (request.containsKey("centerTextBackgroundRadius")
+                    && request.get("centerTextBackgroundRadius") instanceof Integer)
+                updates.setCenterTextBackgroundRadius((Integer) request.get("centerTextBackgroundRadius"));
+            if (request.containsKey("margin") && request.get("margin") instanceof Integer)
+                updates.setMargin((Integer) request.get("margin"));
+            if (request.containsKey("frameStyle"))
+                updates.setFrameStyle((String) request.get("frameStyle"));
 
             QrCode updated = qrCodeService.updateQrCode(qrCodeId, userId, updates);
 
@@ -539,6 +706,30 @@ public class QrCodeController {
                 qrData.put("backgroundColor", qr.getBackgroundColor());
                 qrData.put("size", qr.getSize());
                 qrData.put("format", qr.getFormat());
+
+                // Add Advanced Fields
+                qrData.put("trustBadge", qr.isTrustBadge());
+                qrData.put("frameStyle", qr.getFrameStyle());
+                qrData.put("frameColor", qr.getFrameColor());
+                qrData.put("frameText", qr.getFrameText());
+                qrData.put("frameTextColor", qr.getFrameTextColor());
+                qrData.put("gradientType", qr.getGradientType());
+                qrData.put("gradientDirection", qr.getGradientDirection());
+                qrData.put("secondaryColor", qr.getSecondaryColor());
+                qrData.put("centerText", qr.getCenterText());
+                qrData.put("centerTextColor", qr.getCenterTextColor());
+                qrData.put("logoSize", qr.getLogoSize());
+                qrData.put("logoOpacity", qr.getLogoOpacity());
+                qrData.put("logoCornerRadius", qr.getLogoCornerRadius());
+                qrData.put("centerTextFontSize", qr.getCenterTextFontSize());
+                qrData.put("centerTextFontFamily", qr.getCenterTextFontFamily());
+                qrData.put("centerTextBackgroundColor", qr.getCenterTextBackgroundColor());
+                qrData.put("centerTextBold", qr.isCenterTextBold());
+                qrData.put("centerTextOpacity", qr.getCenterTextOpacity());
+                qrData.put("centerTextBackgroundOpacity", qr.getCenterTextBackgroundOpacity());
+                qrData.put("centerTextBackgroundRadius", qr.getCenterTextBackgroundRadius());
+                qrData.put("margin", qr.getMargin());
+
                 qrData.put("totalScans", qr.getTotalScans());
                 qrData.put("uniqueScans", qr.getUniqueScans());
                 qrData.put("createdAt", qr.getCreatedAt());

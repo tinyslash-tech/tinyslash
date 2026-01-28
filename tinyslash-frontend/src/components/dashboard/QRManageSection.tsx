@@ -929,9 +929,12 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                       {qr.qrCodeImage ? (
                         <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-cover rounded-lg" />
                       ) : (
-                        <QrCode
-                          className="w-6 h-6"
-                          style={{ color: qr.customization.foregroundColor }}
+                        <QRCodePreview
+                          value={qr.isDynamic && qr.shortUrl ? qr.shortUrl : qr.url}
+                          size={48}
+                          foregroundColor={qr.customization.foregroundColor}
+                          backgroundColor={qr.customization.backgroundColor}
+                          className="w-full h-full rounded-lg"
                         />
                       )}
                     </div>

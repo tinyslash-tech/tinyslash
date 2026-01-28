@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import QRCode from 'qrcode';
-import { 
-  QrCode, 
-  Plus, 
-  Download, 
-  Copy, 
-  Trash2, 
-  Eye, 
+import {
+  QrCode,
+  Plus,
+  Download,
+  Copy,
+  Trash2,
+  Eye,
   Search,
   Calendar,
   MoreVertical,
@@ -64,12 +64,12 @@ interface QRCodePreviewProps {
   className?: string;
 }
 
-const QRCodePreview: React.FC<QRCodePreviewProps> = ({ 
-  value, 
-  size, 
-  foregroundColor = '#000000', 
+const QRCodePreview: React.FC<QRCodePreviewProps> = ({
+  value,
+  size,
+  foregroundColor = '#000000',
   backgroundColor = '#ffffff',
-  className 
+  className
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -96,8 +96,8 @@ const QRCodePreview: React.FC<QRCodePreviewProps> = ({
   }, [value, size, foregroundColor, backgroundColor]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
+    <canvas
+      ref={canvasRef}
       className={className}
       style={{ width: '100%', height: '100%' }}
     />
@@ -111,10 +111,10 @@ interface QRManageSectionProps {
 const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // Use React Query for fast loading with caching
   const { data: rawQRCodes, isLoading, isFetching, error, refetch } = useUserQRCodes();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'date' | 'scans' | 'name'>('date');
@@ -161,8 +161,8 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (activeDropdown && dropdownRefs.current[activeDropdown] && 
-          !dropdownRefs.current[activeDropdown]?.contains(event.target as Node)) {
+      if (activeDropdown && dropdownRefs.current[activeDropdown] &&
+        !dropdownRefs.current[activeDropdown]?.contains(event.target as Node)) {
         setActiveDropdown(null);
       }
     };
@@ -233,7 +233,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   };
 
   const toggleHidden = (qrId: string) => {
-    const updatedQRs = qrCodes.map(qr => 
+    const updatedQRs = qrCodes.map(qr =>
       qr.id === qrId ? { ...qr, isHidden: !qr.isHidden } : qr
     );
     updateQRCodes(updatedQRs);
@@ -243,7 +243,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   };
 
   const toggleFavorite = (qrId: string) => {
-    const updatedQRs = qrCodes.map(qr => 
+    const updatedQRs = qrCodes.map(qr =>
       qr.id === qrId ? { ...qr, isFavorite: !qr.isFavorite } : qr
     );
     updateQRCodes(updatedQRs);
@@ -261,7 +261,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/qr/${qrId}?userId=${user?.id}`, {
         method: 'DELETE',
         headers: {
@@ -320,7 +320,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/qr/bulk-delete`, {
         method: 'POST',
         headers: {
@@ -334,7 +334,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setSelectedQRCodes(new Set());
         refetch();
@@ -359,10 +359,10 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context not available');
-      
+
       // Import QRCode dynamically to avoid issues
       const QRCode = await import('qrcode');
-      
+
       // Generate basic QR code on canvas first
       await QRCode.toCanvas(canvas, qr.url, {
         width: qr.customization.size,
@@ -378,13 +378,13 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
       if (qr.customization.style !== 'square') {
         await applyStyleToCanvas(ctx, canvas, qr.customization);
       }
-      
+
       // Download the canvas as PNG
       const link = document.createElement('a');
       link.download = `${qr.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_qr_code.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      
+
       toast.success('QR Code downloaded successfully!');
     } catch (error) {
       console.error('Error generating QR code for download:', error);
@@ -433,14 +433,14 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   const filteredQRCodes = qrCodes
     .filter(qr => {
       const matchesSearch = qr.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           qr.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           qr.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesFilter = filterBy === 'all' || 
-                           (filterBy === 'favorites' && qr.isFavorite) ||
-                           (filterBy === 'hidden' && qr.isHidden) ||
-                           (filterBy === 'dynamic' && qr.isDynamic);
-      
+        qr.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        qr.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesFilter = filterBy === 'all' ||
+        (filterBy === 'favorites' && qr.isFavorite) ||
+        (filterBy === 'static' && !qr.isDynamic) ||
+        (filterBy === 'dynamic' && qr.isDynamic);
+
       return matchesSearch && matchesFilter;
     })
     .sort((a, b) => {
@@ -457,9 +457,9 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
 
   const editQR = (qr: QRCodeData) => {
     // Navigate to create page with pre-loaded QR data for editing
-    navigate('/dashboard', { 
-      state: { 
-        activeSection: 'create', 
+    navigate('/dashboard', {
+      state: {
+        activeSection: 'create',
         createMode: 'qr',
         editQRData: {
           id: qr.id,
@@ -503,7 +503,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
         <Copy className="w-4 h-4 mr-3" />
         Duplicate Design
       </button>
-      
+
       <button
         onClick={() => createShortLink(qr)}
         className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -511,7 +511,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
         <Link className="w-4 h-4 mr-3" />
         Create Link
       </button>
-      
+
       <button
         onClick={() => customizeQR(qr)}
         className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -527,7 +527,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
         <div className="text-red-600 mb-4">Failed to load QR codes</div>
-        <button 
+        <button
           onClick={handleRefresh}
           className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
         >
@@ -554,14 +554,14 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
             </div>
           </div>
         </div>
-        
+
         {/* Stats Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCardSkeleton />
           <StatCardSkeleton />
           <StatCardSkeleton />
         </div>
-        
+
         {/* QR Codes Grid Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -620,7 +620,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
               Your QR Codes ({filteredQRCodes.length})
             </h3>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             {/* Search */}
             <div className="relative">
@@ -642,7 +642,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
             >
               <option value="all">All QR Codes</option>
               <option value="favorites">Favorites</option>
-              <option value="hidden">Hidden</option>
+              <option value="static">Static</option>
               <option value="dynamic">Dynamic</option>
             </select>
 
@@ -661,17 +661,15 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'grid' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600'
-                }`}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600'
+                  }`}
               >
                 <Grid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'list' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600'
-                }`}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600'
+                  }`}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -795,110 +793,110 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     onChange={() => toggleSelectQR(qr.id)}
                     className="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                   />
-                  
+
                   <div className="flex-1 flex flex-col space-y-3">
-                  {/* Header Row - Title and Status */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate" title={qr.title}>
-                        {qr.title}
-                      </h3>
-                      <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                        {qr.type.charAt(0).toUpperCase() + qr.type.slice(1)}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      {qr.isFavorite && (
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      )}
-                      <div className="flex items-center space-x-1 text-xs text-gray-500">
-                        <Eye className="w-3 h-3" />
-                        <span>{qr.scans}</span>
+                    {/* Header Row - Title and Status */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate" title={qr.title}>
+                          {qr.title}
+                        </h3>
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                          {qr.type.charAt(0).toUpperCase() + qr.type.slice(1)}
+                        </span>
                       </div>
-                    </div>
-                  </div>
-                  
-                  {/* QR Preview and URL Row */}
-                  <div className="flex items-center space-x-3">
-                    {/* QR Code Preview */}
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex items-center justify-center flex-shrink-0 relative border border-gray-200">
-                      <QRCodePreview 
-                        value={qr.url} 
-                        size={60}
-                        foregroundColor={qr.customization.foregroundColor}
-                        backgroundColor={qr.customization.backgroundColor}
-                        className="w-full h-full rounded-lg"
-                      />
-                    </div>
-                    
-                    {/* URL Information */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center text-sm text-gray-600 mb-1">
-                        <Link className="w-3 h-3 mr-1 flex-shrink-0" />
-                        <span className="truncate" title={qr.url}>{qr.url}</span>
-                      </div>
-                      
-                      {qr.shortUrl && (
-                        <div className="flex items-center justify-between text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded-md">
-                          <span className="truncate font-mono text-xs" title={qr.shortUrl}>{qr.shortUrl}</span>
-                          <button
-                            onClick={() => copyQRUrl(qr.shortUrl!)}
-                            className="ml-2 text-purple-500 hover:text-purple-700 flex-shrink-0 touch-manipulation"
-                            title="Copy"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
+                      <div className="flex items-center space-x-1">
+                        {qr.isFavorite && (
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        )}
+                        <div className="flex items-center space-x-1 text-xs text-gray-500">
+                          <Eye className="w-3 h-3" />
+                          <span>{qr.scans}</span>
                         </div>
-                      )}
+                      </div>
+                    </div>
+
+                    {/* QR Preview and URL Row */}
+                    <div className="flex items-center space-x-3">
+                      {/* QR Code Preview */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex items-center justify-center flex-shrink-0 relative border border-gray-200">
+                        <QRCodePreview
+                          value={qr.url}
+                          size={60}
+                          foregroundColor={qr.customization.foregroundColor}
+                          backgroundColor={qr.customization.backgroundColor}
+                          className="w-full h-full rounded-lg"
+                        />
+                      </div>
+
+                      {/* URL Information */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center text-sm text-gray-600 mb-1">
+                          <Link className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="truncate" title={qr.url}>{qr.url}</span>
+                        </div>
+
+                        {qr.shortUrl && (
+                          <div className="flex items-center justify-between text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded-md">
+                            <span className="truncate font-mono text-xs" title={qr.shortUrl}>{qr.shortUrl}</span>
+                            <button
+                              onClick={() => copyQRUrl(qr.shortUrl!)}
+                              className="ml-2 text-purple-500 hover:text-purple-700 flex-shrink-0 touch-manipulation"
+                              title="Copy"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom Row - Date and Actions */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <div className="flex items-center space-x-1 text-xs text-gray-500">
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(qr.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}</span>
+                      </div>
+
+                      {/* Touch-Friendly Action Buttons */}
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => viewQRAnalytics(qr)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
+                          title="Analytics"
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => editQR(qr)}
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors touch-manipulation"
+                          title="Edit"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => downloadQR(qr)}
+                          className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors touch-manipulation"
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => deleteQR(qr.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* Bottom Row - Date and Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <div className="flex items-center space-x-1 text-xs text-gray-500">
-                      <Calendar className="w-3 h-3" />
-                      <span>{new Date(qr.createdAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}</span>
-                    </div>
-                    
-                    {/* Touch-Friendly Action Buttons */}
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={() => viewQRAnalytics(qr)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
-                        title="Analytics"
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => editQR(qr)}
-                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors touch-manipulation"
-                        title="Edit"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => downloadQR(qr)}
-                        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors touch-manipulation"
-                        title="Download"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => deleteQR(qr.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
                 </div>
               </motion.div>
             ))}
@@ -920,20 +918,20 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     onChange={() => toggleSelectQR(qr.id)}
                     className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mr-4"
                   />
-                  
+
                   <div className="flex items-center space-x-4 flex-1 min-w-0">
                     {/* QR Preview */}
                     <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       {qr.qrCodeImage ? (
                         <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-cover rounded-lg" />
                       ) : (
-                        <QrCode 
-                          className="w-6 h-6" 
+                        <QrCode
+                          className="w-6 h-6"
                           style={{ color: qr.customization.foregroundColor }}
                         />
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2 mb-1">
                         <h4 className="font-medium text-gray-900 truncate">{qr.title}</h4>
@@ -941,9 +939,9 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                         {qr.isHidden && <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                         {qr.isDynamic && <RefreshCw className="w-4 h-4 text-blue-500 flex-shrink-0" />}
                       </div>
-                      
+
                       <p className="text-sm text-gray-600 truncate mb-1">{qr.url}</p>
-                      
+
                       {qr.shortUrl && (
                         <div className="flex items-center space-x-2 mb-2">
                           <code className="text-purple-600 font-mono text-sm bg-purple-50 px-2 py-1 rounded">
@@ -958,7 +956,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                           </button>
                         </div>
                       )}
-                      
+
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span className="flex items-center space-x-1">
                           <Eye className="w-3 h-3" />
@@ -985,7 +983,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     >
                       <BarChart3 className="w-4 h-4" />
                     </button>
-                    
+
                     {/* Edit */}
                     <button
                       onClick={() => editQR(qr)}
@@ -994,7 +992,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
-                    
+
                     {/* Download */}
                     <button
                       onClick={() => downloadQR(qr)}
@@ -1003,7 +1001,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     >
                       <Download className="w-4 h-4" />
                     </button>
-                    
+
                     {/* Delete */}
                     <button
                       onClick={() => deleteQR(qr.id)}
@@ -1012,7 +1010,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    
+
                     {/* Three Dots Menu */}
                     <div className="relative" ref={el => dropdownRefs.current[qr.id] = el}>
                       <button
@@ -1022,7 +1020,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
-                      
+
                       <AnimatePresence>
                         {activeDropdown === qr.id && (
                           <motion.div

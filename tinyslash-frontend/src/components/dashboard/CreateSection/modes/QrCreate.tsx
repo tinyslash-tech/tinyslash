@@ -41,7 +41,7 @@ export const QrCreate: React.FC<QrCreateProps> = ({
             disabled={isEditMode}
             className={`p-3 rounded-lg border-2 text-center transition-all ${qrType === "static" ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500" : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"} ${isEditMode ? "opacity-60 cursor-not-allowed" : ""}`}
           >
-            <div className="font-semibold flex items-center justify-center gap-2"><span>🔒</span> Static</div>
+            <div className="font-semibold flex items-center justify-center gap-2"><span></span> Static</div>
             <div className="text-xs mt-1 text-gray-500">Permanent, unchangeable</div>
           </button>
         </div>
@@ -54,7 +54,7 @@ export const QrCreate: React.FC<QrCreateProps> = ({
         {isEditMode && (
           <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-800">
             <div className="flex items-start">
-              <span className="text-xl mr-2">⚡️</span>
+              <span className="text-xl mr-2"></span>
               <div>
                 <h4 className="font-semibold mb-1">Dynamic QR Code</h4>
                 <p className="text-indigo-700 leading-relaxed">

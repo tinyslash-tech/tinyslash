@@ -121,7 +121,12 @@ public class RedirectController {
             }
 
             // Increment domain-scoped clicks
-            urlShorteningService.incrementClicks(shortCode, domain);
+            try {
+                urlShorteningService.incrementClicks(shortCode, domain);
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to increment clicks for " + shortCode + ": " + e.getMessage());
+                // Non-critical failure, proceed with redirect
+            }
 
             // 5. Password Protection Handling
             if (url.isPasswordProtected()) {
@@ -153,18 +158,20 @@ public class RedirectController {
 
             // --- FEATURE: TRUST BADGE (High Trust Interstitial) ---
             // Check if Owner is Verified
-            Optional<com.urlshortener.model.TrustVerification> trustOpt = trustService
-                    .getApprovedVerification(url.getUserId());
-            if (trustOpt.isPresent()) {
-                com.urlshortener.model.TrustVerification trust = trustOpt.get();
-                // Check if not expired
-                if (trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
-                    boolean trustViewed = hasTrustCookie(request, shortCode);
-                    if (!trustViewed) {
-                        // Redirect to Trust Page
-                        return ResponseEntity.status(HttpStatus.FOUND)
-                                .location(URI.create("/verified/" + shortCode))
-                                .build();
+            if (url.getUserId() != null) {
+                Optional<com.urlshortener.model.TrustVerification> trustOpt = trustService
+                        .getApprovedVerification(url.getUserId());
+                if (trustOpt.isPresent()) {
+                    com.urlshortener.model.TrustVerification trust = trustOpt.get();
+                    // Check if not expired
+                    if (trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
+                        boolean trustViewed = hasTrustCookie(request, shortCode);
+                        if (!trustViewed) {
+                            // Redirect to Trust Page
+                            return ResponseEntity.status(HttpStatus.FOUND)
+                                    .location(URI.create("/verified/" + shortCode))
+                                    .build();
+                        }
                     }
                 }
             }
@@ -172,11 +179,6 @@ public class RedirectController {
             // --- FEATURE: LEAD LOCK (Industry Grade) ---
             if (url.getLeadLockConfig() != null && url.getLeadLockConfig().isEnabled()) {
                 // Check if user has already unlocked this link (via cookie or valid session)
-                // For now, we redirect to frontend "Unlock Page" which handles the form and
-                // validation.
-                // The frontend will call a verify API, which will return the final target URL
-                // (or we set a cookie).
-
                 // If allow-list cookie is missing (simplified for demo):
                 boolean unlocked = hasUnlockCookie(request, shortCode);
                 if (!unlocked) {
@@ -189,12 +191,18 @@ public class RedirectController {
             }
 
             // 6. Final Redirect (302 Found)
+            if (targetUrl == null || targetUrl.isBlank()) {
+                System.err.println("Error: Target URL is null or empty for shortCode: " + shortCode);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Destination URL");
+            }
+
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(targetUrl))
                     .build();
 
         } catch (Exception e) {
-            System.err.println("Redirect error: " + e.getMessage());
+            System.err.println("Redirect error for shortCode " + shortCode + ": " + e.getMessage());
+            e.printStackTrace(); // Helpful for debugging in logs
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -44,6 +44,7 @@ interface QRCodeData {
     style: 'square' | 'rounded' | 'dots' | 'classy';
     size: number;
     errorCorrection: 'L' | 'M' | 'Q' | 'H';
+    trustBadge?: boolean;
   };
   isPro: boolean;
   trackingEnabled: boolean;
@@ -143,7 +144,8 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
       logoUrl: qr.logoUrl,
       style: qr.style || 'square',
       size: qr.size || 256,
-      errorCorrection: qr.errorCorrectionLevel || 'M'
+      errorCorrection: qr.errorCorrectionLevel || 'M',
+      trustBadge: qr.trustBadge
     },
     isPro: false,
     trackingEnabled: true,

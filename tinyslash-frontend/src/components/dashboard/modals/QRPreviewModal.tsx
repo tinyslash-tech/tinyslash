@@ -18,6 +18,7 @@ export interface QRPreviewData {
     style?: string; // may need mapping to pattern
     size?: number;
     errorCorrection?: string;
+    trustBadge?: boolean;
   };
   qrCodeImage?: string;
 }
@@ -78,12 +79,16 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
         pattern: (customization.style as any) || 'square',
         logo: customization.logoUrl, // Map logoUrl to logo
         size: qrSize,
-        margin: 1
+        margin: 1,
+        trustBadge: customization.trustBadge // Pass trustBadge
       };
+
+      // Calculate Badge Height
+      const badgeHeight = config.trustBadge ? 140 : 0;
 
       // Setup Canvas
       canvas.width = downloadSize;
-      canvas.height = downloadSize;
+      canvas.height = downloadSize + badgeHeight;
 
       // Fill Background
       ctx.fillStyle = config.backgroundColor;
@@ -134,10 +139,65 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
         }
       }
 
+      // Draw Trust Badge if enabled
+      if (config.trustBadge) {
+        addTrustBadge(ctx, canvas, padding, drawingSize, downloadSize, 140);
+      }
+
     } catch (error) {
       console.error('QR generation failed:', error);
       toast.error('Failed to generate preview');
     }
+  };
+
+  const addTrustBadge = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, padding: number, qrSize: number, downloadSize: number, badgeHeight: number) => {
+    const y = downloadSize; // Bottom of the QR area
+
+    // We need to ensure the canvas was resized to include badge height if not already done. 
+    // Wait, we set canvas height earlier?
+    // Let's check config logic. If we missed setting height, we do it now.
+    // In generateQR: canvas.height = downloadSize; 
+    // We need to fix that too.
+
+    // BUT since we are inside `generateQR`, we should set height correctly THERE.
+    // Let's modify generateQR in next chunk to set height.
+    // Here we just draw.
+
+    ctx.fillStyle = '#059669'; // Emerald-600
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const text = "Secure By Tinyslash";
+    const centerY = y + (badgeHeight / 2) - 10;
+    ctx.fillText(text, downloadSize / 2, centerY);
+
+    const textMetrics = ctx.measureText(text);
+    const textWidth = textMetrics.width;
+    const iconSize = 48;
+    // Position icon to the left of text
+    const iconX = (downloadSize / 2) - (textWidth / 2) - iconSize - 24;
+    const iconY = centerY - iconSize / 2;
+
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+
+    // Shield Icon path
+    ctx.moveTo(iconX + iconSize / 2, iconY + iconSize);
+    ctx.bezierCurveTo(iconX, iconY + iconSize / 1.5, iconX, iconY + iconSize / 3, iconX, iconY);
+    ctx.lineTo(iconX + iconSize, iconY);
+    ctx.bezierCurveTo(iconX + iconSize, iconY + iconSize / 3, iconX + iconSize, iconY + iconSize / 1.5, iconX + iconSize / 2, iconY + iconSize);
+    ctx.stroke();
+
+    // Checkmark inside shield
+    ctx.beginPath();
+    ctx.moveTo(iconX + 12, iconY + 20);
+    ctx.lineTo(iconX + 20, iconY + 32);
+    ctx.lineTo(iconX + 36, iconY + 12);
+    ctx.stroke();
   };
 
   const addLogo = async (ctx: CanvasRenderingContext2D, logoUrl: string, padding: number, qrSize: number) => {

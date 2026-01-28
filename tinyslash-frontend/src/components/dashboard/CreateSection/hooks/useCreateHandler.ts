@@ -266,27 +266,46 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
             ...commonPayload
           });
         } else if (mode === 'qr') {
+          // Flatten advanced customization fields for the backend
+          const qrPayload = {
+            ...commonPayload,
+            content: originalUrl,
+            contentType: 'TEXT',
+            foregroundColor: finalQrCustomization.foregroundColor,
+            backgroundColor: finalQrCustomization.backgroundColor,
+            size: finalQrCustomization.size,
+            style: finalQrCustomization.pattern || 'square', // Backend 'style' maps to 'pattern' usually, or keep 'square' as fallback
+            isDynamic: qrType === 'dynamic',
+            // Pass all advanced fields
+            pattern: finalQrCustomization.pattern,
+            frameStyle: finalQrCustomization.frameStyle,
+            frameColor: finalQrCustomization.frameColor,
+            frameText: finalQrCustomization.frameText,
+            frameTextColor: finalQrCustomization.frameTextColor,
+            gradientType: finalQrCustomization.gradientType,
+            gradientDirection: finalQrCustomization.gradientDirection,
+            secondaryColor: finalQrCustomization.secondaryColor,
+            centerText: finalQrCustomization.centerText,
+            centerTextColor: finalQrCustomization.centerTextColor,
+            centerTextFontSize: finalQrCustomization.centerTextFontSize,
+            centerTextFontFamily: finalQrCustomization.centerTextFontFamily,
+            centerTextBackgroundColor: finalQrCustomization.centerTextBackgroundColor,
+            centerTextBold: finalQrCustomization.centerTextBold,
+            centerTextOpacity: finalQrCustomization.centerTextOpacity,
+            centerTextBackgroundOpacity: finalQrCustomization.centerTextBackgroundOpacity,
+            centerTextBackgroundRadius: finalQrCustomization.centerTextBackgroundRadius,
+            logoSize: finalQrCustomization.logoSize,
+            logoOpacity: finalQrCustomization.logoOpacity,
+            logoCornerRadius: finalQrCustomization.logoCornerRadius,
+            trustBadge: finalQrCustomization.trustBadge,
+            margin: finalQrCustomization.margin,
+            logoUrl: finalQrCustomization.logo // Pass logo as logoUrl
+          };
+
           if (isEditMode && editQRId) {
-            backendResult = await updateQrCode(editQRId, {
-              ...commonPayload,
-              content: originalUrl,
-              contentType: 'TEXT',
-              foregroundColor: finalQrCustomization.foregroundColor,
-              backgroundColor: finalQrCustomization.backgroundColor,
-              size: finalQrCustomization.size,
-              style: 'square'
-            });
+            backendResult = await updateQrCode(editQRId, qrPayload);
           } else {
-            backendResult = await createQrCode({
-              ...commonPayload,
-              content: originalUrl,
-              contentType: 'TEXT',
-              foregroundColor: finalQrCustomization.foregroundColor,
-              backgroundColor: finalQrCustomization.backgroundColor,
-              size: finalQrCustomization.size,
-              style: 'square',
-              isDynamic: qrType === 'dynamic'
-            });
+            backendResult = await createQrCode(qrPayload);
           }
         }
 

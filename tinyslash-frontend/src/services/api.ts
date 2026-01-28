@@ -489,6 +489,30 @@ export const createQrCode = async (data: {
   size?: number;
   format?: string;
   isDynamic?: boolean;
+  // Advanced Customization
+  pattern?: string;
+  frameStyle?: string;
+  frameColor?: string;
+  frameText?: string;
+  frameTextColor?: string;
+  gradientType?: string;
+  gradientDirection?: string;
+  secondaryColor?: string;
+  centerText?: string;
+  centerTextColor?: string;
+  centerTextFontSize?: number;
+  centerTextFontFamily?: string;
+  centerTextBackgroundColor?: string;
+  centerTextBold?: boolean;
+  centerTextOpacity?: number;
+  centerTextBackgroundOpacity?: number;
+  centerTextBackgroundRadius?: number;
+  logoSize?: number;
+  logoOpacity?: number;
+  logoCornerRadius?: number;
+  trustBadge?: boolean;
+  margin?: number;
+  logoUrl?: string; // Explicit logo URL field
 }): Promise<any> => {
   const response = await apiClient.post('/v1/qr', data);
   return response.data;

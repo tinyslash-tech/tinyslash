@@ -171,6 +171,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
       setIsEditMode(true);
       setEditQRId(editData.id);
       setQrText(editData.content || '');
+      setQrType(editData.isDynamic ? "dynamic" : "static");
 
       setQrCustomization({
         foregroundColor: editData.foregroundColor || '#000000',

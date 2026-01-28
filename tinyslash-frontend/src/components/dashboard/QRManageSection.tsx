@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import QRPreviewModal, { QRPreviewData } from './modals/QRPreviewModal';
 import QRCode from 'qrcode';
 import {
   QrCode,
@@ -119,7 +120,10 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'date' | 'scans' | 'name'>('date');
   const [filterBy, setFilterBy] = useState<'all' | 'favorites' | 'static' | 'dynamic'>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [previewQR, setPreviewQR] = useState<QRPreviewData | null>(null);
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [selectedQRCodes, setSelectedQRCodes] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -819,7 +823,11 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     {/* QR Preview and URL Row */}
                     <div className="flex items-center space-x-3">
                       {/* QR Code Preview */}
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex items-center justify-center flex-shrink-0 relative border border-gray-200 overflow-hidden">
+                      <button
+                        onClick={() => setPreviewQR(qr as unknown as QRPreviewData)}
+                        className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex items-center justify-center flex-shrink-0 relative border border-gray-200 overflow-hidden hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        title="Click to View & Download"
+                      >
                         {qr.qrCodeImage ? (
                           <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-contain p-1" />
                         ) : (
@@ -831,7 +839,11 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                             className="w-full h-full rounded-lg"
                           />
                         )}
-                      </div>
+                        {/* Hover Overlay Icon */}
+                        <div className="absolute inset-0 bg-black/10 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <Eye className="w-6 h-6 text-white drop-shadow-md" />
+                        </div>
+                      </button>
 
                       {/* URL Information */}
                       <div className="flex-1 min-w-0">
@@ -925,19 +937,29 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
 
                   <div className="flex items-center space-x-4 flex-1 min-w-0">
                     {/* QR Preview */}
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {/* QR Preview */}
+                    <button
+                      onClick={() => setPreviewQR(qr as unknown as QRPreviewData)}
+                      className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer overflow-hidden relative group/preview"
+                      title="View QR"
+                    >
                       {qr.qrCodeImage ? (
-                        <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-cover rounded-lg" />
+                        <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-cover" />
                       ) : (
                         <QRCodePreview
                           value={qr.isDynamic && qr.shortUrl ? qr.shortUrl : qr.url}
                           size={48}
                           foregroundColor={qr.customization.foregroundColor}
                           backgroundColor={qr.customization.backgroundColor}
-                          className="w-full h-full rounded-lg"
+                          className="w-full h-full"
                         />
                       )}
-                    </div>
+
+                      {/* List View Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/preview:opacity-100 flex items-center justify-center transition-opacity">
+                        <Eye className="w-4 h-4 text-white drop-shadow-md" />
+                      </div>
+                    </button>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2 mb-1">
@@ -1048,6 +1070,13 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
           </div>
         )}
       </div>
+
+      {/* QR Preview Modal */}
+      <QRPreviewModal
+        isOpen={!!previewQR}
+        onClose={() => setPreviewQR(null)}
+        qr={previewQR}
+      />
     </div>
   );
 };

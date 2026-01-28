@@ -250,31 +250,30 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
       </AccordionSection>
 
       {/* 2. Growth & Marketing */}
-      {mode === 'qr' && (
-        <AccordionSection
-          title="Growth & Marketing"
-          icon={Sparkles}
-          isOpen={isGrowthOpen}
-          setIsOpen={setIsGrowthOpen}
-          headerColorClass="text-purple-600"
-        >
-          <GrowthMarketing
-            smartLinkPreview={smartLinkPreview}
-            setSmartLinkPreview={setSmartLinkPreview}
-            geoConfig={geoConfig}
-            setGeoConfig={setGeoConfig}
-            deepLinkConfig={deepLinkConfig}
-            setDeepLinkConfig={setDeepLinkConfig}
-            leadLockConfig={leadLockConfig}
-            setLeadLockConfig={setLeadLockConfig}
-            smartActionConfig={smartActionConfig}
-            setSmartActionConfig={setSmartActionConfig}
-            featureAccess={featureAccess}
-            upgradeModal={upgradeModal}
-            mode={mode}
-          />
-        </AccordionSection>
-      )}
+      {/* 2. Growth & Marketing */}
+      <AccordionSection
+        title="Growth & Marketing"
+        icon={Sparkles}
+        isOpen={isGrowthOpen}
+        setIsOpen={setIsGrowthOpen}
+        headerColorClass="text-purple-600"
+      >
+        <GrowthMarketing
+          smartLinkPreview={smartLinkPreview}
+          setSmartLinkPreview={setSmartLinkPreview}
+          geoConfig={geoConfig}
+          setGeoConfig={setGeoConfig}
+          deepLinkConfig={deepLinkConfig}
+          setDeepLinkConfig={setDeepLinkConfig}
+          leadLockConfig={leadLockConfig}
+          setLeadLockConfig={setLeadLockConfig}
+          smartActionConfig={smartActionConfig}
+          setSmartActionConfig={setSmartActionConfig}
+          featureAccess={featureAccess}
+          upgradeModal={upgradeModal}
+          mode={mode}
+        />
+      </AccordionSection>
 
       {/* 3. Security & Trust */}
       <AccordionSection

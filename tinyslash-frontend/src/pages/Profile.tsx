@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Mail,
+  Phone,
+  MapPin,
   Calendar,
   Camera,
   Save,
@@ -17,7 +19,9 @@ import {
   EyeOff,
   Crown,
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  Briefcase,
+  BarChart3
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +30,48 @@ import { useFeatureAccess } from '../hooks/useFeatureAccess';
 import { subscriptionService } from '../services/subscriptionService';
 import Header from '../components/Header';
 import toast from 'react-hot-toast';
+
+
+interface AccordionItemProps {
+  title: string;
+  icon: React.ElementType;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}
+
+const AccordionItem: React.FC<AccordionItemProps> = ({ title, icon: Icon, isOpen, onToggle, children }) => {
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-200 hover:shadow-md mb-4">
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors ${isOpen ? 'border-b border-gray-100 bg-gray-50' : ''}`}
+      >
+        <div className="flex items-center space-x-3 text-gray-900">
+          <div className={`p-2 rounded-lg transition-colors ${isOpen ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+            <Icon className="w-5 h-5" />
+          </div>
+          <span className={`font-semibold text-base ${isOpen ? 'text-blue-900' : 'text-gray-700'}`}>{title}</span>
+        </div>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-gray-400" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-400" />
+        )}
+      </button>
+      <motion.div
+        initial={false}
+        animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="overflow-hidden"
+      >
+        <div className="p-6 border-t border-gray-100 bg-white">
+          {children}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 // Subscription Section Component
 const SubscriptionSection: React.FC = () => {
@@ -36,11 +82,11 @@ const SubscriptionSection: React.FC = () => {
 
   const handleCancelSubscription = async () => {
     if (!user?.id) return;
-    
+
     const confirmed = window.confirm(
       'Are you sure you want to cancel your subscription? You will lose access to Pro features at the end of your billing period.'
     );
-    
+
     if (!confirmed) return;
 
     setIsLoading(true);
@@ -52,9 +98,9 @@ const SubscriptionSection: React.FC = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         toast.success('Subscription cancelled successfully');
         await refreshPlanInfo();
@@ -125,7 +171,7 @@ const SubscriptionSection: React.FC = () => {
       {/* Usage Limits - Updated for New Pricing Structure */}
       <div className="bg-gray-50 rounded-lg p-4">
         <h4 className="text-sm font-medium text-gray-900 mb-4">Monthly Usage Limits</h4>
-        
+
         {planInfo.hasProAccess ? (
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center bg-white rounded-lg p-3 border border-gray-200">
@@ -157,33 +203,33 @@ const SubscriptionSection: React.FC = () => {
               </div>
               <div className="text-xs text-gray-500 mt-1">Short Links</div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
+                <div
                   className="bg-blue-500 h-2 rounded-full transition-all"
                   style={{ width: `${((75 - (planInfo.remainingMonthlyUrls || 0)) / 75) * 100}%` }}
                 ></div>
               </div>
             </div>
-            
+
             <div className="text-center bg-white rounded-lg p-3 border border-gray-200">
               <div className="text-lg font-bold text-purple-600">
                 {planInfo.remainingMonthlyQrCodes || 0}/30
               </div>
               <div className="text-xs text-gray-500 mt-1">QR Codes</div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
+                <div
                   className="bg-purple-500 h-2 rounded-full transition-all"
                   style={{ width: `${((30 - (planInfo.remainingMonthlyQrCodes || 0)) / 30) * 100}%` }}
                 ></div>
               </div>
             </div>
-            
+
             <div className="text-center bg-white rounded-lg p-3 border border-gray-200">
               <div className="text-lg font-bold text-orange-600">
                 {planInfo.remainingMonthlyFiles || 0}/5
               </div>
               <div className="text-xs text-gray-500 mt-1">File Conversions</div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
+                <div
                   className="bg-orange-500 h-2 rounded-full transition-all"
                   style={{ width: `${((5 - (planInfo.remainingMonthlyFiles || 0)) / 5) * 100}%` }}
                 ></div>
@@ -191,12 +237,12 @@ const SubscriptionSection: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* Plan Info */}
         <div className="mt-4 text-center">
           <div className="text-xs text-gray-600">
             Current Plan: <span className="font-medium text-gray-900">
-              {planInfo.hasProAccess 
+              {planInfo.hasProAccess
                 ? (planInfo.plan?.includes('BUSINESS') ? 'Business' : 'Pro')
                 : 'Free'
               }
@@ -209,7 +255,7 @@ const SubscriptionSection: React.FC = () => {
           </div>
           {!planInfo.hasProAccess ? (
             <div className="text-xs text-blue-600 mt-1">
-              Limits reset monthly • <button 
+              Limits reset monthly • <button
                 onClick={() => window.location.href = '/pricing'}
                 className="underline hover:no-underline"
               >
@@ -265,7 +311,7 @@ const SubscriptionSection: React.FC = () => {
           </div>
           <div className="flex items-center text-green-600">
             <span className="mr-2">✓</span>
-            {planInfo?.hasProAccess 
+            {planInfo?.hasProAccess
               ? (planInfo.plan?.includes('BUSINESS') ? '500MB' : '100MB')
               : '10MB'
             } File Uploads
@@ -314,6 +360,8 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>('personal');
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -336,9 +384,13 @@ const Profile: React.FC = () => {
     }
   });
 
+  const toggleSection = (section: string) => {
+    setActiveSection(activeSection === section ? null : section);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setFormData(prev => ({
@@ -371,8 +423,8 @@ const Profile: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
-      <div className="max-w-4xl mx-auto px-4 py-8">
+
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
@@ -387,7 +439,7 @@ const Profile: React.FC = () => {
               <p className="text-gray-600">Manage your account information and preferences</p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             {isEditing ? (
               <>
@@ -417,80 +469,88 @@ const Profile: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Card */}
-          <div className="lg:col-span-1">
-            <motion.div 
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="text-center">
-                <div className="relative inline-block mb-4">
-                  <img
-                    src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=3b82f6&color=fff&size=128`}
-                    alt={formData.name}
-                    className="w-24 h-24 rounded-full mx-auto"
-                  />
-                  {isEditing && (
-                    <button
-                      onClick={handleAvatarChange}
-                      className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
-                    >
-                      <Camera className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-1">{formData.name}</h2>
-                <p className="text-gray-600 mb-2">{formData.email}</p>
-                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  {(user?.plan?.includes('PRO') || user?.plan?.includes('BUSINESS')) ? '👑 Pro/Business' : '🆓 Free Plan'}
-                </div>
-                
-                {formData.bio && (
-                  <p className="text-gray-600 text-sm mt-4 leading-relaxed">{formData.bio}</p>
-                )}
-                
-                <div className="mt-6 space-y-2 text-sm text-gray-600">
-                  {formData.location && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{formData.location}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Sticky Profile Card (Span 4) */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-24">
+              <motion.div
+                className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="text-center">
+                  <div className="relative inline-block mb-4">
+                    <img
+                      src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=3b82f6&color=fff&size=128`}
+                      alt={formData.name}
+                      className="w-32 h-32 rounded-full mx-auto shadow-md border-4 border-white ring-1 ring-gray-100"
+                    />
+                    {isEditing && (
+                      <button
+                        onClick={handleAvatarChange}
+                        className="absolute bottom-1 right-1 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg"
+                      >
+                        <Camera className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{formData.name}</h2>
+                  <p className="text-gray-500 mb-3">{formData.email}</p>
+
+                  <div className="flex flex-wrap justify-center gap-2 mb-6">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                      {(user?.plan?.includes('PRO') || user?.plan?.includes('BUSINESS')) ? '👑 Pro/Business' : '🆓 Free Plan'}
+                    </span>
+                    {formData.jobTitle && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                        {formData.jobTitle}
+                      </span>
+                    )}
+                  </div>
+
+                  {formData.bio && (
+                    <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
+                      <p className="text-gray-600 text-sm leading-relaxed italic">"{formData.bio}"</p>
                     </div>
                   )}
-                  {formData.website && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <Globe className="w-4 h-4" />
-                      <a href={formData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        {formData.website}
-                      </a>
+
+                  <div className="space-y-3 text-sm text-gray-600 border-t border-gray-100 pt-6">
+                    {formData.location && (
+                      <div className="flex items-center space-x-3">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span>{formData.location}</span>
+                      </div>
+                    )}
+                    {formData.website && (
+                      <div className="flex items-center space-x-3">
+                        <Globe className="w-4 h-4 text-gray-400" />
+                        <a href={formData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[200px]">
+                          {formData.website}
+                        </a>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-3">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span>Joined {new Date(user?.createdAt || Date.now()).toLocaleDateString()}</span>
                     </div>
-                  )}
-                  <div className="flex items-center justify-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>Joined {new Date(user?.createdAt || Date.now()).toLocaleDateString()}</span>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
 
-          {/* Settings Forms */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Personal Information */}
-            <motion.div 
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+          {/* Right Column: Accordion Settings (Span 8) */}
+          <div className="lg:col-span-8 space-y-4">
+
+            {/* 1. Personal Information */}
+            <AccordionItem
+              title="Personal Information"
+              icon={User}
+              isOpen={activeSection === 'personal'}
+              onToggle={() => toggleSection('personal')}
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="w-5 h-5 mr-2" />
-                Personal Information
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                   <input
@@ -499,10 +559,10 @@ const Profile: React.FC = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                   <input
@@ -511,10 +571,10 @@ const Profile: React.FC = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                   <input
@@ -524,10 +584,10 @@ const Profile: React.FC = () => {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     placeholder="+91 98765 43210"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                   <input
@@ -537,10 +597,10 @@ const Profile: React.FC = () => {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     placeholder="Mumbai, India"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
-                
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
                   <textarea
@@ -548,24 +608,22 @@ const Profile: React.FC = () => {
                     value={formData.bio}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    rows={3}
+                    rows={4}
                     placeholder="Tell us about yourself..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed resize-y"
                   />
                 </div>
               </div>
-            </motion.div>
+            </AccordionItem>
 
-            {/* Professional Information */}
-            <motion.div 
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+            {/* 2. Professional Information */}
+            <AccordionItem
+              title="Professional Information"
+              icon={Briefcase}
+              isOpen={activeSection === 'professional'}
+              onToggle={() => toggleSection('professional')}
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Professional Information</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
                   <input
@@ -575,10 +633,10 @@ const Profile: React.FC = () => {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     placeholder="Your Company"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
                   <input
@@ -588,35 +646,36 @@ const Profile: React.FC = () => {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     placeholder="Software Engineer"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
-                
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
-                  <input
-                    type="url"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    placeholder="https://yourwebsite.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-                  />
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <input
+                      type="url"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      placeholder="https://yourwebsite.com"
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
                 </div>
               </div>
-            </motion.div>
+            </AccordionItem>
 
-            {/* Preferences */}
-            <motion.div 
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+            {/* 3. Preferences */}
+            <AccordionItem
+              title="Preferences"
+              icon={Globe}
+              isOpen={activeSection === 'preferences'}
+              onToggle={() => toggleSection('preferences')}
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Preferences</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
                   <select
@@ -624,7 +683,7 @@ const Profile: React.FC = () => {
                     value={formData.timezone}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
                     <option value="America/New_York">America/New_York (EST)</option>
@@ -632,7 +691,7 @@ const Profile: React.FC = () => {
                     <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
                   <select
@@ -640,7 +699,7 @@ const Profile: React.FC = () => {
                     value={formData.language}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="en">English</option>
                     <option value="hi">Hindi</option>
@@ -649,94 +708,72 @@ const Profile: React.FC = () => {
                   </select>
                 </div>
               </div>
-            </motion.div>
+            </AccordionItem>
 
-            {/* Notification Settings */}
-            <motion.div 
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
+            {/* 4. Notification Settings */}
+            <AccordionItem
+              title="Notification Settings"
+              icon={Bell}
+              isOpen={activeSection === 'notifications'}
+              onToggle={() => toggleSection('notifications')}
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Bell className="w-5 h-5 mr-2" />
-                Notification Preferences
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">Email Notifications</h4>
-                    <p className="text-sm text-gray-600">Receive notifications via email</p>
+              <div className="space-y-6">
+                {[
+                  {
+                    id: 'email',
+                    title: 'Email Notifications',
+                    desc: 'Receive updates, tips, and alerts via email',
+                    checked: formData.notifications.email
+                  },
+                  {
+                    id: 'push',
+                    title: 'Push Notifications',
+                    desc: 'Receive real-time alerts in your browser',
+                    checked: formData.notifications.push
+                  },
+                  {
+                    id: 'marketing',
+                    title: 'Marketing Communications',
+                    desc: 'Receive news about new features and special offers',
+                    checked: formData.notifications.marketing
+                  }
+                ].map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name={`notifications.${item.id}`}
+                        checked={item.checked}
+                        onChange={handleInputChange}
+                        disabled={!isEditing}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 transition-colors"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="notifications.email"
-                      checked={formData.notifications.email}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">Push Notifications</h4>
-                    <p className="text-sm text-gray-600">Receive push notifications in browser</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="notifications.push"
-                      checked={formData.notifications.push}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">Marketing Communications</h4>
-                    <p className="text-sm text-gray-600">Receive updates about new features and offers</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="notifications.marketing"
-                      checked={formData.notifications.marketing}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
+                ))}
               </div>
-            </motion.div>
+            </AccordionItem>
 
-            {/* Privacy Settings */}
-            <motion.div 
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
+            {/* 5. Privacy Settings */}
+            <AccordionItem
+              title="Privacy Settings"
+              icon={Shield}
+              isOpen={activeSection === 'privacy'}
+              onToggle={() => toggleSection('privacy')}
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="w-5 h-5 mr-2" />
-                Privacy Settings
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">Public Profile</h4>
-                    <p className="text-sm text-gray-600">Make your profile visible to other users</p>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-start space-x-3">
+                    <User className="w-5 h-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">Public Profile</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">Make your profile visible to other users</p>
+                    </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -747,14 +784,17 @@ const Profile: React.FC = () => {
                       disabled={!isEditing}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 transition-colors"></div>
                   </label>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">Analytics Visibility</h4>
-                    <p className="text-sm text-gray-600">Allow others to see your link analytics</p>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-start space-x-3">
+                    <BarChart3 className="w-5 h-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">Analytics Visibility</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">Allow others to see your link analytics</p>
+                    </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -765,26 +805,22 @@ const Profile: React.FC = () => {
                       disabled={!isEditing}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 transition-colors"></div>
                   </label>
                 </div>
               </div>
-            </motion.div>
+            </AccordionItem>
 
-            {/* Subscription & Billing */}
-            <motion.div 
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
+            {/* 6. Subscription & Billing */}
+            <AccordionItem
+              title="Subscription & Billing"
+              icon={CreditCard}
+              isOpen={activeSection === 'subscription'}
+              onToggle={() => toggleSection('subscription')}
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="w-5 h-5 mr-2" />
-                Subscription & Billing
-              </h3>
-              
               <SubscriptionSection />
-            </motion.div>
+            </AccordionItem>
+
           </div>
         </div>
       </div>

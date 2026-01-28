@@ -192,7 +192,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
         centerTextFontFamily: 'Arial',
         centerTextColor: '#000000',
         centerTextBackgroundColor: '#FFFFFF',
-        centerTextBold: true
+        centerTextBold: true,
+        trustBadge: editData.trustBadge
       });
 
       window.history.replaceState({}, document.title);

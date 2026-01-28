@@ -1025,8 +1025,9 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                           <Calendar className="w-3 h-3" />
                           <span>{new Date(qr.createdAt).toLocaleDateString()}</span>
                         </span>
-                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                          {qr.type.toUpperCase()}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${qr.isDynamic ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                          {qr.isDynamic ? 'DYNAMIC' : 'STATIC'}
                         </span>
                       </div>
                     </div>

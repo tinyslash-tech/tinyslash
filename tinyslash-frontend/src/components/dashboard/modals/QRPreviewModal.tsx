@@ -68,12 +68,15 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
 
       // Map simple customization to complex structure if needed
       // Default fallback values
+      // Ensure customization object exists
+      const customization = qr.customization || {};
+
       const config: any = {
-        foregroundColor: qr.customization.foregroundColor || '#000000',
-        backgroundColor: qr.customization.backgroundColor || '#ffffff',
-        errorCorrectionLevel: (qr.customization.errorCorrection as any) || 'M',
-        pattern: (qr.customization.style as any) || 'square',
-        logo: qr.customization.logoUrl,
+        foregroundColor: customization.foregroundColor || '#000000',
+        backgroundColor: customization.backgroundColor || '#ffffff',
+        errorCorrectionLevel: (customization.errorCorrection as any) || 'M',
+        pattern: (customization.style as any) || 'square',
+        logo: customization.logoUrl, // Map logoUrl to logo
         size: qrSize,
         margin: 1
       };
@@ -87,8 +90,14 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Generate Base QR Data
-      // For dynamic QRs, we use the shortUrl if available
-      const qrValue = (qr.isDynamic && qr.shortUrl) ? qr.shortUrl : qr.url;
+      // For dynamic QRs, we use the shortUrl if available. If not, fallback to url. 
+      // Ensure we have SOME content.
+      const qrValue = (qr.isDynamic && qr.shortUrl) ? qr.shortUrl : (qr.url || 'https://tinyslash.com');
+
+      if (!qrValue) {
+        console.error("No QR content available");
+        return;
+      }
 
       const qrData = QRCode.create(qrValue, {
         errorCorrectionLevel: config.errorCorrectionLevel
@@ -118,7 +127,11 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
 
       // Draw Logo if present
       if (config.logo) {
-        await addLogo(ctx, config.logo, padding, drawingSize);
+        try {
+          await addLogo(ctx, config.logo, padding, drawingSize);
+        } catch (e) {
+          console.warn("Failed to load logo", e);
+        }
       }
 
     } catch (error) {

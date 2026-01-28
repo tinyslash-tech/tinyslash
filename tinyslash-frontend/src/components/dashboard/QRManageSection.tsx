@@ -367,8 +367,15 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
       // Import QRCode dynamically to avoid issues
       const QRCode = await import('qrcode');
 
+      // Use shortUrl for dynamic QRs, fallback to original url
+      const qrValue = (qr.isDynamic && qr.shortUrl) ? qr.shortUrl : qr.url;
+
+      if (!qrValue) {
+        throw new Error('QR Content is empty');
+      }
+
       // Generate basic QR code on canvas first
-      await QRCode.toCanvas(canvas, qr.url, {
+      await QRCode.toCanvas(canvas, qrValue, {
         width: qr.customization.size,
         margin: 4,
         color: {
@@ -824,7 +831,19 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     <div className="flex items-center space-x-3">
                       {/* QR Code Preview */}
                       <button
-                        onClick={() => setPreviewQR(qr as unknown as QRPreviewData)}
+                        onClick={() => {
+                          // Ensure we pass a complete object that matches QRPreviewData structure
+                          const previewData: QRPreviewData = {
+                            ...qr,
+                            customization: {
+                              ...qr.customization,
+                              // Ensure style is mapped or passed through
+                              style: qr.customization.style,
+                              errorCorrection: qr.customization.errorCorrection
+                            }
+                          };
+                          setPreviewQR(previewData);
+                        }}
                         className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex items-center justify-center flex-shrink-0 relative border border-gray-200 overflow-hidden hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         title="Click to View & Download"
                       >
@@ -937,9 +956,18 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
 
                   <div className="flex items-center space-x-4 flex-1 min-w-0">
                     {/* QR Preview */}
-                    {/* QR Preview */}
                     <button
-                      onClick={() => setPreviewQR(qr as unknown as QRPreviewData)}
+                      onClick={() => {
+                        const previewData: QRPreviewData = {
+                          ...qr,
+                          customization: {
+                            ...qr.customization,
+                            style: qr.customization.style,
+                            errorCorrection: qr.customization.errorCorrection
+                          }
+                        };
+                        setPreviewQR(previewData);
+                      }}
                       className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer overflow-hidden relative group/preview"
                       title="View QR"
                     >

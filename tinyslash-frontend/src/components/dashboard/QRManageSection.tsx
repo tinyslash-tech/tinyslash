@@ -801,8 +801,8 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                         <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate" title={qr.title}>
                           {qr.title}
                         </h3>
-                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                          {qr.type.charAt(0).toUpperCase() + qr.type.slice(1)}
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${qr.isDynamic ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {qr.isDynamic ? 'Dynamic' : 'Static'}
                         </span>
                       </div>
                       <div className="flex items-center space-x-1">

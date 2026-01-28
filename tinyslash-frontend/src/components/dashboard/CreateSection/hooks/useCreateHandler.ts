@@ -18,6 +18,7 @@ interface UseCreateHandlerProps {
   qrCustomization: QRCustomization;
   isEditMode: boolean;
   editQRId: string | null;
+  qrType: "static" | "dynamic";
   featureAccess: any;
   checkAccess: any;
   showUpgradeModal: any;
@@ -52,6 +53,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     qrCustomization,
     isEditMode,
     editQRId,
+    qrType,
     featureAccess,
     checkAccess,
     showUpgradeModal,
@@ -282,7 +284,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
               foregroundColor: finalQrCustomization.foregroundColor,
               backgroundColor: finalQrCustomization.backgroundColor,
               size: finalQrCustomization.size,
-              style: 'square'
+              style: 'square',
+              isDynamic: qrType === 'dynamic'
             });
           }
         }

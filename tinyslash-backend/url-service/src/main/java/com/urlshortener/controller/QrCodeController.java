@@ -51,6 +51,18 @@ public class QrCodeController {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             QrCode configContainer = new QrCode();
 
+            // Check for explicit dynamic flag (default is true in model)
+            if (request.containsKey("isDynamic")) {
+                Object dynamicVal = request.get("isDynamic");
+                if (dynamicVal instanceof Boolean) {
+                    configContainer.setDynamic((Boolean) dynamicVal);
+                } else if (dynamicVal instanceof String) {
+                    configContainer.setDynamic(Boolean.parseBoolean((String) dynamicVal));
+                }
+            } else {
+                configContainer.setDynamic(true); // Default
+            }
+
             if (request.containsKey("geoConfig")) {
                 configContainer.setGeoConfig(mapper.convertValue(request.get("geoConfig"),
                         com.urlshortener.model.ShortenedUrl.GeoConfig.class));

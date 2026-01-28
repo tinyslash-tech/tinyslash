@@ -488,6 +488,7 @@ export const createQrCode = async (data: {
   backgroundColor?: string;
   size?: number;
   format?: string;
+  isDynamic?: boolean;
 }): Promise<any> => {
   const response = await apiClient.post('/v1/qr', data);
   return response.data;

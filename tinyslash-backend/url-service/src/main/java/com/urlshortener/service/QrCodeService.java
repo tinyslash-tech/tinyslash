@@ -93,15 +93,28 @@ public class QrCodeService {
         }
         // ------------------------------------------
 
+        // Determine isDynamic preference (default true)
+        boolean isDynamic = true;
+        if (configContainer != null) {
+            isDynamic = configContainer.isDynamic();
+        }
+
         // Generate Short Code for Dynamic QR
-        String shortCode = generateUniqueShortCode();
-        String dynamicUrl = shortUrlDomain + "/q/" + shortCode;
+        String shortCode = null;
+        String dynamicUrl = null;
+
+        if (isDynamic) {
+            shortCode = generateUniqueShortCode();
+            dynamicUrl = shortUrlDomain + "/q/" + shortCode;
+        }
 
         // Create QR code object
         // The 'content' parameter is now treated as the destinationUrl
         QrCode qrCode = new QrCode(content, contentType, userId, scopeType, scopeId);
-        qrCode.setShortCode(shortCode);
-        qrCode.setDynamic(true); // Default to true for newly created QRs
+        if (isDynamic) {
+            qrCode.setShortCode(shortCode);
+        }
+        qrCode.setDynamic(isDynamic);
 
         // Apply Advanced Configs if present
         if (configContainer != null) {
@@ -120,8 +133,12 @@ public class QrCodeService {
         qrCode.setFormat(format != null ? format : "PNG");
 
         try {
-            // Generate QR code image. For dynamic QRs, encode the dynamicUrl.
-            byte[] qrImageBytes = generateQrCodeImage(dynamicUrl, qrCode.getSize(),
+            // Generate QR code image.
+            // For Dynamic: encode dynamicUrl.
+            // For Static: encode original content (destinationUrl).
+            String contentToEncode = isDynamic ? dynamicUrl : content;
+
+            byte[] qrImageBytes = generateQrCodeImage(contentToEncode, qrCode.getSize(),
                     qrCode.getForegroundColor(), qrCode.getBackgroundColor(), qrCode.getFormat());
             qrCode.setFileSize(qrImageBytes.length);
 

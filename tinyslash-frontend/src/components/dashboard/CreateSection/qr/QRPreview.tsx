@@ -9,6 +9,7 @@ interface QRPreviewProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   downloadQR: () => void;
   copyToClipboard: (text: string) => void;
+  qrType?: "static" | "dynamic";
 }
 
 export const QRPreview: React.FC<QRPreviewProps> = ({
@@ -16,7 +17,8 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
   qrCustomization,
   canvasRef,
   downloadQR,
-  copyToClipboard
+  copyToClipboard,
+  qrType = 'dynamic'
 }) => {
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -59,7 +61,16 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
         {qrText ? (
           <div className="space-y-4">
             <div className="flex justify-center">
-              <div className="relative bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+              <div className="relative bg-white p-3 rounded-lg border border-gray-200 shadow-sm mt-2">
+
+                {/* Type Label Chip */}
+                <div className={`absolute -top-3 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 z-10 whitespace-nowrap ${qrType === 'dynamic'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-white'
+                  }`}>
+                  {qrType === 'dynamic' ? '⚡️ Dynamic' : '🔒 Static'}
+                </div>
+
                 <QRCodeGenerator
                   value={qrText || 'https://example.com'}
                   size={200}

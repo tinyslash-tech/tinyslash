@@ -8,6 +8,8 @@ interface QrCreateProps {
   errorMessage: string | null;
   setErrorMessage: (msg: string | null) => void;
   isEditMode: boolean;
+  qrType: "static" | "dynamic";
+  setQrType: (value: "static" | "dynamic") => void;
 }
 
 export const QrCreate: React.FC<QrCreateProps> = ({
@@ -15,10 +17,36 @@ export const QrCreate: React.FC<QrCreateProps> = ({
   setQrText,
   errorMessage,
   setErrorMessage,
-  isEditMode
+  isEditMode,
+  qrType,
+  setQrType
 }) => {
   return (
     <div>
+      <div className="mb-5">
+        <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">
+          QR Code Type
+        </label>
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={() => !isEditMode && setQrType("dynamic")}
+            disabled={isEditMode}
+            className={`p-3 rounded-lg border-2 text-center transition-all ${qrType === "dynamic" ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500" : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"} ${isEditMode ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            <div className="font-semibold flex items-center justify-center gap-2"><span>⚡️</span> Dynamic</div>
+            <div className="text-xs mt-1 text-gray-500">Update destination anytime</div>
+          </button>
+          <button
+            onClick={() => !isEditMode && setQrType("static")}
+            disabled={isEditMode}
+            className={`p-3 rounded-lg border-2 text-center transition-all ${qrType === "static" ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500" : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"} ${isEditMode ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            <div className="font-semibold flex items-center justify-center gap-2"><span>🔒</span> Static</div>
+            <div className="text-xs mt-1 text-gray-500">Permanent, unchangeable</div>
+          </button>
+        </div>
+      </div>
+
       <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
         Enter text or URL for QR code
       </label>

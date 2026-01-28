@@ -51,6 +51,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
   const [maxClicks, setMaxClicks] = useState<number | ''>('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [editQRId, setEditQRId] = useState<string | null>(null);
+  const [qrType, setQrType] = useState<"static" | "dynamic">("dynamic");
   const [isOneTime, setIsOneTime] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -137,6 +138,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
     qrCustomization,
     isEditMode,
     editQRId,
+    qrType,
     featureAccess,
     checkAccess,
     showUpgradeModal,
@@ -282,6 +284,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
               canvasRef={canvasRef}
               downloadQR={downloadQR}
               copyToClipboard={copyToClipboard}
+              qrType={qrType}
             />
           </div>
         )}
@@ -306,6 +309,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
                 errorMessage={errorMessage}
                 setErrorMessage={setErrorMessage}
                 isEditMode={isEditMode}
+                qrType={qrType}
+                setQrType={setQrType}
               />
             )}
 

@@ -118,7 +118,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'date' | 'scans' | 'name'>('date');
-  const [filterBy, setFilterBy] = useState<'all' | 'favorites' | 'hidden' | 'dynamic'>('all');
+  const [filterBy, setFilterBy] = useState<'all' | 'favorites' | 'static' | 'dynamic'>('all');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [selectedQRCodes, setSelectedQRCodes] = useState<Set<string>>(new Set());
@@ -735,11 +735,11 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
             </div>
             <div className="text-sm text-orange-700">Favorites</div>
           </div>
-          <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-lg p-4">
-            <div className="text-2xl font-bold text-red-600">
-              {qrCodes.filter(qr => qr.isHidden).length}
+          <div className="bg-gradient-to-r from-gray-50 to-gray-200 rounded-lg p-4">
+            <div className="text-2xl font-bold text-gray-700">
+              {qrCodes.filter(qr => !qr.isDynamic).length}
             </div>
-            <div className="text-sm text-red-700">Hidden</div>
+            <div className="text-sm text-gray-800">Static</div>
           </div>
         </div>
 

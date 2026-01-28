@@ -819,14 +819,18 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                     {/* QR Preview and URL Row */}
                     <div className="flex items-center space-x-3">
                       {/* QR Code Preview */}
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex items-center justify-center flex-shrink-0 relative border border-gray-200">
-                        <QRCodePreview
-                          value={qr.url}
-                          size={60}
-                          foregroundColor={qr.customization.foregroundColor}
-                          backgroundColor={qr.customization.backgroundColor}
-                          className="w-full h-full rounded-lg"
-                        />
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex items-center justify-center flex-shrink-0 relative border border-gray-200 overflow-hidden">
+                        {qr.qrCodeImage ? (
+                          <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-contain p-1" />
+                        ) : (
+                          <QRCodePreview
+                            value={qr.isDynamic && qr.shortUrl ? qr.shortUrl : qr.url}
+                            size={60}
+                            foregroundColor={qr.customization.foregroundColor}
+                            backgroundColor={qr.customization.backgroundColor}
+                            className="w-full h-full rounded-lg"
+                          />
+                        )}
                       </div>
 
                       {/* URL Information */}

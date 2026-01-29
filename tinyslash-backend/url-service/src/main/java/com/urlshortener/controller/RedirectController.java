@@ -70,6 +70,9 @@ public class RedirectController {
         }
     }
 
+    @Autowired
+    private com.urlshortener.repository.QrCodeRepository qrCodeRepository;
+
     @GetMapping("/{shortCode}")
     public ResponseEntity<?> redirect(@PathVariable String shortCode, HttpServletRequest request) {
         try {
@@ -85,6 +88,14 @@ public class RedirectController {
             }
 
             if (urlOpt.isEmpty()) {
+                // Feature: Handle QR Codes via main Short Link path (Fixes VerifiedPage
+                // redirect loop)
+                // If not a ShortLink, check if it's a QR Code.
+                if (qrCodeRepository.findByShortCode(shortCode).isPresent()) {
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create("/q/" + shortCode))
+                            .build();
+                }
                 return ResponseEntity.notFound().build();
             }
 

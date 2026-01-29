@@ -144,18 +144,37 @@ public class UrlShorteningService {
             // Feistel logic.
             // Our plan says createUrl uses new logic.
         } else {
-            // New Deterministic Logic: Auto-Increment -> Feistel -> Base62
-            // We need a loop to ensure collision resistance if using random (though Feistel
-            // is 1:1)
-            // But strict (Domain + ShortCode) allows same code on different domains
+            // New Logic: 7-character Random Alphanumeric (to match QrCodeService)
+            // Was: Auto-Increment -> Feistel -> Base62 (approx 6-7 chars)
 
+            // Generate 7-char short code
+            // Collision check loop
+            do {
+                // Using substring of UUID or similar math to get 7 chars.
+                // UUID is hex, but we want alphanumeric (Base62 alike).
+                // Let's use a simpler approach or reuse Base62Encoder with a random large
+                // number ensuring 7 chars.
+                // 62^7 is > 2^42. To guarantee 7 chars in Base62, number must be > 62^6 (~56.8
+                // billion).
+
+                // Simple approach: Custom 7-char alphanumeric generator
+                // chars: 0-9, a-z, A-Z
+                String chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                StringBuilder sb = new StringBuilder(7);
+                java.util.Random random = new java.util.Random();
+                for (int i = 0; i < 7; i++) {
+                    sb.append(chars.charAt(random.nextInt(chars.length())));
+                }
+                shortCode = sb.toString();
+            } while (shortenedUrlRepository.findByShortCode(shortCode).isPresent());
+
+            // numericId is strictly for sequence tracking if needed, but for random mode
+            // it's less critical
+            // We can still consume the sequence to keep it moving or leave null.
+            // Leaving numericId as generated for reference, though it doesn't map to
+            // shortCode effectively anymore.
             long id = sequenceGenerator.generateSequence("url_sequence");
-            long shuffledId = feistelCipher.encrypt(id);
-            shortCode = base62Encoder.encode(shuffledId);
             numericId = id;
-
-            // Note: Since this is creating a NEW unique ID from atomic counter,
-            // collision is mathematically impossible within 4.4 trillion IDs.
         }
 
         // Create shortened URL

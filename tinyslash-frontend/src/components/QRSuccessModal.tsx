@@ -65,7 +65,11 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       ctx.fillStyle = config.backgroundColor || '#FFFFFF';
       ctx.fillRect(padding, padding, qrSize, qrSize);
 
-      const qrData = QRCode.create(originalUrl, {
+      // Use shortUrl (the generated link) if available, otherwise originalUrl
+      // This ensures dynamic QRs and tracking work correctly.
+      const valueToEncode = shortUrl || originalUrl;
+
+      const qrData = QRCode.create(valueToEncode, {
         errorCorrectionLevel: config.errorCorrectionLevel || 'M'
       });
 

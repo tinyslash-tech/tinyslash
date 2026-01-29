@@ -193,7 +193,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
     },
     isPro: false,
     trackingEnabled: true,
-    isDynamic: false,
+    isDynamic: qr.isDynamic || false,
     isHidden: false,
     isFavorite: false,
     category: 'General',

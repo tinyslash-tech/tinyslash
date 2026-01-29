@@ -155,11 +155,18 @@ public class QrCodeController {
                 return ResponseEntity.status(403).body(response);
             }
 
+            // Extract custom shortCode if provided (to align with frontend)
+            String shortCode = (String) request.get("shortCode");
+            // If customAlias is present, it takes precedence or is same
+            if (request.containsKey("customAlias") && request.get("customAlias") != null) {
+                shortCode = (String) request.get("customAlias");
+            }
+
             QrCode qrCode = qrCodeService.createQrCode(
                     content, contentType != null ? contentType : "TEXT", userId,
                     title, description, style, foregroundColor, backgroundColor,
                     size != null ? size : 300, format != null ? format : "PNG",
-                    scopeType, scopeId, configContainer);
+                    scopeType, scopeId, configContainer, shortCode);
 
             Map<String, Object> qrData = new HashMap<>();
             qrData.put("id", qrCode.getId());

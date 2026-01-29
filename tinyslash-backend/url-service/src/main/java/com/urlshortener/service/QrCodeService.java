@@ -59,14 +59,14 @@ public class QrCodeService {
             String foregroundColor, String backgroundColor,
             int size, String format) {
         return createQrCode(content, contentType, userId, title, description, style,
-                foregroundColor, backgroundColor, size, format, "USER", userId, null);
+                foregroundColor, backgroundColor, size, format, "USER", userId, null, null);
     }
 
     public QrCode createQrCode(String content, String contentType, String userId,
             String title, String description, String style,
             String foregroundColor, String backgroundColor,
             int size, String format, String scopeType, String scopeId,
-            QrCode configContainer) { // Pass a container or DTO with new configs
+            QrCode configContainer, String customShortCode) { // Accepted customShortCode
 
         // Validate content
         if (content == null || content.trim().isEmpty()) {
@@ -99,21 +99,29 @@ public class QrCodeService {
             isDynamic = configContainer.isDynamic();
         }
 
-        // Generate Short Code for Dynamic QR
-        String shortCode = null;
+        // Generate Short Code for Dynamic QR (or Static alias)
+        String shortCode = customShortCode;
         String dynamicUrl = null;
 
-        if (isDynamic) {
+        if (shortCode == null || shortCode.trim().isEmpty()) {
             shortCode = generateUniqueShortCode();
+        } else {
+            // Validate custom code
+            if (qrCodeRepository.findByShortCode(shortCode).isPresent()) {
+                throw new RuntimeException("Short code already in use");
+            }
+        }
+
+        if (isDynamic) {
             dynamicUrl = shortUrlDomain + "/q/" + shortCode;
         }
 
         // Create QR code object
         // The 'content' parameter is now treated as the destinationUrl
         QrCode qrCode = new QrCode(content, contentType, userId, scopeType, scopeId);
-        if (isDynamic) {
-            qrCode.setShortCode(shortCode);
-        }
+
+        // Always set shortCode (so Dashboard links work for Static too)
+        qrCode.setShortCode(shortCode);
         qrCode.setDynamic(isDynamic);
 
         // Apply Advanced Configs if present

@@ -17,13 +17,22 @@ const VerifiedPage = () => {
   // For now we mock it to demonstrate the UI.
 
   // Determine API Base URL based on environment
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://tinyslash-backend-prod.onrender.com';
+  const getApiBaseUrl = () => {
+    const url = process.env.REACT_APP_API_URL || 'https://tinyslash-backend-prod.onrender.com';
+    // Normalize: Remove trailing slash
+    const cleanUrl = url.replace(/\/$/, '');
+    // If it ends in /api, return it. If not, append /api
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  };
+
+  const API_BASE_URL = getApiBaseUrl();
 
   useEffect(() => {
     // Fetch real trust data
     const fetchTrustData = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/v1/trust/public/${shortCode}`);
+        // API_BASE_URL guarantees ending in /api, so we use /v1/... (not /api/v1/...)
+        const response = await fetch(`${API_BASE_URL}/v1/trust/public/${shortCode}`);
         if (response.ok) {
           const data = await response.json();
           setTrustInfo({

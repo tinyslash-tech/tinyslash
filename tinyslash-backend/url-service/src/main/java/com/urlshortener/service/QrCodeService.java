@@ -208,10 +208,10 @@ public class QrCodeService {
     private String generateUniqueShortCode() {
         String shortCode;
         do {
-            shortCode = java.util.UUID.randomUUID().toString().substring(0, 6); // Simple for now
-            // Better: use Apache Commons RandomStringUtils.randomAlphanumeric(6) if
+            // Using 7 characters as per requirements
+            shortCode = java.util.UUID.randomUUID().toString().substring(0, 7);
+            // Better: use Apache Commons RandomStringUtils.randomAlphanumeric(7) if
             // available
-            // or a custom generator.
         } while (qrCodeRepository.findByShortCode(shortCode).isPresent());
         return shortCode;
     }

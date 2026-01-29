@@ -28,6 +28,48 @@ public class TrustVerificationController {
     return ResponseEntity.ok(service.getStatus(userId).orElse(null));
   }
 
+  @Autowired
+  private com.urlshortener.service.UrlShorteningService urlService;
+
+  @GetMapping("/public/{shortCode}")
+  public ResponseEntity<?> getPublicTrustInfo(@PathVariable String shortCode) {
+    // 1. Resolve URL
+    // Note: We use the permissive lookup here because the redirection logic already
+    // validated it
+    // But for security, we should ideally check domain too. For now, shortCode
+    // uniqueness (Feistel) is assumed.
+    java.util.Optional<com.urlshortener.model.ShortenedUrl> urlOpt = urlService.findByShortCodeIgnoreDomain(shortCode);
+
+    if (urlOpt.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    com.urlshortener.model.ShortenedUrl url = urlOpt.get();
+
+    // 2. Get Trust Info
+    if (url.getUserId() == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    java.util.Optional<TrustVerification> trustOpt = service.getApprovedVerification(url.getUserId());
+
+    if (trustOpt.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    TrustVerification trust = trustOpt.get();
+
+    // 3. Construct Safe Public DTO
+    java.util.Map<String, Object> response = new java.util.HashMap<>();
+    response.put("brandName", trust.getBrandName());
+    response.put("verified", true);
+    // Use the domain from the URL or fallback
+    String displayDomain = url.getDomain() != null ? url.getDomain() : "tinyslash.com";
+    response.put("domain", displayDomain);
+
+    return ResponseEntity.ok(response);
+  }
+
   // Temporary Admin Endpoint for Demo
   @PostMapping("/approve")
   public ResponseEntity<?> approve(@RequestParam String userId) {

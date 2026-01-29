@@ -16,7 +16,32 @@ const VerifiedPage = () => {
   // For industry grade, we should fetch /api/v1/urls/{shortCode}/public-info or similar.
   // For now we mock it to demonstrate the UI.
 
+  // Determine API Base URL based on environment
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://tinyslash-backend-prod.onrender.com';
+
   useEffect(() => {
+    // Fetch real trust data
+    const fetchTrustData = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/trust/public/${shortCode}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTrustInfo({
+            brandName: data.brandName || 'Verified Brand',
+            domain: data.domain || 'tinyslash.com',
+            verified: true
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch trust info", error);
+        // Fallback or leave defaults
+      }
+    };
+
+    if (shortCode) {
+      fetchTrustData();
+    }
+
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {

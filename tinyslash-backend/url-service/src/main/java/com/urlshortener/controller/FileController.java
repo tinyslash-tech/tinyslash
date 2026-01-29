@@ -28,6 +28,9 @@ public class FileController {
     @Autowired
     private DashboardService dashboardService;
 
+    @Autowired
+    private com.urlshortener.service.TrustVerificationService trustService;
+
     @PostMapping("/upload")
     @RequiresPlan(feature = "fileUpload", checkLimit = true)
     public ResponseEntity<Map<String, Object>> uploadFile(
@@ -144,7 +147,27 @@ public class FileController {
             fileData.put("isPublic", file.isPublic());
             fileData.put("requiresPassword", file.isRequiresPassword());
             fileData.put("hasQrCode", file.isHasQrCode());
+            fileData.put("hasQrCode", file.isHasQrCode());
             fileData.put("fileUrl", file.getFileUrl());
+
+            // Add Trust Verification Status
+            boolean isTrustVerified = false;
+            try {
+                if (file.getUserId() != null) {
+                    java.util.Optional<com.urlshortener.model.TrustVerification> trustOpt = trustService
+                            .getApprovedVerification(file.getUserId());
+                    if (trustOpt.isPresent()) {
+                        com.urlshortener.model.TrustVerification trust = trustOpt.get();
+                        if (trust.getExpiresAt() == null
+                                || trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
+                            isTrustVerified = true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+            fileData.put("trustVerified", isTrustVerified);
 
             response.put("success", true);
             response.put("data", fileData);

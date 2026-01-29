@@ -31,27 +31,40 @@ public class TrustVerificationController {
   @Autowired
   private com.urlshortener.service.UrlShorteningService urlService;
 
+  @Autowired
+  private com.urlshortener.repository.QrCodeRepository qrCodeRepository;
+
   @GetMapping("/public/{shortCode}")
   public ResponseEntity<?> getPublicTrustInfo(@PathVariable String shortCode) {
-    // 1. Resolve URL
-    // Note: We use the permissive lookup here because the redirection logic already
-    // validated it
-    // But for security, we should ideally check domain too. For now, shortCode
-    // uniqueness (Feistel) is assumed.
+    String userId = null;
+    String displayDomain = "tinyslash.com";
+
+    // 1. Try to resolve as ShortenedUrl
     java.util.Optional<com.urlshortener.model.ShortenedUrl> urlOpt = urlService.findByShortCodeIgnoreDomain(shortCode);
 
-    if (urlOpt.isEmpty()) {
+    if (urlOpt.isPresent()) {
+      com.urlshortener.model.ShortenedUrl url = urlOpt.get();
+      userId = url.getUserId();
+      if (url.getDomain() != null) {
+        displayDomain = url.getDomain();
+      }
+    } else {
+      // 2. Try to resolve as QrCode
+      java.util.Optional<com.urlshortener.model.QrCode> qrOpt = qrCodeRepository.findByShortCode(shortCode);
+      if (qrOpt.isPresent()) {
+        com.urlshortener.model.QrCode qr = qrOpt.get();
+        userId = qr.getUserId();
+        // QR codes don't strictly have a custom domain unless linked to a short link,
+        // fallback to default
+      }
+    }
+
+    if (userId == null) {
       return ResponseEntity.notFound().build();
     }
 
-    com.urlshortener.model.ShortenedUrl url = urlOpt.get();
-
-    // 2. Get Trust Info
-    if (url.getUserId() == null) {
-      return ResponseEntity.notFound().build();
-    }
-
-    java.util.Optional<TrustVerification> trustOpt = service.getApprovedVerification(url.getUserId());
+    // 3. Get Trust Info
+    java.util.Optional<TrustVerification> trustOpt = service.getApprovedVerification(userId);
 
     if (trustOpt.isEmpty()) {
       return ResponseEntity.notFound().build();
@@ -59,12 +72,10 @@ public class TrustVerificationController {
 
     TrustVerification trust = trustOpt.get();
 
-    // 3. Construct Safe Public DTO
+    // 4. Construct Safe Public DTO
     java.util.Map<String, Object> response = new java.util.HashMap<>();
     response.put("brandName", trust.getBrandName());
     response.put("verified", true);
-    // Use the domain from the URL or fallback
-    String displayDomain = url.getDomain() != null ? url.getDomain() : "tinyslash.com";
     response.put("domain", displayDomain);
 
     return ResponseEntity.ok(response);

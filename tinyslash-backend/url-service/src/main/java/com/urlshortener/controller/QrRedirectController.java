@@ -29,6 +29,9 @@ public class QrRedirectController {
   @Autowired
   private SecurityService securityService;
 
+  @Autowired
+  private com.urlshortener.service.TrustVerificationService trustService;
+
   // TODO: Add caching here (Redis) in future iteration
 
   @GetMapping("/q/{shortCode}")
@@ -89,15 +92,32 @@ public class QrRedirectController {
       return new RedirectView("/smart-qr/" + qrCode.getId());
     }
 
-    // 6. Geo / Language (Placeholder for logic)
+    // 6. Trust Badge Verification
+    if (qrCode.getUserId() != null) {
+      java.util.Optional<com.urlshortener.model.TrustVerification> trustOpt = trustService
+          .getApprovedVerification(qrCode.getUserId());
+      if (trustOpt.isPresent()) {
+        com.urlshortener.model.TrustVerification trust = trustOpt.get();
+        // Check if not expired (or if expiration is not set/indefinite)
+        if (trust.getExpiresAt() == null || trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
+          boolean trustViewed = hasTrustCookie(request, shortCode);
+          if (!trustViewed) {
+            // Redirect to Trust Page
+            return new RedirectView("/verified/" + shortCode);
+          }
+        }
+      }
+    }
+
+    // 7. Geo / Language (Placeholder for logic)
     // if (qrCode.getGeoConfig() != null) ...
 
-    // 7. Security Check (Runtime)
+    // 8. Security Check (Runtime)
     // In highly secure env, check URL again.
     // SecurityService.preCheckUrl(qrCode.getDestinationUrl(), null); // Can cause
     // latency
 
-    // 8. Final Redirect
+    // 9. Final Redirect
     String destination = qrCode.getDestinationUrl();
     if (destination == null || destination.isEmpty()) {
       // Fallback or error
@@ -112,5 +132,16 @@ public class QrRedirectController {
     redirectView.setUrl(destination);
     redirectView.setStatusCode(HttpStatus.FOUND); // 302
     return redirectView;
+  }
+
+  private boolean hasTrustCookie(HttpServletRequest request, String shortCode) {
+    if (request.getCookies() == null)
+      return false;
+    for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+      if (("trusted_" + shortCode).equals(cookie.getName())) {
+        return true;
+      }
+    }
+    return false;
   }
 }

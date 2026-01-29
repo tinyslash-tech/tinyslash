@@ -248,6 +248,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
           expirationDays: finalExpirationDays ? parseInt(finalExpirationDays.toString()) : undefined,
           maxClicks: finalMaxClicks ? parseInt(finalMaxClicks.toString()) : undefined,
           customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined,
+          shortCode: shortCode, // Explicitly send generated code so backend matches
 
           // New Advanced Features (These will be ignored by backend if not implemented yet, or stored in generic metadata)
           // Ideally, the backend expects these specific fields if updated. 

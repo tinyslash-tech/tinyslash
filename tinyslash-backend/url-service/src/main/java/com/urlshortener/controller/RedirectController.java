@@ -79,6 +79,11 @@ public class RedirectController {
             // 2. Strict Lookup (FIX 2)
             Optional<ShortenedUrl> urlOpt = urlShorteningService.getByShortCodeAndDomain(shortCode, domain);
 
+            // Fallback: Try looser lookup if strict fails (for dev/testing/legacy)
+            if (urlOpt.isEmpty()) {
+                urlOpt = urlShorteningService.findByShortCodeIgnoreDomain(shortCode);
+            }
+
             if (urlOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }

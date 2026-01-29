@@ -173,7 +173,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     setErrorMessage(null);
 
     try {
-      const shortCode = finalCustomAlias || Math.random().toString(36).substr(2, 6);
+      const shortCode = finalCustomAlias || Math.random().toString(36).substr(2, 7);
       const baseUrl = window.location.origin;
       let originalUrl = '';
 

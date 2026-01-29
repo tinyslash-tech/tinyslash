@@ -139,6 +139,11 @@ public class QrRedirectController {
       return false;
     for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
       if (("trusted_" + shortCode).equals(cookie.getName())) {
+        // DEBUG: For now, we want to enforce showing it if the user claims it's
+        // skipping.
+        // But for production, this should return true.
+        // Let's assume the user is testing and might have old cookies.
+        // We will return true normally.
         return true;
       }
     }

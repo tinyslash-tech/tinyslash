@@ -163,8 +163,8 @@ public class RedirectController {
                         .getApprovedVerification(url.getUserId());
                 if (trustOpt.isPresent()) {
                     com.urlshortener.model.TrustVerification trust = trustOpt.get();
-                    // Check if not expired
-                    if (trust.getExpiresAt() != null && trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
+                    // Check if not expired (or if expiration is not set/indefinite)
+                    if (trust.getExpiresAt() == null || trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
                         boolean trustViewed = hasTrustCookie(request, shortCode);
                         if (!trustViewed) {
                             // Redirect to Trust Page

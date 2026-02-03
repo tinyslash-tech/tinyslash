@@ -166,6 +166,12 @@ const AppContent: React.FC = () => {
             } />
 
             {/* Individual Analytics Routes */}
+            <Route path="/dashboard/links/:shortCode/analytics" element={
+              <AuthRedirect requireAuth={true}>
+                <Analytics />
+              </AuthRedirect>
+            } />
+
             <Route path="/dashboard/links/analytics/:shortCode" element={
               <AuthRedirect requireAuth={true}>
                 <Analytics />

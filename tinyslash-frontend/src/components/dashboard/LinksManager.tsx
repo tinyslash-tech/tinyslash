@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  Link, 
-  ExternalLink, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Search, 
+import {
+  Link,
+  ExternalLink,
+  Edit,
+  Trash2,
+  Eye,
+  Search,
   Filter,
   Calendar,
   BarChart3,
@@ -39,10 +39,10 @@ interface LinksManagerProps {
 
 const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
   const { user } = useAuth();
-  
+
   // Use React Query for fast loading with caching
   const { data: rawLinks, isLoading, isFetching, error, refetch } = useUserUrls();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'clicks' | 'url'>('date');
   const [filterBy, setFilterBy] = useState<'all' | 'url' | 'qr' | 'file'>('all');
@@ -65,7 +65,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
   const filteredLinks = links
     .filter(link => {
       const matchesSearch = link.shortUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           link.originalUrl.toLowerCase().includes(searchTerm.toLowerCase());
+        link.originalUrl.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesFilter = filterBy === 'all' || link.type === filterBy;
       return matchesSearch && matchesFilter;
     })
@@ -111,7 +111,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/urls/${linkToDelete.shortCode}?userId=${user?.id}`, {
         method: 'DELETE',
         headers: {
@@ -121,7 +121,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Refresh the data after successful deletion
         refetch();
@@ -171,7 +171,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/urls/bulk-delete`, {
         method: 'POST',
         headers: {
@@ -185,7 +185,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setSelectedLinks(new Set());
         refetch();
@@ -226,7 +226,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/urls/${linkToUpdate.shortCode}`, {
         method: 'PUT',
         headers: {
@@ -240,7 +240,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Refresh the data after successful update
         refetch();
@@ -265,7 +265,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
       console.log('Updating tags in backend:', linkId, newTags);
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/urls/${linkToUpdate.shortCode}`, {
         method: 'PUT',
         headers: {
@@ -279,7 +279,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Refresh the data after successful update
         refetch();
@@ -298,7 +298,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
         <div className="text-red-600 mb-4">Failed to load links</div>
-        <button 
+        <button
           onClick={handleRefresh}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
@@ -322,7 +322,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
             <div className="h-12 w-32 bg-white/20 rounded-lg"></div>
           </div>
         </div>
-        
+
         {/* Table Skeleton */}
         <TableSkeleton />
       </div>
@@ -365,7 +365,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
           <p className="text-gray-600 mb-6">
             Create your first short link to start tracking clicks and managing your URLs.
           </p>
-          <button 
+          <button
             onClick={onCreateClick}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -517,7 +517,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
             </h3>
           </div>
         </div>
-        
+
         {filteredLinks.length === 0 ? (
           <div className="text-center py-8">
             <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -536,103 +536,102 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
                     onChange={() => toggleSelectLink(link.id)}
                     className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  
+
                   <div className="flex-1 flex flex-col space-y-3">
-                  {/* Header Row - Type and Domain */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        link.type === 'url' ? 'bg-blue-500' : 
-                        link.type === 'qr' ? 'bg-purple-500' : 'bg-green-500'
-                      }`} />
-                      <span className="text-xs font-medium text-gray-500 uppercase">
-                        {link.type === 'url' ? 'Short Link' : link.type === 'qr' ? 'QR Code' : 'File Link'}
-                      </span>
-                      {link.customDomain && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          Custom Domain
+                    {/* Header Row - Type and Domain */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full ${link.type === 'url' ? 'bg-blue-500' :
+                            link.type === 'qr' ? 'bg-purple-500' : 'bg-green-500'
+                          }`} />
+                        <span className="text-xs font-medium text-gray-500 uppercase">
+                          {link.type === 'url' ? 'Short Link' : link.type === 'qr' ? 'QR Code' : 'File Link'}
                         </span>
-                      )}
+                        {link.customDomain && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            Custom Domain
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-1 text-xs text-gray-500">
+                        <Eye className="w-3 h-3" />
+                        <span>{link.clicks}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-1 text-xs text-gray-500">
-                      <Eye className="w-3 h-3" />
-                      <span>{link.clicks}</span>
+
+                    {/* Short URL - Prominent Display */}
+                    <div className="flex items-center justify-between">
+                      <code className="text-blue-600 font-mono text-sm sm:text-base font-medium flex-1 truncate">
+                        {link.shortUrl}
+                      </code>
+                      <button
+                        onClick={() => copyToClipboard(link.shortUrl)}
+                        className="ml-2 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
+                        title="Copy Link"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
                     </div>
-                  </div>
-                  
-                  {/* Short URL - Prominent Display */}
-                  <div className="flex items-center justify-between">
-                    <code className="text-blue-600 font-mono text-sm sm:text-base font-medium flex-1 truncate">
-                      {link.shortUrl}
-                    </code>
-                    <button
-                      onClick={() => copyToClipboard(link.shortUrl)}
-                      className="ml-2 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
-                      title="Copy Link"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  {/* Original URL - Truncated */}
-                  <p className="text-sm text-gray-600 truncate">{link.originalUrl}</p>
-                  
-                  {/* Tags */}
-                  {link.tags && link.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {link.tags.slice(0, 3).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+
+                    {/* Original URL - Truncated */}
+                    <p className="text-sm text-gray-600 truncate">{link.originalUrl}</p>
+
+                    {/* Tags */}
+                    {link.tags && link.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {link.tags.slice(0, 3).map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {link.tags.length > 3 && (
+                          <span className="text-xs text-gray-500">+{link.tags.length - 3} more</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bottom Row - Date and Actions */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <div className="flex items-center space-x-1 text-xs text-gray-500">
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(link.createdAt).toLocaleDateString()}</span>
+                      </div>
+
+                      {/* Touch-Friendly Action Buttons */}
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => {
+                            const shortCode = link.shortCode || link.shortUrl.split('/').pop();
+                            // Navigate to new analytics page structure
+                            window.open(`/dashboard/links/${shortCode}/analytics`, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
+                          title="Analytics"
                         >
-                          {tag}
-                        </span>
-                      ))}
-                      {link.tags.length > 3 && (
-                        <span className="text-xs text-gray-500">+{link.tags.length - 3} more</span>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Bottom Row - Date and Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <div className="flex items-center space-x-1 text-xs text-gray-500">
-                      <Calendar className="w-3 h-3" />
-                      <span>{new Date(link.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    
-                    {/* Touch-Friendly Action Buttons */}
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={() => {
-                          const shortCode = link.shortUrl.split('/').pop();
-                          // Navigate to analytics page with shortCode and userId
-                          window.open(`/dashboard/analytics/url/${shortCode}?userId=${user?.id}`, '_blank');
-                        }}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
-                        title="Analytics"
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => editLink(link.id)}
-                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors touch-manipulation"
-                        title="Edit"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => deleteLink(link.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                          <BarChart3 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => editLink(link.id)}
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors touch-manipulation"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => deleteLink(link.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
                 </div>
               </div>
             ))}

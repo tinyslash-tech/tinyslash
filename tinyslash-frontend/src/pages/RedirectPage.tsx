@@ -22,7 +22,7 @@ const RedirectPage: React.FC = () => {
 
       // Use relative URL in production to prevent backend URL exposure
       const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
-      
+
       // Determine the type of redirect based on shortCode pattern
       let endpoint = '';
       if (shortCode?.startsWith('file_')) {
@@ -32,7 +32,7 @@ const RedirectPage: React.FC = () => {
       } else {
         endpoint = `/v1/urls/${shortCode}/redirect`;
       }
-      
+
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -65,7 +65,7 @@ const RedirectPage: React.FC = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.data) {
         // Handle different types of redirects
         if (data.data.originalUrl) {

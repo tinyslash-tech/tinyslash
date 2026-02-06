@@ -31,6 +31,18 @@ public class SecurityService {
   @Autowired
   private UserTrustRepository userTrustRepository;
 
+  // Helper Class for Brand Context
+  private static class BrandContext {
+    String category; // BANK, PAYMENT, ECOMMERCE, etc.
+    @SuppressWarnings("unused")
+    Set<String> officialDomains;
+
+    BrandContext(String category, String... domains) {
+      this.category = category;
+      this.officialDomains = Set.of(domains);
+    }
+  }
+
   // --- MAIN PRECHECK ENTRY POINT ---
   public SecurityDecision preCheckUrl(String url, User user) {
     RiskAnalysis analysis = new RiskAnalysis();
@@ -88,8 +100,16 @@ public class SecurityService {
 
       riskScore = analysis.getRiskScore(); // Recalculate total score
 
-      // 2. High Risk / Block
-      if (riskScore >= 70) {
+      // Add Logging for Monitoring
+      if (logger.isDebugEnabled()) {
+        logger.debug("URL: {} | Decision: {} | Score: {} | Breakdown: {}",
+            url,
+            (riskScore >= 75 ? "BLOCK" : (riskScore >= 45 ? "WARN" : "ALLOW")),
+            analysis.getRiskScore(),
+            analysis.getRiskBreakdown());
+      }
+
+      if (riskScore >= 75) {
         String reason = "high_risk_score";
         // Try to find specific major violation
         if (!analysis.getViolations().isEmpty()) {
@@ -101,13 +121,15 @@ public class SecurityService {
         }
         return SecurityDecision.block(reason, "This URL has a high risk score (" + riskScore + ")",
             riskScore, analysis);
-      } else if (riskScore >= 40) {
+      } else if (riskScore >= 45) {
         return SecurityDecision.warn(riskScore, analysis);
       } else {
         return SecurityDecision.allow(riskScore, analysis);
       }
 
-    } catch (MalformedURLException e) {
+    } catch (
+
+    MalformedURLException e) {
       return SecurityDecision.block("malformed_url", "Invalid URL format", 100, analysis);
     } catch (Exception e) {
       logger.error("Error in SecurityService preCheck", e);
@@ -116,6 +138,27 @@ public class SecurityService {
   }
 
   // --- CHECK 1: URL STRUCTURE & SANITIZATION ---
+  private static final Set<String> TRUSTED_DOWNLOAD_DOMAINS = Set.of(
+      "github.com",
+      "githubusercontent.com",
+      "sourceforge.net",
+      "gitlab.com",
+      "bitbucket.org",
+      "microsoft.com",
+      "download.microsoft.com",
+      "apple.com",
+      "adobe.com",
+      "google.com",
+      "dl.google.com",
+      "drive.google.com",
+      "googledrive.com",
+      "dropbox.com",
+      "box.com",
+      "onedrive.live.com",
+      "s3.amazonaws.com",
+      "cloudfront.net",
+      "raw.githubusercontent.com");
+
   private static final Set<String> ALLOWED_SCHEMES = Set.of("http", "https");
   private static final Set<String> LOCALHOST_ALIASES = Set.of("localhost", "127.0.0.1", "0.0.0.0", "::1");
   // Regex for private IP ranges: 10.x.x.x, 172.16-31.x.x, 192.168.x.x,
@@ -137,12 +180,12 @@ public class SecurityService {
     // STAGE 1: PARSING & DECODING
     String url = rawUrl.trim();
 
-    // 1. Null Byte Injection (Check 12)
+    // 1. Null Byte Injection
     if (url.contains("\0") || url.contains("%00")) {
       return SecurityDecision.block("null_byte", "URL contains null byte characters", 100, analysis);
     }
 
-    // 2. Decode URL (Check for excessive encoding - Check 1 variation)
+    // 2. Decode URL (Check for excessive encoding)
     String decodedUrl = url;
     int encodingLayers = 0;
     while (decodedUrl.contains("%")) {
@@ -165,22 +208,22 @@ public class SecurityService {
         .replaceAll("/+$", "") // remove trailing slash
         .replaceAll("\\s+", ""); // remove whitespace
 
-    // 3. Invisible Characters (Check 6)
+    // 3. Invisible Characters
     if (containsInvisibleChars(rawUrl)) { // Check RAW url for tricks
       return SecurityDecision.block("invisible_characters", "URL contains invisible Unicode characters", 100, analysis);
     }
 
-    // 4. Control Characters (Check 15)
+    // 4. Control Characters
     if (containsControlChars(rawUrl)) {
       return SecurityDecision.block("control_characters", "URL contains malicious control characters", 100, analysis);
     }
 
-    // 5. RTLO Attack (Check 13)
+    // 5. RTLO Attack
     if (containsRTLO(rawUrl)) {
       return SecurityDecision.block("rtlo_attack", "Right-to-Left Override attack detected", 100, analysis);
     }
 
-    // 6. URL Length (Check 5)
+    // 6. URL Length
     if (url.length() > 2048) {
       return SecurityDecision.block("url_too_long", "URL exceeds maximum length (2048 chars)", 100, analysis);
     }
@@ -193,22 +236,26 @@ public class SecurityService {
       String query = urlObj.getQuery();
       String userInfo = urlObj.getUserInfo();
 
-      // 7. Scheme Validation (Check 1)
+      // 7. Scheme Validation
       if (!ALLOWED_SCHEMES.contains(scheme)) {
         return SecurityDecision.block("invalid_scheme", "Only HTTP/HTTPS schemes are allowed", 100, analysis);
       }
 
-      // 8. Localhost & Private IPs (Check 10 - Prioritized)
+      // 8. Localhost & Private IPs
       if (LOCALHOST_ALIASES.contains(host) || PRIVATE_IP_PATTERN.matcher(host).matches()) {
         return SecurityDecision.block("private_ip", "Local/Private IP addresses are not allowed", 100, analysis);
       }
 
-      // 9. IP Address Blocking (Check 2 - Catch-all for Public IPs)
+      // 9. IP Address Blocking
       if (isIpAddress(host)) {
-        return SecurityDecision.block("ip_url", "Direct IP address URLs are not allowed", 100, analysis);
+        // Public IP - allow with moderate risk
+        // Public IPs get 25 pts as they could be legitimate services (cloud VMs, APIs)
+        // but are riskier than domain names due to difficulty in tracking reputation
+        analysis.addRiskScore("public_ip_address", 25);
+        // Don't return - continue to other checks
       }
 
-      // 10. @ Symbol & UserInfo (Check 3 - Refined)
+      // 10. @ Symbol & UserInfo
       // Allow @ in path (e.g. /@username) but block in authority (user:pass@host)
       if (userInfo != null) {
         return SecurityDecision.block("at_symbol", "URL contains userinfo (potential credential harvesting)", 100,
@@ -227,7 +274,7 @@ public class SecurityService {
         }
       }
 
-      // 11. Double Slashes/Traversal (Check 4 & 11)
+      // 11. Double Slashes/Traversal
       if (path.contains("//")) {
         return SecurityDecision.block("double_slashes", "URL path contains suspicious double slashes", 100, analysis);
       }
@@ -235,24 +282,46 @@ public class SecurityService {
         return SecurityDecision.block("path_traversal", "URL path contains traversal patterns (..)", 100, analysis);
       }
 
-      // 12. Non-Standard Port (Check 9)
+      // 12. Non-Standard Port
       int port = urlObj.getPort();
       if (port != -1 && port != 80 && port != 443) {
-        // Check suspicious list
-        Set<Integer> SUSPICIOUS_PORTS = Set.of(8080, 8443, 3128, 8888, 4444, 1337);
-        if (SUSPICIOUS_PORTS.contains(port)) {
-          analysis.addRiskScore("suspicious_port", 40);
+        // Only flag ports commonly used by malware/proxies
+        Set<Integer> MALWARE_PORTS = Set.of(
+            4444, // Metasploit default
+            31337, // Back Orifice trojan
+            12345, // NetBus trojan
+            6667, // IRC (used by botnets)
+            1337, // Elite/hacker culture
+            5554, // Android ADB
+            9001 // Tor/HSPA+ exploit
+        );
+
+        if (MALWARE_PORTS.contains(port)) {
+          analysis.addRiskScore("malware_port", 60);
         } else {
-          analysis.addRiskScore("non_standard_port", 30);
+          // Common dev/enterprise ports - minimal penalty
+          analysis.addRiskScore("non_standard_port", 10);
         }
       }
 
-      // 13. Mixed Scripts Check (Moved fully to Check 4)
+      // 13. Mixed Scripts Check
 
       // 14. Indian Phone Patterns
-      if (INDIAN_PHONE_PATTERN.matcher(url).find()) {
-        analysis.addRiskScore("phone_number_in_url", 35);
+      if (INDIAN_PHONE_PATTERN.matcher(host).find()) {
+        // Check if phone number is in DOMAIN (very suspicious)
+        analysis.addRiskScore("phone_in_domain", 70);
         analysis.addViolation("phone_scam_pattern");
+      } else if (INDIAN_PHONE_PATTERN.matcher(url).find()) {
+        // Phone in path/query - check for scam context
+        boolean hasScamKeywords = containsAny(url.toLowerCase(), ACTION_KEYWORDS.get("urgency")) ||
+            containsAny(url.toLowerCase(), ACTION_KEYWORDS.get("greed")) ||
+            containsAny(url.toLowerCase(), List.of("winner", "prize", "claim", "urgent"));
+
+        if (hasScamKeywords) {
+          analysis.addRiskScore("phone_with_scam_keywords", 50);
+        } else {
+          analysis.addRiskScore("phone_in_url", 10);
+        }
       }
 
       // 15. Typosquatting
@@ -261,8 +330,8 @@ public class SecurityService {
         analysis.addViolation("possible_typosquatting");
       }
 
-      // 16. Excessive Query Params (Check 14)
-      if (query != null && query.split("&").length > 20) {
+      // 16. Excessive Query Params
+      if (query != null && query.split("&").length > 35) {
         analysis.addRiskScore("excessive_params", 40);
       }
 
@@ -341,21 +410,44 @@ public class SecurityService {
 
   // TLD Risk Matrix (Simplified from SQL provided)
   private static final Map<String, Integer> TLD_RISK_SCORES = Map.ofEntries(
+      // CRITICAL RISK - KEEP BLOCKING (Freenom + Malware havens)
       Map.entry(".tk", 100), Map.entry(".ml", 100), Map.entry(".ga", 100), Map.entry(".cf", 100), Map.entry(".gq", 100),
-      Map.entry(".download", 100), Map.entry(".loan", 95), Map.entry(".racing", 90),
-      Map.entry(".xyz", 50), Map.entry(".online", 45), Map.entry(".site", 45), Map.entry(".top", 95),
-      Map.entry(".pw", 55), Map.entry(".cc", 50), Map.entry(".info", 40),
-      Map.entry(".club", 25), Map.entry(".vip", 30),
+      Map.entry(".download", 100), Map.entry(".loan", 95), Map.entry(".racing", 90), Map.entry(".top", 95),
+
+      // HIGH RISK - Reduce slightly
+      Map.entry(".pw", 40), Map.entry(".cc", 35),
+
+      // MEDIUM RISK - Significant reduction
+      Map.entry(".xyz", 20), Map.entry(".online", 20), Map.entry(".site", 20),
+      Map.entry(".info", 25), Map.entry(".club", 15), Map.entry(".vip", 20),
+      Map.entry(".tech", 20), Map.entry(".store", 15), Map.entry(".shop", 15),
+      Map.entry(".co", 10), Map.entry(".me", 15),
+
+      // LOW RISK / TRUSTED
+      Map.entry(".app", 5), Map.entry(".dev", 5),
+
+      // TRUSTED - KEEP AS IS
       Map.entry(".com", 0), Map.entry(".org", 0), Map.entry(".net", 0), Map.entry(".io", 10),
       Map.entry(".in", 0), Map.entry(".co.in", 0), Map.entry(".gov.in", 0));
 
   // Massive Indian Whitelist (Subset for implementation)
   private static final Set<String> INDIAN_WHITELIST = Set.of(
-      "india.gov.in", "uidai.gov.in", "incometax.gov.in", "gst.gov.in", "epfindia.gov.in",
-      "onlinesbi.sbi", "sbi.co.in", "hdfcbank.com", "icicibank.com", "axisbank.com", "kotak.com",
-      "paytm.com", "phonepe.com", "googlepay.com", "razorpay.com", "cred.club",
+      // GOVERNMENT (auto-trust these)
+      "india.gov.in", "uidai.gov.in", "incometax.gov.in", "gst.gov.in",
+      "epfindia.gov.in", "mygov.in",
+
+      // TOP BANKS (critical)
+      "onlinesbi.sbi", "sbi.co.in", "hdfcbank.com", "icicibank.com",
+      "axisbank.com", "kotakbank.com",
+
+      // TOP PAYMENTS (critical)
+      "paytm.com", "phonepe.com", "googlepay.com", "pay.google.com",
+
+      // TOP ECOMMERCE (top 10 only)
       "amazon.in", "flipkart.com", "myntra.com", "swiggy.com", "zomato.com",
-      "google.com", "microsoft.com", "apple.com", "facebook.com", "instagram.com", "whatsapp.com");
+
+      // GLOBAL TECH (essential)
+      "google.com", "microsoft.com", "apple.com", "facebook.com", "whatsapp.com");
 
   // Changed to return SecurityDecision for INSTANT BLOCK/ALLOW capabilities
   private SecurityDecision checkDomainIntelligence(String domain, RiskAnalysis analysis) {
@@ -489,26 +581,27 @@ public class SecurityService {
 
   // --- CHECK 3: BRAND IMPERSONATION ---
 
-  // Categorized Brand Registry (Simplified for Set lookup, but logic can handle
-  // categories)
-  private static final Set<String> INDIAN_BRANDS = Set.of(
-      // BANKS (Critical)
-      "sbi", "statebank", "hdfc", "hdfcbank", "icici", "icicibank", "axis", "axisbank", "pnb", "punjabnationalbank",
-      "kotak", "kotakbank", "indusind", "yesbank", "idbi", "unionbank", "canara", "bob", "bankofbaroda", "federal",
-      "federalbank",
-      // DIGITAL PAYMENTS (Critical)
-      "paytm", "paytmbank", "phonepe", "googlepay", "gpay", "bhim", "amazonpay", "mobikwik", "freecharge", "cred",
-      "slice", "razorpay", "payu", "cashfree",
-      // E-COMMERCE
-      "amazon", "amazn", "flipkart", "myntra", "snapdeal", "meesho", "ajio", "swiggy", "zomato", "bigbasket", "blinkit",
-      "grofers",
-      // GOVT
-      "aadhaar", "uidai", "epfo", "epf", "pan", "pancard", "gst", "irctc", "railway", "digilocker", "cowin", "passport",
-      "india",
-      // TELECOM
-      "airtel", "jio", "vi", "vodafone", "idea", "bsnl",
-      // TECH
-      "google", "facebook", "whatsapp", "instagram", "microsoft", "apple", "youtube", "netflix");
+  private static final Map<String, BrandContext> INDIAN_BRANDS_CONTEXT = Map.ofEntries(
+      Map.entry("sbi", new BrandContext("BANK", "sbi.co.in", "onlinesbi.sbi")),
+      Map.entry("hdfc", new BrandContext("BANK", "hdfcbank.com", "hdfc.com")),
+      Map.entry("icici", new BrandContext("BANK", "icicibank.com")),
+      Map.entry("axis", new BrandContext("BANK", "axisbank.com")),
+      Map.entry("paytm", new BrandContext("PAYMENT", "paytm.com", "paytmbank.com")),
+      Map.entry("phonepe", new BrandContext("PAYMENT", "phonepe.com")),
+      Map.entry("googlepay", new BrandContext("PAYMENT", "pay.google.com")),
+      Map.entry("amazon", new BrandContext("ECOMMERCE", "amazon.in", "amazon.com")),
+      Map.entry("flipkart", new BrandContext("ECOMMERCE", "flipkart.com")),
+      Map.entry("aadhaar", new BrandContext("GOVT", "uidai.gov.in")),
+      Map.entry("epfo", new BrandContext("GOVT", "epfindia.gov.in")),
+      // Add more as needed, keep critical ones
+      Map.entry("facebook", new BrandContext("TECH", "facebook.com")),
+      Map.entry("instagram", new BrandContext("TECH", "instagram.com")),
+      Map.entry("whatsapp", new BrandContext("TECH", "whatsapp.com")),
+      Map.entry("google", new BrandContext("TECH", "google.com")),
+      Map.entry("microsoft", new BrandContext("TECH", "microsoft.com")),
+      Map.entry("apple", new BrandContext("TECH", "apple.com")));
+
+  private static final Set<String> INDIAN_BRANDS = INDIAN_BRANDS_CONTEXT.keySet();
 
   // Expanded Action Keywords
   private static final Map<String, List<String>> ACTION_KEYWORDS = Map.of(
@@ -545,12 +638,40 @@ public class SecurityService {
       // A. Exact Match
       if (INDIAN_BRANDS.contains(token)) {
         detectedBrand = token;
-        // Check if officially allowed (Official TLD bypass logic is in Check 2,
-        // simplified here)
+
         if (!isOfficialBrandDomain(domain, token)) {
-          analysis.addRiskScore("brand_exact_match", 100);
-          analysis.addViolation("brand_impersonation_" + token);
-          isCriticalBrand = true;
+          // Multi-signal check
+          int signalCount = 0;
+
+          // Signal 1: Action keywords present
+          boolean hasActionKeyword = containsAny(urlLower, ACTION_KEYWORDS.get("auth")) ||
+              containsAny(urlLower, ACTION_KEYWORDS.get("financial"));
+          if (hasActionKeyword)
+            signalCount++;
+
+          // Signal 2: Risky TLD
+          String tld = extractEffectiveTld(domain);
+          boolean hasRiskyTLD = TLD_RISK_SCORES.getOrDefault(tld, 0) >= 40;
+          if (hasRiskyTLD)
+            signalCount++;
+
+          // Signal 3: New domain (not in database)
+          boolean isNewDomain = true;
+          try {
+            isNewDomain = !domainRepository.findByDomain(domain).isPresent();
+          } catch (Exception e) {
+          }
+          if (isNewDomain)
+            signalCount++;
+
+          // ✅ ONLY flag as impersonation if 2+ signals
+          if (signalCount >= 2) {
+            analysis.addRiskScore("brand_impersonation", 100);
+            analysis.addViolation("brand_impersonation_" + token);
+          } else {
+            // Just a brand mention - low score
+            analysis.addRiskScore("brand_mention", 20);
+          }
         }
       }
 
@@ -572,7 +693,7 @@ public class SecurityService {
             continue;
           int dist = getLevenshteinDistance(token, brand);
           if (dist <= 1) { // Very close match
-            analysis.addRiskScore("brand_fuzzy_match", 50);
+            analysis.addRiskScore("brand_fuzzy_match", 30);
             detectedBrand = brand;
             break;
           }
@@ -586,9 +707,9 @@ public class SecurityService {
     // 2. Contextual Escalation (Action Keywords)
     if (detectedBrand != null) {
       if (containsAny(urlLower, ACTION_KEYWORDS.get("auth"))) {
-        analysis.addRiskScore("brand_plus_auth", 100);
+        analysis.addRiskScore("brand_plus_auth", 40);
       } else if (containsAny(urlLower, ACTION_KEYWORDS.get("financial"))) {
-        analysis.addRiskScore("brand_plus_financial", 100);
+        analysis.addRiskScore("brand_plus_financial", 40);
       } else if (containsAny(urlLower, ACTION_KEYWORDS.get("urgency"))) {
         analysis.addRiskScore("brand_plus_urgency", 50);
       } else if (containsAny(urlLower, ACTION_KEYWORDS.get("greed"))) {
@@ -845,7 +966,21 @@ public class SecurityService {
     // 2. High Risk Archives
     for (String ext : ARCHIVE_EXTENSIONS) {
       if (path.endsWith(ext)) {
-        analysis.addRiskScore("archive_extension", 40);
+        // Check if from trusted source
+        String domain = urlObj.getHost().toLowerCase().replace("www.", "");
+        boolean isTrustedSource = false;
+        for (String trusted : TRUSTED_DOWNLOAD_DOMAINS) {
+          if (domain.equals(trusted) || domain.endsWith("." + trusted)) {
+            isTrustedSource = true;
+            break;
+          }
+        }
+
+        if (isTrustedSource) {
+          analysis.addRiskScore("archive_trusted_source", 5);
+        } else {
+          analysis.addRiskScore("archive_extension", 25);
+        }
       }
     }
 

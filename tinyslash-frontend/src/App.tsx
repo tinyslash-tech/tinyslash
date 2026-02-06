@@ -41,8 +41,11 @@ import JobDetail from './pages/JobDetail';
 import Apply from './pages/Apply';
 
 import Leads from './pages/dashboard/Leads';
+import PagesDashboard from './pages/dashboard/PagesDashboard';
+import PageBuilder from './pages/dashboard/PageBuilder'; // Import PageBuilder
 import UnlockPage from './pages/UnlockPage';
 import VerifiedPage from './pages/VerifiedPage';
+import PublicPage from './pages/public/PublicPage';
 
 // New Sitelinks Pages
 import ShortLinks from './pages/ShortLinks';
@@ -106,6 +109,26 @@ const AppContent: React.FC = () => {
                 <DashboardLayout>
                   <UnifiedDashboard />
                 </DashboardLayout>
+              </AuthRedirect>
+            } />
+
+            <Route path="/dashboard/pages" element={
+              <AuthRedirect requireAuth={true}>
+                <DashboardLayout>
+                  <PagesDashboard />
+                </DashboardLayout>
+              </AuthRedirect>
+            } />
+
+            <Route path="/dashboard/pages/builder/:id" element={
+              <AuthRedirect requireAuth={true}>
+                <PageBuilder />
+                {/* Note: PageBuilder has its own layout or Sidebar management if needed, or wrap in DashboardLayout if it fits */}
+                {/* For full screen editor experience, usually better without dashboard layout, or check requirement. I'll assume separate layout or just component for now. 
+                      Actually, keeping consistent nav is safely done via DashboardLayout but Builder often needs validation. 
+                      Let's use DashboardLayout for consistency for now, or just the component if it has its own sidebar. 
+                      Looking at PageBuilder code, it has its own "Left Sidebar: Controls". So maybe NO DashboardLayout.
+                   */}
               </AuthRedirect>
             } />
 
@@ -280,6 +303,12 @@ const AppContent: React.FC = () => {
             <Route path="/unlock/:shortCode" element={<UnlockPage />} />
             <Route path="/verified/:shortCode" element={<VerifiedPage />} />
             <Route path="/redirect/:shortCode" element={<RedirectPage />} />
+
+            {/* Public Page Route (e.g. tinyslash.com/p/my-page) */}
+            <Route path="/p/:slug" element={<PublicPage />} />
+
+            {/* Short Link Redirect (Root level e.g. tinyslash.com/abc) */}
+            <Route path="/:shortCode" element={<RedirectPage />} />
 
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />

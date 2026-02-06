@@ -33,7 +33,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
-type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
+type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'pages' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
 type CreateMode = 'url' | 'qr' | 'file';
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
@@ -57,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
       }
     }
     else if (path.includes('/dashboard/links')) setActiveSection('links');
+    else if (path.includes('/dashboard/pages')) setActiveSection('pages');
     else if (path.includes('/dashboard/leads')) setActiveSection('leads');
     else if (path.includes('/dashboard/trust-badge')) setActiveSection('trust-badge');
     else if (path.includes('/dashboard/qr-codes')) setActiveSection('qr-codes');
@@ -105,6 +106,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           id: 'file-to-url' as SidebarSection,
           label: 'Files',
           icon: Upload,
+        },
+        {
+          id: 'pages' as SidebarSection,
+          label: 'Pages',
+          icon: LayoutDashboard,
+          badge: 'NEW'
         },
         {
           id: 'leads' as SidebarSection,
@@ -163,6 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
     switch (item.id) {
       case 'dashboard': navigate('/dashboard'); break;
       case 'links': navigate('/dashboard/links'); break;
+      case 'pages': navigate('/dashboard/pages'); break;
       case 'qr-codes': navigate('/dashboard/qr-codes'); break;
       case 'file-to-url': navigate('/dashboard/file-links'); break;
       case 'leads': navigate('/dashboard/leads'); break;

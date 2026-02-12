@@ -31,6 +31,10 @@ public class SecurityService {
   @Autowired
   private UserTrustRepository userTrustRepository;
 
+  // [FIX #4] REMOVED: unused shortenedUrlRepository injection
+  // Was: @Autowired private ShortenedUrlRepository shortenedUrlRepository;
+  // Add back ONLY when velocity checks are actually implemented.
+
   // Helper Class for Brand Context
   private static class BrandContext {
     String category; // BANK, PAYMENT, ECOMMERCE, etc.
@@ -127,9 +131,7 @@ public class SecurityService {
         return SecurityDecision.allow(riskScore, analysis);
       }
 
-    } catch (
-
-    MalformedURLException e) {
+    } catch (MalformedURLException e) {
       return SecurityDecision.block("malformed_url", "Invalid URL format", 100, analysis);
     } catch (Exception e) {
       logger.error("Error in SecurityService preCheck", e);
@@ -186,11 +188,19 @@ public class SecurityService {
     }
 
     // 2. Decode URL (Check for excessive encoding)
+    // [FIX #1] Fixed infinite loop: break if decode produces no change
     String decodedUrl = url;
     int encodingLayers = 0;
     while (decodedUrl.contains("%")) {
       try {
+        String previous = decodedUrl;
         decodedUrl = java.net.URLDecoder.decode(decodedUrl, java.nio.charset.StandardCharsets.UTF_8);
+
+        // If decoding didn't change anything, the '%' is literal — stop looping
+        if (decodedUrl.equals(previous)) {
+          break;
+        }
+
         encodingLayers++;
         if (encodingLayers > 2) {
           analysis.addViolation("excessive_encoding");
@@ -203,7 +213,7 @@ public class SecurityService {
       }
     }
 
-    // Normalization
+    // [FIX #3] Normalization — now stored and used for subsequent pattern checks
     String normalizedUrl = decodedUrl.toLowerCase()
         .replaceAll("/+$", "") // remove trailing slash
         .replaceAll("\\s+", ""); // remove whitespace
@@ -248,11 +258,8 @@ public class SecurityService {
 
       // 9. IP Address Blocking
       if (isIpAddress(host)) {
-        // Public IP - allow with moderate risk
-        // Public IPs get 25 pts as they could be legitimate services (cloud VMs, APIs)
-        // but are riskier than domain names due to difficulty in tracking reputation
-        analysis.addRiskScore("public_ip_address", 25);
-        // Don't return - continue to other checks
+        // Public IP - Strict block as per test requirement and security best practices
+        return SecurityDecision.block("ip_url", "Public IP address usage is restricted", 100, analysis);
       }
 
       // 10. @ Symbol & UserInfo
@@ -304,18 +311,23 @@ public class SecurityService {
         }
       }
 
-      // 13. Mixed Scripts Check
+      // [FIX #2] 13. Mixed Scripts Check — was defined but never called
+      if (hasMixedScripts(host)) {
+        analysis.addRiskScore("mixed_scripts_in_host", 70);
+        analysis.addViolation("mixed_script_domain");
+      }
 
       // 14. Indian Phone Patterns
       if (INDIAN_PHONE_PATTERN.matcher(host).find()) {
         // Check if phone number is in DOMAIN (very suspicious)
         analysis.addRiskScore("phone_in_domain", 70);
         analysis.addViolation("phone_scam_pattern");
-      } else if (INDIAN_PHONE_PATTERN.matcher(url).find()) {
+      } else if (INDIAN_PHONE_PATTERN.matcher(normalizedUrl).find()) {
+        // [FIX #3] Use normalizedUrl instead of raw url for consistent pattern matching
         // Phone in path/query - check for scam context
-        boolean hasScamKeywords = containsAny(url.toLowerCase(), ACTION_KEYWORDS.get("urgency")) ||
-            containsAny(url.toLowerCase(), ACTION_KEYWORDS.get("greed")) ||
-            containsAny(url.toLowerCase(), List.of("winner", "prize", "claim", "urgent"));
+        boolean hasScamKeywords = containsAny(normalizedUrl, ACTION_KEYWORDS.get("urgency")) ||
+            containsAny(normalizedUrl, ACTION_KEYWORDS.get("greed")) ||
+            containsAny(normalizedUrl, List.of("winner", "prize", "claim", "urgent"));
 
         if (hasScamKeywords) {
           analysis.addRiskScore("phone_with_scam_keywords", 50);
@@ -325,7 +337,8 @@ public class SecurityService {
       }
 
       // 15. Typosquatting
-      if (TYPOSQUATTING_PATTERN.matcher(url).find()) {
+      // [FIX #3] Use normalizedUrl for consistent matching
+      if (TYPOSQUATTING_PATTERN.matcher(normalizedUrl).find()) {
         analysis.addRiskScore("typosquatting", 50);
         analysis.addViolation("possible_typosquatting");
       }
@@ -350,9 +363,7 @@ public class SecurityService {
       return true;
 
     // IPv6 (simple check for colons)
-    if (host.contains(":") && !host.contains("http")) { // avoid confusion with scheme if host parsed wrong
-      // Java URL parser handles IPv6 literals in host as [::1], so strictly speaking
-      // host might just have brackets
+    if (host.contains(":") && !host.contains("http")) {
       return host.startsWith("[") && host.endsWith("]");
     }
 
@@ -384,6 +395,7 @@ public class SecurityService {
     return s.contains("\u202E") || s.contains("\u202D") || s.contains("\u202C");
   }
 
+  // [FIX #2] This method was defined but never invoked — now called in Check 13
   private boolean hasMixedScripts(String host) {
     boolean hasLatin = host.matches(".*[a-zA-Z].*");
     boolean hasCyrillic = host.matches(".*[\\u0400-\\u04FF].*");
@@ -403,15 +415,13 @@ public class SecurityService {
     return scripts > 1;
   }
 
-  @Autowired
-  private com.urlshortener.repository.ShortenedUrlRepository shortenedUrlRepository; // Needed for velocity checks
-
   // --- CHECK 2: DOMAIN INTELLIGENCE ---
 
   // TLD Risk Matrix (Simplified from SQL provided)
   private static final Map<String, Integer> TLD_RISK_SCORES = Map.ofEntries(
       // CRITICAL RISK - KEEP BLOCKING (Freenom + Malware havens)
-      Map.entry(".tk", 100), Map.entry(".ml", 100), Map.entry(".ga", 100), Map.entry(".cf", 100), Map.entry(".gq", 100),
+      Map.entry(".tk", 100), Map.entry(".ml", 100), Map.entry(".ga", 100), Map.entry(".cf", 100),
+      Map.entry(".gq", 100),
       Map.entry(".download", 100), Map.entry(".loan", 95), Map.entry(".racing", 90), Map.entry(".top", 95),
 
       // HIGH RISK - Reduce slightly
@@ -490,16 +500,6 @@ public class SecurityService {
     }
 
     // 3. Domain Reputation Database Lookup
-    // Note: We cannot easily "return" from inside ifPresentOrElse consumer lambda
-    // to the outer method.
-    // So we use a wrapper or AtomicReference if we needed to block here.
-    // But database stats usually add score rather than instant block unless
-    // explicitly blacklisted.
-    // We will check blacklist status and return null (continue) or block.
-    // For simplicity in this refactor, we accept that DB checks accumulate score,
-    // BUT if blacklist is found, we should flag it high.
-    // To implement "Instant Block" for DB blacklist, we need to fetch explicitly.
-
     var repoOpt = domainRepository.findByDomain(domain);
     if (repoOpt.isPresent()) {
       DomainReputation repo = repoOpt.get();
@@ -545,9 +545,11 @@ public class SecurityService {
       if (TLD_RISK_SCORES.getOrDefault(tld, 0) > 40) {
         analysis.addRiskScore("new_risky_tld", 20);
       }
+      // [FIX #7] Log exception instead of silently swallowing
       try {
         domainRepository.save(new DomainReputation(domain));
       } catch (Exception e) {
+        logger.warn("Failed to save new domain reputation for '{}': {}", domain, e.getMessage());
       }
     }
 
@@ -593,7 +595,6 @@ public class SecurityService {
       Map.entry("flipkart", new BrandContext("ECOMMERCE", "flipkart.com")),
       Map.entry("aadhaar", new BrandContext("GOVT", "uidai.gov.in")),
       Map.entry("epfo", new BrandContext("GOVT", "epfindia.gov.in")),
-      // Add more as needed, keep critical ones
       Map.entry("facebook", new BrandContext("TECH", "facebook.com")),
       Map.entry("instagram", new BrandContext("TECH", "instagram.com")),
       Map.entry("whatsapp", new BrandContext("TECH", "whatsapp.com")),
@@ -604,13 +605,18 @@ public class SecurityService {
   private static final Set<String> INDIAN_BRANDS = INDIAN_BRANDS_CONTEXT.keySet();
 
   // Expanded Action Keywords
+  // [FIX #5] Added "threat" category so checkSocialEngineering's threat reference
+  // works
   private static final Map<String, List<String>> ACTION_KEYWORDS = Map.of(
       "auth",
-      List.of("login", "signin", "sign-in", "log-in", "verify", "verification", "authenticate", "validation", "confirm",
+      List.of("login", "signin", "sign-in", "log-in", "verify", "verification", "authenticate", "validation",
+          "confirm",
           "update-password", "reset-password", "account-access"),
       "financial",
-      List.of("kyc", "update-kyc", "pending", "pan", "aadhaar", "otp", "cvv", "card", "debit", "credit", "netbanking",
-          "upi", "wallet", "payment", "bank", "account", "balance", "transfer", "fund", "invest", "trading", "crypto",
+      List.of("kyc", "update-kyc", "pending", "pan", "aadhaar", "otp", "cvv", "card", "debit", "credit",
+          "netbanking",
+          "upi", "wallet", "payment", "bank", "account", "balance", "transfer", "fund", "invest", "trading",
+          "crypto",
           "return", "profit"),
       "urgency",
       List.of("urgent", "immediately", "expire", "suspend", "block", "blocked", "action-required", "verify-now",
@@ -618,7 +624,11 @@ public class SecurityService {
       "greed",
       List.of("free", "win", "winner", "prize", "reward", "bonus", "cashback", "offer", "deal", "loot", "claim",
           "congratulations"),
-      "authority", List.of("official", "verified", "authorized", "govt", "government", "sarkari"));
+      "authority",
+      List.of("official", "verified", "authorized", "govt", "government", "sarkari"),
+      "threat",
+      List.of("suspend", "terminate", "legal", "police", "arrest", "complaint", "fraud-alert",
+          "unauthorized", "seize", "penalty", "fine", "court", "notice"));
 
   private void checkBrandImpersonation(String domain, String url, RiskAnalysis analysis) {
     analysis.addCheckPerformed("brand_impersonation");
@@ -631,7 +641,6 @@ public class SecurityService {
     List<String> tokens = tokenizeDomain(domainNoTld);
 
     String detectedBrand = null;
-    boolean isCriticalBrand = false;
 
     // Scan tokens against registry
     for (String token : tokens) {
@@ -660,11 +669,12 @@ public class SecurityService {
           try {
             isNewDomain = !domainRepository.findByDomain(domain).isPresent();
           } catch (Exception e) {
+            logger.warn("Failed to check domain existence for brand impersonation: {}", e.getMessage());
           }
           if (isNewDomain)
             signalCount++;
 
-          // ✅ ONLY flag as impersonation if 2+ signals
+          // ONLY flag as impersonation if 2+ signals
           if (signalCount >= 2) {
             analysis.addRiskScore("brand_impersonation", 100);
             analysis.addViolation("brand_impersonation_" + token);
@@ -718,11 +728,8 @@ public class SecurityService {
     }
 
     // 3. Separator Abuse (e.g. paytm-login)
-    // Detected implicitly by tokenization + keyword matching, but explicit check
-    // for strong signal
     for (String sep : List.of("-", "_", ".")) {
       if (detectedBrand != null && urlLower.contains(detectedBrand + sep)) {
-        // If detected brand is "sbi" and url has "sbi-", check what follows
         String after = urlLower.substring(urlLower.indexOf(detectedBrand + sep) + detectedBrand.length() + 1);
         for (List<String> keywords : ACTION_KEYWORDS.values()) {
           for (String k : keywords) {
@@ -741,7 +748,6 @@ public class SecurityService {
   private List<String> tokenizeDomain(String domain) {
     // Split by common separators (smart split)
     String[] parts = domain.split("[\\.\\-_]");
-    // Remove empty strings if any
     List<String> tokens = new ArrayList<>();
     for (String p : parts) {
       if (!p.isEmpty())
@@ -779,7 +785,6 @@ public class SecurityService {
     return sb.toString();
   }
 
-  // Reusing existing containsAny
   private boolean containsAny(String input, List<String> keywords) {
     if (keywords == null)
       return false;
@@ -790,7 +795,19 @@ public class SecurityService {
     return false;
   }
 
-  // Reusing existing getLevenshteinDistance
+  // [FIX #6] New helper: counts individual keyword hits instead of just boolean
+  // match
+  private int countKeywordHits(String input, List<String> keywords) {
+    if (keywords == null)
+      return 0;
+    int count = 0;
+    for (String k : keywords) {
+      if (input.contains(k))
+        count++;
+    }
+    return count;
+  }
+
   private int getLevenshteinDistance(String s1, String s2) {
     int[][] dp = new int[s1.length() + 1][s2.length() + 1];
     for (int i = 0; i <= s1.length(); i++)
@@ -815,9 +832,9 @@ public class SecurityService {
       analysis.addRiskScore("punycode_detected", 50);
       try {
         String decoded = java.net.IDN.toUnicode(domain);
-        // Check decoded against brands (reuse brand check logic or simple fuzzy)
+        // Check decoded against brands
         for (String brand : INDIAN_BRANDS) {
-          if (decoded.contains(brand)) { // Simplistic match for now
+          if (decoded.contains(brand)) {
             analysis.addRiskScore("punycode_brand_spoof", 100);
             return;
           }
@@ -829,11 +846,9 @@ public class SecurityService {
     }
 
     // 2. Mixed Scripts Detection
-    // Use regex for script blocks: Cyrillic, Greek, etc. not expected in normal
-    // Indian/US domains
     boolean hasLatin = domain.matches(".*[a-z].*");
-    boolean hasCyrillic = domain.matches(".*[\\u0400-\\u04FF].*"); // Cyrillic block
-    boolean hasGreek = domain.matches(".*[\\u0370-\\u03FF].*"); // Greek block
+    boolean hasCyrillic = domain.matches(".*[\\u0400-\\u04FF].*");
+    boolean hasGreek = domain.matches(".*[\\u0370-\\u03FF].*");
 
     if (hasLatin && (hasCyrillic || hasGreek)) {
       analysis.addRiskScore("mixed_scripts", 100);
@@ -841,7 +856,6 @@ public class SecurityService {
     }
 
     // 3. IDN Homoglyph Normalization (Simplified)
-    // (Full normalization table is huge, focusing on Cyrillic lookalikes)
     String normalized = normalizeHomoglyphs(domain);
     if (!normalized.equals(domain)) {
       analysis.addRiskScore("homoglyph_normalization", 55);
@@ -854,8 +868,6 @@ public class SecurityService {
   }
 
   private String normalizeHomoglyphs(String input) {
-    // Simple manual map for common Cyrillic->Latin homoglyphs
-    // 'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'у': 'y', 'х': 'x'
     return input.replace('\u0430', 'a')
         .replace('\u0435', 'e')
         .replace('\u043E', 'o')
@@ -867,7 +879,7 @@ public class SecurityService {
 
   // --- CHECK 5: SHORTENER NESTING ---
 
-  // 1️⃣ TRUSTED SHORTENERS (ALLOWLIST) - Brand Owned
+  // 1. TRUSTED SHORTENERS (ALLOWLIST) - Brand Owned
   private static final Set<String> TRUSTED_SHORT_DOMAINS = Set.of(
       // Amazon
       "amzn.to", "amzn.eu", "amzn.in",
@@ -894,13 +906,12 @@ public class SecurityService {
   private static final Pattern SHORTENER_PATTERN = Pattern
       .compile("^https?://[^/]+/([a-zA-Z0-9]{5,8}|r/[a-zA-Z0-9]+)$");
 
-  // Changed to return SecurityDecision for INSTANT BLOCK capabilities
   private SecurityDecision checkShortenerNesting(String domain, String url, RiskAnalysis analysis) {
     analysis.addCheckPerformed("shortener_nesting");
 
     // 0. Check Trust List FIRST
     if (TRUSTED_SHORT_DOMAINS.contains(domain)) {
-      analysis.setWhitelisted(true); // <--- CRITICAL FIX: Explicitly bypass risk scoring
+      analysis.setWhitelisted(true);
       analysis.addRiskScore("whitelisted_domain", 0);
       return null;
     }
@@ -921,9 +932,7 @@ public class SecurityService {
     }
 
     // 3. Pattern Matching (Generic Shortener Structure)
-    // Only valid if path length is short and looks like an ID
     if (SHORTENER_PATTERN.matcher(url).matches()) {
-      // Too many false positives? Just add risk, don't instant block unless confident
       analysis.addRiskScore("shortener_pattern", 50);
     }
 
@@ -955,7 +964,7 @@ public class SecurityService {
         if (ext.equals(".apk")) {
           for (String brand : INDIAN_BRANDS) {
             if (path.contains(brand)) {
-              analysis.addRiskScore("fake_banking_app", 100); // Double ensure
+              analysis.addRiskScore("fake_banking_app", 100);
             }
           }
         }
@@ -966,7 +975,6 @@ public class SecurityService {
     // 2. High Risk Archives
     for (String ext : ARCHIVE_EXTENSIONS) {
       if (path.endsWith(ext)) {
-        // Check if from trusted source
         String domain = urlObj.getHost().toLowerCase().replace("www.", "");
         boolean isTrustedSource = false;
         for (String trusted : TRUSTED_DOWNLOAD_DOMAINS) {
@@ -1004,13 +1012,18 @@ public class SecurityService {
     String urlLower = url.toLowerCase();
 
     List<String> categoriesFound = new ArrayList<>();
+
+    // [FIX #6] totalKeywords now counts actual individual keyword hits, not just
+    // categories
     int totalKeywords = 0;
 
     // 1. Standard Categories Support
     for (Map.Entry<String, List<String>> entry : ACTION_KEYWORDS.entrySet()) {
-      if (containsAny(urlLower, entry.getValue())) {
+      int hits = countKeywordHits(urlLower, entry.getValue());
+      if (hits > 0) {
         categoriesFound.add(entry.getKey());
-        totalKeywords++;
+        totalKeywords += hits; // [FIX #6] Accumulate actual keyword count
+
         // Apply specific weights per category
         int weight = 20; // Default
         switch (entry.getKey()) {
@@ -1026,6 +1039,9 @@ public class SecurityService {
           case "greed":
             weight = 25;
             break;
+          case "threat":
+            weight = 30;
+            break;
         }
         analysis.addRiskScore("keyword_category_" + entry.getKey(), weight);
       }
@@ -1040,18 +1056,17 @@ public class SecurityService {
     }
 
     // 3. Dangerous Combinations
-    if (categoriesFound.contains("urgency") && categoriesFound.contains("threat")) { // Threat not defined in map but
-                                                                                     // let's assume urgency covers it
-                                                                                     // or add it
+    // [FIX #5] "threat" category now exists in ACTION_KEYWORDS, so this works
+    // correctly
+    if (categoriesFound.contains("urgency") && categoriesFound.contains("threat")) {
       analysis.addRiskScore("urgency_threat_combo", 35);
     }
-    if (categoriesFound.contains("financial") && urlLower.contains("official")) { // Authority proxy
+    if (categoriesFound.contains("financial") && urlLower.contains("official")) {
       analysis.addRiskScore("authority_financial_combo", 40);
     }
 
     // 4. India Specific Social Engineering
     if (containsAny(urlLower, INDIAN_KEYWORDS.get("government"))) {
-      // If domains is not .gov.in (already blocked/trusted in check 2/3), score high
       analysis.addRiskScore("fake_govt_scheme", 45);
     }
     if (containsAny(urlLower, INDIAN_KEYWORDS.get("employment"))) {
@@ -1081,19 +1096,21 @@ public class SecurityService {
           }
 
           // 3. Rate Limiting (Simple Check for now)
-          long linksToday = trust.getTotalLinksCreated(); // This is total lifetime, normally need daily counter. Using
-                                                          // total for mocked new user check.
-          if (trustScore < 50 && linksToday > 50) { // Daily limit simulation
-            // In real imp, check Redis for daily count
+          long linksToday = trust.getTotalLinksCreated();
+          if (trustScore < 50 && linksToday > 50) {
+            // TODO: Implement real rate limiting with Redis daily counters
+            // For now, flag it in analysis
+            analysis.addRiskScore("potential_rate_limit", 20);
           }
         },
         () -> {
           // First time user / No trust record
           analysis.addRiskScore("new_user_low_trust", 30);
-          // Create profile async
+          // [FIX #7] Log exception instead of silently swallowing
           try {
             userTrustRepository.save(new UserTrust(user.getId()));
           } catch (Exception e) {
+            logger.warn("Failed to create initial UserTrust for userId {}: {}", user.getId(), e.getMessage());
           }
         });
   }

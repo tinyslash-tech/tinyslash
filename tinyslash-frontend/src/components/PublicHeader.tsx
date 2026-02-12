@@ -70,13 +70,19 @@ const PublicHeader: React.FC = () => {
                     <button onClick={() => navigate('/file-to-link')} className="text-left px-4 py-3 hover:bg-gray-50 rounded-lg text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors">
                       File to Link
                     </button>
+                    <div className="h-px bg-gray-100 my-1"></div>
+                    <button onClick={() => navigate('/pages')} className="text-left px-4 py-3 hover:bg-purple-50 rounded-lg text-sm text-gray-900 hover:text-purple-600 font-bold transition-colors flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                      TinySlash Pages
+                    </button>
                   </div>
                 </div>
               </div>
 
               <button onClick={() => navigate('/pricing')} className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Pricing</button>
+              <button onClick={() => navigate('/blog')} className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Blog</button>
               <button onClick={() => navigate('/faq')} className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">FAQ</button>
-              <button onClick={() => navigate('/contact')} className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Contact</button>
+
             </div>
 
             {/* Auth Buttons */}
@@ -120,8 +126,9 @@ const PublicHeader: React.FC = () => {
                   <button onClick={() => { navigate('/file-to-link'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left">File to Link</button>
                 </div>
                 <button onClick={() => { navigate('/pricing'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left">Pricing</button>
+                <button onClick={() => { navigate('/blog'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left">Blog</button>
                 <button onClick={() => { navigate('/faq'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left">FAQ</button>
-                <button onClick={() => { navigate('/contact'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left">Contact</button>
+
 
                 <div className="pt-4 border-t border-gray-100 space-y-3">
                   <button

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import PublicHeader from '../components/PublicHeader';
+import Footer from '../components/Footer';
+import AuthModal from '../components/AuthModal';
 import { SEO } from '../components/SEO';
 import { paymentService } from '../services/paymentService';
 import { subscriptionService, PricingData } from '../services/subscriptionService';
@@ -16,7 +18,7 @@ const Pricing: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // New State for coupons if needed, though streamlined in new design
@@ -24,8 +26,9 @@ const Pricing: React.FC = () => {
 
   const handleRazorpayPayment = async (planType: string, planName: string, amount: number) => {
     if (!isAuthenticated) {
-      toast.error('Please log in or sign up to upgrade');
-      navigate('/signup'); // Assuming /signup exists, or trigger modal
+      // Show signup modal instead of breaking
+      setAuthMode('signup');
+      setIsAuthModalOpen(true);
       return;
     }
 
@@ -162,7 +165,6 @@ const Pricing: React.FC = () => {
       {/* Pricing Cards */}
       <section className="px-4 sm:px-6 lg:px-8 pb-24">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-
           {/* FREE Plan */}
           <motion.div
             className="border border-gray-200 rounded-2xl p-6 flex flex-col hover:border-blue-300 transition-all duration-300"
@@ -177,28 +179,41 @@ const Pricing: React.FC = () => {
               <p className="text-sm text-gray-500 mt-2">For individuals trying TinySlash</p>
             </div>
             <button
-              onClick={() => navigate('/signup')}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setAuthMode('signup');
+                  setIsAuthModalOpen(true);
+                } else {
+                  // Already free? Maybe redirect to dashboard
+                  navigate('/dashboard');
+                }
+              }}
               className="w-full py-2.5 rounded-lg border border-gray-300 font-semibold text-gray-700 hover:bg-gray-50 transition-colors mb-6"
             >
               Get Started Free
             </button>
-            <div className="space-y-3 flex-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">What's included</p>
-              <ul className="space-y-3">
-                {['50 short links', '50 QR codes', '5 file-to-link uploads', 'Basic click analytics', 'TinySlash branded links', 'Link expiration (time-based)', '7-day analytics history'].map((item, i) => (
-                  <li key={i} className="flex items-start text-sm text-gray-600">
-                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <div className="pt-4 border-t border-gray-100 space-y-3">
-                {['Custom domains', 'Password protection', 'Team access', 'API access'].map((item, i) => (
-                  <li key={i} className="flex items-start text-sm text-gray-400">
-                    <X className="w-4 h-4 text-gray-300 mr-2 mt-0.5 shrink-0" />
-                    {item}
-                  </li>
-                ))}
+            <div className="space-y-4 flex-1">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">What's included</p>
+                <ul className="space-y-2">
+                  {['50 short links', '50 QR codes', '5 file-to-link uploads', 'Basic click analytics', 'TinySlash branded links', 'Link expiration (time-based)', '7-day analytics history'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
+                <ul className="space-y-2">
+                  {['1 Page', 'Up to 5 links', 'Basic theme', 'Page view count', 'TinySlash branding'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </motion.div>
@@ -225,16 +240,29 @@ const Pricing: React.FC = () => {
             >
               Upgrade to Starter
             </button>
-            <div className="space-y-3 flex-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Everything in Free, plus:</p>
-              <ul className="space-y-3">
-                {['1,000 short links', 'Unlimited QR codes', '100 file-to-link uploads', 'Password-protected links', 'Link expiration (date & click-based)', '1 custom domain', '30-day analytics history', 'Device & country analytics', 'Email support'].map((item, i) => (
-                  <li key={i} className="flex items-start text-sm text-gray-900 font-medium">
-                    <Check className="w-4 h-4 text-blue-600 mr-2 mt-0.5 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-4 flex-1">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Everything in Free, plus</p>
+                <ul className="space-y-2">
+                  {['1,000 short links', 'Unlimited QR codes', '100 file-to-link uploads', 'Password-protected links', 'Link expiration (date & click-based)', '1 custom domain', '30-day analytics history', 'Device & country analytics', 'Email support'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-900 font-medium">
+                      <Check className="w-4 h-4 text-blue-600 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
+                <ul className="space-y-2">
+                  {['1 Creator Page', 'Unlimited links', 'Image & button blocks', 'Theme customization', 'Per-link click analytics'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-900 font-medium">
+                      <Check className="w-4 h-4 text-blue-600 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </motion.div>
 
@@ -258,16 +286,29 @@ const Pricing: React.FC = () => {
             >
               Go Pro
             </button>
-            <div className="space-y-3 flex-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Everything in Starter, plus:</p>
-              <ul className="space-y-3">
-                {['Unlimited short links', 'Unlimited QR codes', 'Unlimited file-to-link uploads', 'Advanced password protection', 'Advanced link expiration rules', '5 custom domains', 'Team access (up to 5 users)', 'Advanced analytics', 'API access', 'Priority support'].map((item, i) => (
-                  <li key={i} className="flex items-start text-sm text-gray-600">
-                    <Check className="w-4 h-4 text-purple-600 mr-2 mt-0.5 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-4 flex-1">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Everything in Starter, plus</p>
+                <ul className="space-y-2">
+                  {['Unlimited short links', 'Unlimited QR codes', 'Unlimited file-to-link uploads', 'Advanced password protection', 'Advanced expiration rules', '5 custom domains', 'Team access (up to 5 users)', 'Advanced analytics', 'API access', 'Priority support'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-purple-600 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
+                <ul className="space-y-2">
+                  {['Up to 5 Pages', 'Custom domains for Pages', 'Advanced page analytics', 'Device, country & time insights', 'Team collaboration', 'Smart links (geo / time-based)'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-purple-600 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </motion.div>
 
@@ -289,16 +330,29 @@ const Pricing: React.FC = () => {
             >
               Contact Sales
             </button>
-            <div className="space-y-3 flex-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Everything in Pro, plus:</p>
-              <ul className="space-y-3">
-                {['Unlimited everything', 'Unlimited team members', 'Enterprise-grade secure file sharing', 'Access-controlled & expiring links', 'White-label branding', 'SLA & uptime guarantee', 'Audit logs', 'Dedicated support'].map((item, i) => (
-                  <li key={i} className="flex items-start text-sm text-gray-600">
-                    <Check className="w-4 h-4 text-gray-900 mr-2 mt-0.5 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-4 flex-1">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Everything in Pro, plus</p>
+                <ul className="space-y-2">
+                  {['Unlimited everything', 'Unlimited team members', 'Enterprise-grade secure file sharing', 'Access-controlled & expiring links', 'White-label branding', 'SLA & uptime guarantee', 'Audit logs', 'Dedicated support'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-gray-900 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
+                <ul className="space-y-2">
+                  {['Unlimited Pages', 'White-label Pages', 'Brand fonts & themes', 'Lead capture forms', 'Webhooks & data export', 'Page-level audit logs'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-gray-900 mr-2 mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </motion.div>
 
@@ -308,7 +362,7 @@ const Pricing: React.FC = () => {
       {/* Feature Comparison Table */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl font-bold text-center mb-12">Detail Comparison</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Feature Comparison</h2>
           <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-200">
@@ -321,6 +375,10 @@ const Pricing: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
+                {/* General Features Header */}
+                <tr className="bg-gray-50">
+                  <td colSpan={5} className="px-6 py-3 font-bold text-gray-700 uppercase text-xs tracking-wider">General Features</td>
+                </tr>
                 {[
                   { f: "Short links", free: "50", starter: "1,000", pro: "Unlimited", bus: "Unlimited" },
                   { f: "QR codes", free: "50", starter: "Unlimited", pro: "Unlimited", bus: "Unlimited" },
@@ -333,7 +391,31 @@ const Pricing: React.FC = () => {
                   { f: "API access", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
                   { f: "Support", free: "❌", starter: "Email", pro: "Priority", bus: "Dedicated" },
                 ].map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={`gen-${i}`} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 font-medium text-gray-900">{row.f}</td>
+                    <td className="px-6 py-4 text-gray-500">{row.free}</td>
+                    <td className="px-6 py-4 font-medium text-blue-600">{row.starter}</td>
+                    <td className="px-6 py-4 font-medium text-purple-600">{row.pro}</td>
+                    <td className="px-6 py-4 font-bold text-gray-900">{row.bus}</td>
+                  </tr>
+                ))}
+
+                {/* Pages Features Header */}
+                <tr className="bg-gray-50">
+                  <td colSpan={5} className="px-6 py-3 font-bold text-gray-700 uppercase text-xs tracking-wider border-t border-gray-200">TinySlash Pages</td>
+                </tr>
+                {[
+                  { f: "Pages", free: "1", starter: "1", pro: "5", bus: "Unlimited" },
+                  { f: "Links per Page", free: "5", starter: "Unlimited", pro: "Unlimited", bus: "Unlimited" },
+                  { f: "Image Blocks", free: "❌", starter: "✅", pro: "✅", bus: "✅" },
+                  { f: "Theme Customization", free: "❌", starter: "✅", pro: "✅", bus: "✅" },
+                  { f: "Custom Domain", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
+                  { f: "Advanced Analytics", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
+                  { f: "Branding Removal", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
+                  { f: "Lead Capture", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "White-label Pages", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                ].map((row, i) => (
+                  <tr key={`pages-${i}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">{row.f}</td>
                     <td className="px-6 py-4 text-gray-500">{row.free}</td>
                     <td className="px-6 py-4 font-medium text-blue-600">{row.starter}</td>
@@ -421,6 +503,22 @@ const Pricing: React.FC = () => {
         </div>
       </section>
 
+      <Footer />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        mode={authMode}
+        onSwitchMode={setAuthMode}
+        onSuccess={() => {
+          setIsAuthModalOpen(false);
+          // If they were trying to buy, maybe we should continue? 
+          // For now, just let them be logged in. 
+          // If they need to resume purchase, they can click again.
+          navigate('/dashboard'); // Or stay on page but now authenticated?
+          // Usually redirecting to dashboard is safe for signup.
+        }}
+      />
     </div>
   );
 };

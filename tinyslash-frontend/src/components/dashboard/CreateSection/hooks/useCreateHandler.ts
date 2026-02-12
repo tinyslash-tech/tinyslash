@@ -215,10 +215,26 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
 
       const finalDomain = selectedDomain === DEFAULT_DOMAIN ? baseUrl : `https://${selectedDomain}`;
 
+      // Initialize shortUrl based on type and features
+      let initialShortUrl = `${finalDomain}/${shortCode}`; // Default for Links
+
+      if (mode === 'qr') {
+        if (trustBadgeConfig.requested) {
+          // Feature: Trust Badge -> Always use /verified/ link (Option 3 for Static)
+          initialShortUrl = `${finalDomain}/verified/${shortCode}`;
+        } else if (qrType === 'static') {
+          // Pure Static -> Use Original URL (empty shortUrl triggers fallback)
+          initialShortUrl = '';
+        } else {
+          // Standard Dynamic QR -> Use /q/ link
+          initialShortUrl = `${finalDomain}/q/${shortCode}`;
+        }
+      }
+
       const newLink: ShortenedLink = {
         id: Date.now().toString(),
         shortCode,
-        shortUrl: `${finalDomain}/${shortCode}`,
+        shortUrl: initialShortUrl,
         originalUrl,
         clicks: 0,
         createdAt: new Date().toISOString(),
@@ -232,6 +248,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         trustBadgeConfig: featureAccess.canUseTrustBadge ? trustBadgeConfig : undefined,
         smartActionConfig
       };
+
+      console.log('🚀 Creating Link/QR (Smart Logic):', { mode, qrType, trust: trustBadgeConfig.requested, initialShortUrl }); // Debug log
 
       try {
         let backendResult;
@@ -298,7 +316,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
             logoSize: finalQrCustomization.logoSize,
             logoOpacity: finalQrCustomization.logoOpacity,
             logoCornerRadius: finalQrCustomization.logoCornerRadius,
-            trustBadge: finalQrCustomization.trustBadge,
+            trustBadge: trustBadgeConfig.requested,
             margin: finalQrCustomization.margin,
             logoUrl: finalQrCustomization.logo // Pass logo as logoUrl
           };
@@ -311,14 +329,29 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         }
 
         if (backendResult && backendResult.success) {
-          if (backendResult.data && backendResult.data.shortUrl) {
-            newLink.shortUrl = backendResult.data.shortUrl;
+          console.log('✅ Backend QR Creation Success:', backendResult); // Debug Log
+
+          if (backendResult.data) {
+            console.log('📦 Backend Data:', backendResult.data);
+
+            // Use the backend-computed shortUrl (matches the actual QR redirect URL format)
+            if (backendResult.data.shortUrl) {
+              console.log('🔗 Updating shortUrl from backend:', backendResult.data.shortUrl);
+              newLink.shortUrl = backendResult.data.shortUrl;
+            } else {
+              console.warn('⚠️ No shortUrl in backend response!', backendResult.data);
+            }
+
             newLink.id = backendResult.data.id || newLink.id;
             newLink.shortCode = backendResult.data.shortCode || newLink.shortCode;
+          } else {
+            console.warn('⚠️ Backend success but no data!');
           }
 
+          console.log('🏁 Final newLink object:', newLink);
+
           toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
-          await handleSuccess(newLink, resetForm);
+          await handleSuccess({ ...newLink }, resetForm); // Spread to force new reference
         } else {
           // ... Error handling logic is preserved
           console.error('Backend save failed:', backendResult);

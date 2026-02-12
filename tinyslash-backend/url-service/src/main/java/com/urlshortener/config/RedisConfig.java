@@ -16,6 +16,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -30,6 +32,24 @@ import java.util.Map;
 @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
 public class RedisConfig {
 
+        @Value("${spring.data.redis.host:localhost}")
+        private String redisHost;
+
+        @Value("${spring.data.redis.port:6379}")
+        private int redisPort;
+
+        @Value("${spring.data.redis.password:}")
+        private String redisPassword;
+
+        @Value("${spring.data.redis.database:0}")
+        private int redisDatabase;
+
+        @Value("${spring.data.redis.timeout:2000}")
+        private long redisTimeout;
+
+        @Value("${spring.data.redis.ssl.enabled:true}")
+        private boolean redisSslEnabled;
+
         @Value("${app.cache.url-ttl:3600}")
         private long urlCacheTtl;
 
@@ -38,6 +58,31 @@ public class RedisConfig {
 
         @Value("${app.cache.geo-ttl:86400}")
         private long geoCacheTtl;
+
+        /**
+         * Custom LettuceConnectionFactory with TLS/SSL support for Upstash Redis.
+         * Upstash enforces TLS on all connections — .useSsl().disablePeerVerification()
+         * handles this.
+         */
+        @Bean
+        public LettuceConnectionFactory redisConnectionFactory() {
+                RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration();
+                serverConfig.setHostName(redisHost);
+                serverConfig.setPort(redisPort);
+                serverConfig.setPassword(redisPassword);
+                serverConfig.setDatabase(redisDatabase);
+
+                LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder = LettuceClientConfiguration
+                                .builder()
+                                .commandTimeout(Duration.ofMillis(redisTimeout))
+                                .shutdownTimeout(Duration.ZERO);
+
+                if (redisSslEnabled) {
+                        clientConfigBuilder.useSsl().disablePeerVerification();
+                }
+
+                return new LettuceConnectionFactory(serverConfig, clientConfigBuilder.build());
+        }
 
         @Bean
         @Primary

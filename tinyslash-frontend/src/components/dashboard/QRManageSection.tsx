@@ -151,6 +151,19 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   const [selectedQRCodes, setSelectedQRCodes] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
 
+  useEffect(() => {
+    if (rawQRCodes) {
+      console.log('📦 QR Manager - Raw API Response:', rawQRCodes);
+      rawQRCodes.forEach((qr: any, i: number) => {
+        if (!qr.shortUrl) {
+          console.warn(`⚠️ QR #${i} (ID: ${qr.qrCode}) missing shortUrl!`, qr);
+        } else {
+          console.log(`✅ QR #${i} shortUrl:`, qr.shortUrl);
+        }
+      });
+    }
+  }, [rawQRCodes]);
+
   // Format the raw data from API
   const qrCodes: QRCodeData[] = rawQRCodes ? rawQRCodes.map((qr: any) => ({
     id: qr.qrCode, // Use qrCode as the ID for navigation
@@ -413,8 +426,8 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
       // Import QRCode dynamically to avoid issues
       const QRCode = await import('qrcode');
 
-      // Use shortUrl for dynamic QRs, fallback to original url
-      const qrValue = (qr.isDynamic && qr.shortUrl) ? qr.shortUrl : qr.url;
+      // Always use shortUrl if available (so QR encodes the tracking short link)
+      const qrValue = qr.shortUrl || qr.url;
 
       if (!qrValue) {
         throw new Error('QR Content is empty');
@@ -897,7 +910,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                           <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-contain p-1" />
                         ) : (
                           <QRCodePreview
-                            value={qr.isDynamic && qr.shortUrl ? qr.shortUrl : qr.url}
+                            value={qr.shortUrl || qr.url}
                             size={60}
                             foregroundColor={qr.customization.foregroundColor}
                             backgroundColor={qr.customization.backgroundColor}
@@ -1021,7 +1034,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                         <img src={qr.qrCodeImage} alt={qr.title} className="w-full h-full object-cover" />
                       ) : (
                         <QRCodePreview
-                          value={qr.isDynamic && qr.shortUrl ? qr.shortUrl : qr.url}
+                          value={qr.shortUrl || qr.url}
                           size={48}
                           foregroundColor={qr.customization.foregroundColor}
                           backgroundColor={qr.customization.backgroundColor}

@@ -6,6 +6,7 @@ import com.urlshortener.service.QrCodeService;
 import com.urlshortener.service.DashboardService;
 import com.urlshortener.service.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -27,6 +28,12 @@ public class QrCodeController {
 
     @Autowired
     private DashboardService dashboardService;
+
+    @Value("${app.shorturl.domain:https://pebly.vercel.app}")
+    private String shortUrlDomain;
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
 
     @PostMapping
     @RequiresPlan(feature = "qrCreation", checkLimit = true)
@@ -183,6 +190,13 @@ public class QrCodeController {
             qrData.put("size", qrCode.getSize());
             qrData.put("format", qrCode.getFormat());
             qrData.put("createdAt", qrCode.getCreatedAt());
+            qrData.put("shortCode", qrCode.getShortCode());
+            qrData.put("isDynamic", qrCode.isDynamic());
+            qrData.put("shortUrl", qrCode.isTrustBadge()
+                    ? frontendUrl + "/verified/" + qrCode.getShortCode()
+                    : (qrCode.isDynamic() && qrCode.getShortCode() != null
+                            ? shortUrlDomain + "/q/" + qrCode.getShortCode()
+                            : null));
 
             // Add Advanced Fields to Response
             qrData.put("trustBadge", qrCode.isTrustBadge());
@@ -294,6 +308,13 @@ public class QrCodeController {
             qrData.put("scansByOS", qrCode.getScansByOS());
             qrData.put("scansByHour", qrCode.getScansByHour());
             qrData.put("scansByDay", qrCode.getScansByDay());
+            qrData.put("shortCode", qrCode.getShortCode());
+            qrData.put("isDynamic", qrCode.isDynamic());
+            qrData.put("shortUrl", qrCode.isTrustBadge()
+                    ? frontendUrl + "/verified/" + qrCode.getShortCode()
+                    : (qrCode.isDynamic() && qrCode.getShortCode() != null
+                            ? shortUrlDomain + "/q/" + qrCode.getShortCode()
+                            : null));
             qrData.put("createdAt", qrCode.getCreatedAt());
             qrData.put("updatedAt", qrCode.getUpdatedAt());
             qrData.put("lastScannedAt", qrCode.getLastScannedAt());
@@ -359,6 +380,13 @@ public class QrCodeController {
 
                 qrData.put("totalScans", qr.getTotalScans());
                 qrData.put("uniqueScans", qr.getUniqueScans());
+                qrData.put("shortCode", qr.getShortCode());
+                qrData.put("isDynamic", qr.isDynamic());
+                qrData.put("shortUrl", qr.isTrustBadge()
+                        ? frontendUrl + "/verified/" + qr.getShortCode()
+                        : (qr.isDynamic() && qr.getShortCode() != null
+                                ? shortUrlDomain + "/q/" + qr.getShortCode()
+                                : null));
                 qrData.put("createdAt", qr.getCreatedAt());
                 qrData.put("updatedAt", qr.getUpdatedAt());
                 qrData.put("lastScannedAt", qr.getLastScannedAt());

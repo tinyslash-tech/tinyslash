@@ -59,7 +59,11 @@ const VerifiedPage = () => {
           // We need to set a cookie 'trusted_{shortCode}' = true
           // Then reload the original link which will now bypass the trust check
           document.cookie = `trusted_${shortCode}=true; path=/; max-age=3600;`;
-          window.location.href = `/${shortCode}`; // Redirect back to original link
+
+          // Fix: Redirect to Backend Root (not Frontend) to handle both Links and QRs
+          // QRs are handled by Backend fallback to /q/, while Frontend RedirectPage fails for QRs
+          const backendRoot = API_BASE_URL.replace(/\/api\/?$/, '');
+          window.location.href = `${backendRoot}/${shortCode}`;
           return 0;
         }
         return prev - 1;

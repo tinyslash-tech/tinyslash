@@ -13,7 +13,7 @@ import SupportWidget from './components/support/SupportWidget';
 // Removed unused import
 import AuthRedirect from './components/AuthRedirect';
 import Header from './components/Header';
-import LandingPage from './pages/LandingPage';
+import LandingPage from './pages/LandingPage/index';
 import Home from './pages/Home';
 import Analytics from './pages/Analytics';
 import Pricing from './pages/Pricing';
@@ -51,9 +51,12 @@ import PublicPage from './pages/public/PublicPage';
 import ShortLinks from './pages/ShortLinks';
 import QrCodes from './pages/QrCodes';
 import FileToLink from './pages/FileToLink';
+import TinySlashPages from './pages/TinySlashPages';
 import FAQ from './pages/FAQ';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
+import BlogList from './pages/Blog/BlogList';
+import BlogPostPage from './pages/Blog/BlogPost';
 
 import SocialMedia from './pages/solutions/SocialMedia';
 import DigitalMarketing from './pages/solutions/DigitalMarketing';
@@ -283,9 +286,12 @@ const AppContent: React.FC = () => {
             <Route path="/short-links" element={<ShortLinks />} />
             <Route path="/qr-codes" element={<QrCodes />} />
             <Route path="/file-to-link" element={<FileToLink />} />
+            <Route path="/pages" element={<TinySlashPages />} />
             <Route path="/faq" element={<FAQ />} />
             {/* Overwriting existing /contact route to use new Contact component matching specific SEO requirements */}
             <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
 
             {/* Solutions Pages */}
             <Route path="/solutions/social-media" element={<SocialMedia />} />

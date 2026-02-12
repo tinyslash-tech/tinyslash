@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +32,9 @@ public class QrRedirectController {
 
   @Autowired
   private com.urlshortener.service.TrustVerificationService trustService;
+
+  @Value("${app.frontend.url:http://localhost:3000}")
+  private String frontendUrl;
 
   // TODO: Add caching here (Redis) in future iteration
 
@@ -102,8 +106,8 @@ public class QrRedirectController {
         if (trust.getExpiresAt() == null || trust.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
           boolean trustViewed = hasTrustCookie(request, shortCode);
           if (!trustViewed) {
-            // Redirect to Trust Page
-            return new RedirectView("/verified/" + shortCode);
+            // Redirect to Trust Page (Frontend)
+            return new RedirectView(frontendUrl + "/verified/" + shortCode);
           }
         }
       }

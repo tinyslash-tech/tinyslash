@@ -139,8 +139,9 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
       ctx.fillRect(0, 0, canvas.width, canvas.height - badgeHeight); // QR Background
 
       // Generate Base QR Data
-      // For dynamic QRs, we use the shortUrl if available. If not, fallback to url. 
-      const qrValue = (qr.isDynamic && qr.shortUrl) ? qr.shortUrl : (qr.url || 'https://tinyslash.com');
+      // Always use shortUrl if available (so QR code points to the tracking short link).
+      // Falls back to the original url only if no shortUrl exists.
+      const qrValue = qr.shortUrl || qr.url || 'https://tinyslash.com';
 
       if (!qrValue) {
         console.error("No QR content available");

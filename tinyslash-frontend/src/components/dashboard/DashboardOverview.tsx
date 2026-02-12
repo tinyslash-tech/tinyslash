@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  Link, 
-  QrCode, 
-  Upload, 
-  Eye, 
-  TrendingUp, 
+import {
+  Link,
+  QrCode,
+  Upload,
+  Eye,
+  TrendingUp,
   Globe,
   Plus,
   ExternalLink,
@@ -50,10 +50,10 @@ interface DashboardStats {
 
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) => {
   const { currentScope, teams } = useTeam();
-  
+
   // Use React Query hook for fast loading with caching
   const { stats, isLoading, isRefreshing, hasData, error, refetch } = useDashboardData();
-  
+
   // Get current team if in team scope
   const currentTeam = currentScope.type === 'TEAM' ? teams.find(t => t.id === currentScope.id) : null;
 
@@ -77,7 +77,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     const isAuthError = errorMessage.includes('Authentication') || errorMessage.includes('token');
     const isEndpointError = errorMessage.includes('endpoint not found') || errorMessage.includes('404');
-    
+
     return (
       <div className="p-6 text-center">
         <div className="text-red-600 mb-4">Failed to load dashboard data</div>
@@ -95,14 +95,14 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
           </div>
         )}
         <div className="flex justify-center space-x-3">
-          <button 
+          <button
             onClick={handleRefresh}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             Try Again
           </button>
           {isAuthError && (
-            <button 
+            <button
               onClick={() => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
@@ -118,8 +118,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
     );
   }
 
-  // Show skeleton loading only when there's no cached data
-  if (isLoading && !hasData) {
+  // Show skeleton loading when data is not yet available
+  // This covers both 'isLoading' and the initial state before queries fire
+  if (!stats) {
     return (
       <div className="space-y-6">
         {/* Welcome Section Skeleton */}
@@ -161,29 +162,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
     );
   }
 
-  // If we have cached data, show it even while refreshing
-  if (!stats && !isLoading) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">No dashboard data available</p>
-        <button 
-          onClick={handleRefresh}
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Load Data
-        </button>
-      </div>
-    );
-  }
-
-  // Ensure stats is available before rendering
-  if (!stats) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Loading dashboard data...</p>
-      </div>
-    );
-  }
+  // "No dashboard data available" block removed
+  // "Loading dashboard data..." block removed
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -207,7 +187,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               )}
             </div>
             <p className="text-blue-100 text-sm sm:text-base">
-              {currentScope.type === 'TEAM' 
+              {currentScope.type === 'TEAM'
                 ? `Here's what's happening with your team's content today.`
                 : "Here's what's happening with your links today."
               }
@@ -234,7 +214,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
             <span className="text-sm">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
-        
+
         {/* Mobile-First Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
           <button
@@ -389,11 +369,11 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
-              <Area 
-                type="monotone" 
-                dataKey="clicks" 
-                stroke="#3b82f6" 
-                fill="#3b82f6" 
+              <Area
+                type="monotone"
+                dataKey="clicks"
+                stroke="#3b82f6"
+                fill="#3b82f6"
                 fillOpacity={0.1}
                 strokeWidth={2}
               />
@@ -423,7 +403,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               </p>
               <p className="text-sm text-gray-600">Countries Reached</p>
             </div>
-            
+
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <MapPin className="w-8 h-8 text-green-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-green-600">
@@ -431,7 +411,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               </p>
               <p className="text-sm text-gray-600">Cities Reached</p>
             </div>
-            
+
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <TrendingUp className="w-8 h-8 text-purple-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-purple-600">
@@ -440,7 +420,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               <p className="text-sm text-gray-600">Mobile Traffic</p>
             </div>
           </div>
-          
+
           <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -526,7 +506,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               </div>
               <span className="text-xl font-bold text-blue-600">{stats.shortLinks}</span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <QrCode className="w-5 h-5 text-purple-600" />
@@ -534,7 +514,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               </div>
               <span className="text-xl font-bold text-purple-600">{stats.qrCodeCount}</span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <Upload className="w-5 h-5 text-orange-600" />
@@ -542,7 +522,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
               </div>
               <span className="text-xl font-bold text-orange-600">{stats.fileLinksCount}</span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <MousePointer className="w-5 h-5 text-green-600" />
@@ -570,16 +550,15 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
-        
+
         {stats.recentActivity.length > 0 ? (
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {stats.recentActivity.map((activity, index) => (
               <div key={`${activity.type}-${activity.id || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    activity.type === 'qr' ? 'bg-purple-100' :
-                    activity.type === 'file' ? 'bg-orange-100' : 'bg-blue-100'
-                  }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'qr' ? 'bg-purple-100' :
+                      activity.type === 'file' ? 'bg-orange-100' : 'bg-blue-100'
+                    }`}>
                     {activity.type === 'qr' ? (
                       <QrCode className={`w-4 h-4 ${activity.type === 'qr' ? 'text-purple-600' : 'text-blue-600'}`} />
                     ) : activity.type === 'file' ? (
@@ -610,8 +589,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleDateString('en-US', { 
-                      month: 'short', 
+                    {new Date(activity.timestamp).toLocaleDateString('en-US', {
+                      month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'

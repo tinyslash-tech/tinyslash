@@ -35,7 +35,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  setUser: (user: User | null) => void;
+  setUser: (user: User | null, token?: string | null) => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: () => void;

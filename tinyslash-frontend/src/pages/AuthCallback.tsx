@@ -13,7 +13,7 @@ const AuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { setUser } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Processing authentication...');
+  // Message state removed as requested
 
   // Use ref to prevent double execution in Strict Mode
   const processedRef = React.useRef(false);
@@ -39,13 +39,13 @@ const AuthCallback: React.FC = () => {
         console.log('Starting auth code exchange...');
         try {
           console.log('Calling googleAuthService.handleCallback with code:', code.substring(0, 10) + '...');
-          setMessage('Exchanging authorization code...');
+          // Message updates removed
 
           // Handle the OAuth callback
           const authResponse = await googleAuthService.handleCallback(code);
           console.log('Auth response received:', authResponse);
 
-          setMessage('Setting up your account...');
+          // Message updates removed
 
           // The response now contains both user info and tokens
           if (authResponse.user && authResponse.token) {
@@ -76,11 +76,11 @@ const AuthCallback: React.FC = () => {
               localStorage.setItem('token', authResponse.token);
             }
 
-            // Set user
-            setUser(userData);
+            // Set user with token
+            setUser(userData, authResponse.token);
 
             setStatus('success');
-            setMessage('Authentication successful! Redirecting...');
+            // Message updates removed
 
             toast.success('Successfully signed in with Google!');
 
@@ -112,7 +112,7 @@ const AuthCallback: React.FC = () => {
             errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
           }
 
-          setMessage(errorMessage);
+          // setMessage(errorMessage); // Removed to avoid showing text
           toast.error(errorMessage);
 
           // Redirect to home page after error
@@ -140,7 +140,7 @@ const AuthCallback: React.FC = () => {
           errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
         }
 
-        setMessage(errorMessage);
+        // setMessage(errorMessage); // Removed to avoid showing text
         toast.error(errorMessage);
 
         // Redirect to home page after error
@@ -158,9 +158,8 @@ const AuthCallback: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
         <div className="mb-6">
           {status === 'loading' && (
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            </div>
+            // Spinner removed
+            null
           )}
 
           {status === 'success' && (
@@ -177,20 +176,18 @@ const AuthCallback: React.FC = () => {
         </div>
 
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          {status === 'loading' && 'Authenticating...'}
+          {status === 'loading' && null}
           {status === 'success' && 'Welcome to Pebly!'}
           {status === 'error' && 'Authentication Failed'}
         </h2>
 
-        <p className="text-gray-600 mb-6">
-          {message}
-        </p>
+        {/* Message display removed */}
 
         {status === 'loading' && (
-          <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-3 h-3 bg-black rounded-full animate-bounce"></div>
+            <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+            <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
           </div>
         )}
 

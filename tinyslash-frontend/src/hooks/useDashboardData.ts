@@ -136,7 +136,7 @@ const processDashboardData = (links: any[], qrCodes: any[], files: any[]): Dashb
 
 // Custom hooks
 export const useDashboardData = () => {
-  const { user, token } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
 
   // Check if we have both user and token before making API calls
   const isAuthenticated = !!user?.id && !!token;
@@ -193,7 +193,9 @@ export const useDashboardData = () => {
 
   return {
     stats,
-    isLoading: isInitialLoading,
+    // If auth is still loading, we should consider the data loading as well
+    // or at least not "ready" (stats=null but isLoading=true)
+    isLoading: authLoading || isInitialLoading,
     isRefreshing,
     hasData,
     error: queries.find(query => query.error)?.error,

@@ -176,7 +176,7 @@ const FileAnalyticsPage: React.FC = () => {
             <p className="text-gray-600 mb-4">{error || 'File analytics could not be loaded'}</p>
             <button
               onClick={() => navigate('/dashboard/file-links')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
             >
               Back to File Links
             </button>
@@ -224,7 +224,7 @@ const FileAnalyticsPage: React.FC = () => {
             </button>
             <button
               onClick={() => navigator.clipboard.writeText(analytics.fileUrl)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               <Share2 className="w-4 h-4" />
               <span>Share</span>
@@ -299,7 +299,7 @@ const FileAnalyticsPage: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-black h-2 rounded-full" 
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>
@@ -423,7 +423,7 @@ const FileAnalyticsPage: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-black h-2 rounded-full" 
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>
@@ -491,7 +491,7 @@ const FileAnalyticsPage: React.FC = () => {
               <div className="pt-4 border-t border-gray-200">
                 <button
                   onClick={() => navigator.clipboard.writeText(analytics.fileUrl)}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="w-full bg-black text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   Copy File Link
                 </button>

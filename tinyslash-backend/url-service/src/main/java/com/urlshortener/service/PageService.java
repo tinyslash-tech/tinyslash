@@ -7,6 +7,8 @@ import com.urlshortener.model.User;
 import com.urlshortener.repository.PageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +17,24 @@ import java.util.UUID;
 @Service
 public class PageService {
 
+  private final PageRepository pageRepository;
+  private final StorageService storageService;
+
   @Autowired
-  private PageRepository pageRepository;
+  public PageService(PageRepository pageRepository, StorageService storageService) {
+    this.pageRepository = pageRepository;
+    this.storageService = storageService;
+  }
+
+  public String uploadAsset(MultipartFile file, String userId) throws IOException {
+    String path = "pages/" + userId + "/" + System.currentTimeMillis() + "-" + file.getOriginalFilename();
+    String storedPath = storageService.uploadFile(file, path);
+    String publicUrl = storageService.getPublicUrl(storedPath);
+
+    // If no public URL (GridFS), we might need a controller endpoint to serve it.
+    // For R2, we get the public URL.
+    return publicUrl != null ? publicUrl : storedPath;
+  }
 
   public List<Page> getUserPages(String userId) {
     return pageRepository.findByUserId(userId);

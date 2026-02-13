@@ -20,6 +20,7 @@
 
     <properties>
         <java.version>17</java.version>
+        <aws.java.sdk.version>2.21.1</aws.java.sdk.version>
     </properties>
 
     <dependencies>
@@ -45,6 +46,12 @@
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
+        </dependency>
+
+        <!-- AWS SDK for Cloudflare R2 (S3 Compatible) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
         </dependency>
         
         <!-- Validation -->
@@ -199,6 +206,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws.java.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

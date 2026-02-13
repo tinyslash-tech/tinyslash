@@ -66,4 +66,19 @@ public class PageController {
     User user = getAuthenticatedUser(authentication);
     return ResponseEntity.ok(pageService.getPageById(id, user.getId()));
   }
+
+  @PostMapping("/upload-asset")
+  public ResponseEntity<java.util.Map<String, String>> uploadAsset(
+      @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+      Authentication authentication) {
+
+    User user = getAuthenticatedUser(authentication);
+    try {
+      String assetUrl = pageService.uploadAsset(file, user.getId());
+      return ResponseEntity.ok(java.util.Map.of("url", assetUrl));
+    } catch (java.io.IOException e) {
+      return ResponseEntity.internalServerError()
+          .body(java.util.Map.of("error", "Failed to upload asset: " + e.getMessage()));
+    }
+  }
 }

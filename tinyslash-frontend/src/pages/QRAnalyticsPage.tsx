@@ -120,7 +120,7 @@ const QRAnalyticsPage: React.FC = () => {
             <p className="text-gray-600 mb-4">{error || 'QR code analytics could not be loaded'}</p>
             <button
               onClick={() => navigate('/dashboard/qr-codes')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
             >
               Back to QR Codes
             </button>
@@ -156,7 +156,7 @@ const QRAnalyticsPage: React.FC = () => {
               <RefreshCw className="w-4 h-4" />
               <span>Refresh</span>
             </button>
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
               <Download className="w-4 h-4" />
               <span>Export</span>
             </button>
@@ -230,7 +230,7 @@ const QRAnalyticsPage: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-black h-2 rounded-full" 
                             style={{ width: `${(count / analytics.totalScans) * 100}%` }}
                           ></div>
                         </div>
@@ -354,7 +354,7 @@ const QRAnalyticsPage: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-black h-2 rounded-full" 
                             style={{ width: `${(count / analytics.totalScans) * 100}%` }}
                           ></div>
                         </div>
@@ -399,7 +399,7 @@ const QRAnalyticsPage: React.FC = () => {
               <div className="pt-4 border-t border-gray-200">
                 <button
                   onClick={() => navigate(`/dashboard/qr-codes/edit/${analytics.qrCode}`)}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="w-full bg-black text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   Edit QR Code
                 </button>

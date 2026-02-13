@@ -31,9 +31,10 @@ import QRSuccessModal from '../../QRSuccessModal';
 interface CreateSectionProps {
   mode: CreateMode;
   onModeChange: (mode: CreateMode) => void;
+  onNavigateToFiles?: () => void;
 }
 
-const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => {
+const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNavigateToFiles }) => {
   const { user } = useAuth();
   const { planInfo, checkAccess, showUpgradeModal } = useSubscription();
   const upgradeModal = useUpgradeModal();
@@ -385,12 +386,22 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange }) => 
           isOpen={showSuccessModal}
           onClose={() => {
             setShowSuccessModal(false);
-            // setResult(null); // Optional: clear result on close if desired, consistent with backup
+            if (mode === 'file' && onNavigateToFiles) {
+              onNavigateToFiles();
+            }
           }}
           shortUrl={result.shortUrl || ''}
           originalUrl={result.originalUrl || ''}
           qrCode={result.qrCode}
           type={mode}
+          onCopy={() => {
+            if (mode === 'file' && onNavigateToFiles) {
+              // Small delay to let toast show
+              setTimeout(() => {
+                onNavigateToFiles();
+              }, 500);
+            }
+          }}
         />
       )}
 

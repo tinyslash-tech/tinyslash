@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as QRCode from 'qrcode'; // Need for final generation
 import { toast } from 'react-hot-toast';
-import { createShortUrl, createQrCode, updateQrCode, uploadFileToBackend } from '../../../../services/api';
+import { createShortUrl, createQrCode, updateQrCode, uploadFileToBackend, updateFile } from '../../../../services/api';
 import { DEFAULT_DOMAIN, ShortenedLink, CreateMode, QRCustomization, SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, TrustBadgeConfig, SmartActionConfig } from '../types';
 
 interface UseCreateHandlerProps {
@@ -114,9 +114,12 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
   };
 
   const handleCreate = async (resetForm: () => void) => {
-    if (mode === 'url' && !urlInput.trim()) return;
-    if (mode === 'qr' && !qrText.trim()) return;
-    if (mode === 'file' && !selectedFile) return;
+    console.log('🚀 handleCreate called. Mode:', mode);
+    const toastId = toast.loading('Processing request...');
+
+    if (mode === 'url' && !urlInput.trim()) { toast.error('URL is empty'); return; }
+    if (mode === 'qr' && !qrText.trim()) { toast.error('QR text is empty'); return; }
+    if (mode === 'file' && !selectedFile) { toast.error('No file selected'); return; }
 
     // For free users, clear any premium field values
     const finalCustomAlias = featureAccess.canUseCustomAlias ? customAlias : '';
@@ -135,10 +138,11 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     // Check subscription limits
     if (user?.id) {
       try {
-        const action = mode === 'url' ? 'create-url' : mode === 'qr' ? 'create-qr' : 'create-file';
+        const action = mode === 'url' ? 'create-url' : mode === 'qr' ? 'create-qr' : 'upload-file';
         const accessCheck = await checkAccess(action);
 
         if (!accessCheck.hasAccess) {
+          toast.error(`Limit reached: ${accessCheck.message}`, { id: toastId });
           showUpgradeModal('daily-limit', accessCheck.message);
           return;
         }
@@ -150,6 +154,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
             qrCustomization.frameStyle !== 'none';
 
           if (hasCustomization && !(await checkAccess('customize-qr')).hasAccess) {
+            toast.error('Upgrade required for customization', { id: toastId });
             showUpgradeModal('customize-qr');
             return;
           }
@@ -160,6 +165,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
           const fileSizeMB = selectedFile.size / (1024 * 1024);
 
           if (fileSizeMB > maxSizeMB) {
+            toast.error(`File too large (> ${maxSizeMB}MB)`, { id: toastId });
             showUpgradeModal('file-size', `File size exceeds ${maxSizeMB}MB limit.`);
             return;
           }
@@ -171,17 +177,22 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
 
     setIsLoading(true);
     setErrorMessage(null);
+    // toast.dismiss(toastId); // Keep it alive for updates
 
     try {
       const shortCode = finalCustomAlias || Math.random().toString(36).substr(2, 7);
       const baseUrl = window.location.origin;
       let originalUrl = '';
+      let uploadedFileCode = ''; // Store fileCode for later update
 
       if (mode === 'url') {
         originalUrl = urlInput;
       } else if (mode === 'qr') {
         originalUrl = qrText;
       } else if (mode === 'file' && selectedFile) {
+        console.log('Pf Uploading file:', selectedFile.name);
+        toast.loading('Uploading file to server...', { id: toastId });
+
         const reader = new FileReader();
         await new Promise<string>((resolve) => {
           reader.onload = (e) => resolve(e.target?.result as string);
@@ -196,14 +207,21 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
             isPublic: true
           });
 
+          console.log('📂 File upload result:', fileResult);
+
           if (fileResult.success) {
             originalUrl = fileResult.data.fileUrl;
-            toast.success('File uploaded to database successfully!');
+            uploadedFileCode = fileResult.data.fileCode; // Capture fileCode
+            console.log('✅ File uploaded, originalUrl set to:', originalUrl);
+            toast.success('File uploaded! Generating link...', { id: toastId });
           } else {
+            console.error('❌ File upload failed:', fileResult);
+            toast.error(`Upload failed: ${fileResult.message}`, { id: toastId });
             throw new Error(fileResult.message || 'File upload failed');
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('File upload error:', error);
+          toast.error(`File upload error: ${error.message}`, { id: toastId });
           if (handleApiError(error)) {
             setIsLoading(false);
             return;
@@ -257,7 +275,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         // Construct Payload with new features
         const commonPayload = {
           userId: user?.id || 'anonymous-user',
-          title: mode === 'url' ? `Dashboard URL - ${shortCode}` : `Dashboard QR - ${shortCode}`,
+          title: mode === 'url' ? `Dashboard URL - ${shortCode}` : mode === 'file' ? (selectedFile?.name || `File Share - ${shortCode}`) : `Dashboard QR - ${shortCode}`,
           description: 'Created via Dashboard',
 
           // Legacy Features
@@ -279,11 +297,13 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
           smartActionConfig: newLink.smartActionConfig
         };
 
-        if (mode === 'url') {
+        if (mode === 'url' || mode === 'file') {
+          console.log('🚀 Calling createShortUrl with:', { originalUrl, ...commonPayload });
           backendResult = await createShortUrl({
             originalUrl: originalUrl,
             ...commonPayload
           });
+          console.log('📡 createShortUrl result:', backendResult);
         } else if (mode === 'qr') {
           // Flatten advanced customization fields for the backend
           const qrPayload = {
@@ -350,7 +370,22 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
 
           console.log('🏁 Final newLink object:', newLink);
 
-          toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created and saved to database!');
+
+          toast.success(isEditMode ? 'QR code updated successfully!' : 'Link created!', { id: toastId });
+
+          // If mode is file, update the file record with the shortUrl
+          if (mode === 'file' && newLink.shortUrl && uploadedFileCode) {
+            try {
+              console.log('📝 Updating file record with shortUrl:', uploadedFileCode);
+              await updateFile(uploadedFileCode, {
+                userId: user?.id,
+                shortUrl: newLink.shortUrl
+              });
+            } catch (err) {
+              console.error('Failed to update file with shortUrl', err);
+            }
+          }
+
           await handleSuccess({ ...newLink }, resetForm); // Spread to force new reference
         } else {
           // ... Error handling logic is preserved
@@ -375,7 +410,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
             return;
           }
 
-          toast.error(backendErrorMsg);
+          toast.error(backendErrorMsg, { id: toastId });
           setErrorMessage(backendErrorMsg);
           setIsLoading(false);
           return;
@@ -393,6 +428,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
 
     } catch (error: any) {
       console.error('Error creating link:', error);
+      toast.error(`Error: ${error.message || 'Unknown error'}`, { id: toastId });
       setIsLoading(false);
       if (handleApiError(error)) {
         return;

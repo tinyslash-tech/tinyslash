@@ -10,7 +10,8 @@ import {
   Palette,
   Type,
   Settings,
-  RefreshCw
+  RefreshCw,
+  Image as ImageIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import QRCodeGenerator from '../components/QRCodeGenerator';
@@ -28,6 +29,10 @@ interface QRCodeData {
   size: number;
   format: string;
   qrImageUrl?: string;
+  logoUrl?: string;
+  logoSize?: number;
+  logoOpacity?: number;
+  logoCornerRadius?: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -53,7 +58,11 @@ const QREditPage: React.FC = () => {
     foregroundColor: '#000000',
     backgroundColor: '#ffffff',
     size: 300,
-    format: 'PNG'
+    format: 'PNG',
+    logoUrl: '',
+    logoSize: 0.2, // 20% of QR size
+    logoOpacity: 1,
+    logoCornerRadius: 0
   });
 
   useEffect(() => {
@@ -87,7 +96,11 @@ const QREditPage: React.FC = () => {
           foregroundColor: data.foregroundColor || '#000000',
           backgroundColor: data.backgroundColor || '#ffffff',
           size: data.size || 300,
-          format: data.format || 'PNG'
+          format: data.format || 'PNG',
+          logoUrl: data.logoUrl || '',
+          logoSize: data.logoSize || 0.2,
+          logoOpacity: data.logoOpacity !== undefined ? data.logoOpacity : 1,
+          logoCornerRadius: data.logoCornerRadius || 0
         });
       } else {
         setError(result.message || 'QR code not found');
@@ -125,7 +138,11 @@ const QREditPage: React.FC = () => {
           foregroundColor: formData.foregroundColor,
           backgroundColor: formData.backgroundColor,
           size: formData.size,
-          format: formData.format
+          format: formData.format,
+          logoUrl: (formData as any).logoUrl,
+          logoSize: (formData as any).logoSize,
+          logoOpacity: (formData as any).logoOpacity,
+          logoCornerRadius: (formData as any).logoCornerRadius
         }),
       });
 
@@ -170,7 +187,11 @@ const QREditPage: React.FC = () => {
           foregroundColor: formData.foregroundColor,
           backgroundColor: formData.backgroundColor,
           size: formData.size,
-          format: formData.format
+          format: formData.format,
+          logoUrl: (formData as any).logoUrl,
+          logoSize: (formData as any).logoSize,
+          logoOpacity: (formData as any).logoOpacity,
+          logoCornerRadius: (formData as any).logoCornerRadius
         }),
       });
 
@@ -197,16 +218,50 @@ const QREditPage: React.FC = () => {
     }));
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    const toastId = toast.loading('Uploading logo...');
+    try {
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('userId', user.id);
+
+      // Using fetch with multipart/form-data directly to ensure boundary is set correctly by browser
+      // And we need to point to the correct endpoint
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+      const response = await fetch(`${apiUrl}/v1/qr/upload-logo`, {
+        method: 'POST',
+        // Headers: do NOT set Content-Type, browser sets it with boundary
+        body: uploadData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        handleInputChange('logoUrl', result.url);
+        toast.success('Logo uploaded', { id: toastId });
+      } else {
+        toast.error(result.message || 'Upload failed', { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Upload failed', { id: toastId });
+    }
+  };
+
   const handleDownloadQR = async () => {
     try {
       // Generate QR code using the qrcode library with full customization
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context not available');
-      
+
       // Import QRCode dynamically to avoid issues
       const QRCode = await import('qrcode');
-      
+
       // Generate basic QR code on canvas first
       await QRCode.toCanvas(canvas, formData.content || 'https://example.com', {
         width: formData.size,
@@ -222,13 +277,18 @@ const QREditPage: React.FC = () => {
       if (formData.style !== 'square') {
         await applyStyleToCanvas(ctx, canvas, formData);
       }
-      
+
+      // Draw Logo if exists
+      if ((formData as any).logoUrl) {
+        await drawLogoOnCanvas(ctx, canvas, formData);
+      }
+
       // Download the canvas as PNG
       const link = document.createElement('a');
       link.download = `${(formData.title || 'qr_code').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_customized.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      
+
       toast.success('QR Code downloaded successfully!');
     } catch (error) {
       console.error('Error generating QR code for download:', error);
@@ -280,6 +340,35 @@ const QREditPage: React.FC = () => {
     }
   };
 
+  const drawLogoOnCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, customization: any) => {
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = customization.logoUrl;
+      img.onload = () => {
+        const size = canvas.width * (customization.logoSize || 0.2);
+        const x = (canvas.width - size) / 2;
+        const y = (canvas.height - size) / 2;
+
+        ctx.save();
+        ctx.globalAlpha = customization.logoOpacity || 1;
+
+        // Draw rounded rect clip if needed
+        if (customization.logoCornerRadius) {
+          ctx.beginPath();
+          // Simple rect for now, could improve with rounded rect logic
+          ctx.rect(x, y, size, size);
+          ctx.clip();
+        }
+
+        ctx.drawImage(img, x, y, size, size);
+        ctx.restore();
+        resolve();
+      };
+      img.onerror = () => resolve();
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -305,7 +394,7 @@ const QREditPage: React.FC = () => {
             <p className="text-gray-600 mb-4">{error || 'The QR code could not be loaded'}</p>
             <button
               onClick={() => navigate('/dashboard/qr-codes')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
             >
               Back to QR Codes
             </button>
@@ -344,7 +433,7 @@ const QREditPage: React.FC = () => {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex items-center space-x-2 px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Saving...' : 'Save Changes'}</span>
@@ -462,12 +551,12 @@ const QREditPage: React.FC = () => {
                         title={preset.name}
                       >
                         <div className="w-6 h-6 rounded border border-gray-200 flex">
-                          <div 
-                            className="w-3 h-6 rounded-l" 
+                          <div
+                            className="w-3 h-6 rounded-l"
                             style={{ backgroundColor: preset.fg }}
                           ></div>
-                          <div 
-                            className="w-3 h-6 rounded-r" 
+                          <div
+                            className="w-3 h-6 rounded-r"
                             style={{ backgroundColor: preset.bg }}
                           ></div>
                         </div>
@@ -567,11 +656,10 @@ const QREditPage: React.FC = () => {
                         key={pattern.id}
                         type="button"
                         onClick={() => handleInputChange('style', pattern.id)}
-                        className={`p-3 border-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
-                          formData.style === pattern.id
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-3 border-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${formData.style === pattern.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <span className="text-lg">{pattern.icon}</span>
                         <span>{pattern.name}</span>
@@ -595,11 +683,10 @@ const QREditPage: React.FC = () => {
                         key={corner.id}
                         type="button"
                         onClick={() => handleInputChange('cornerStyle', corner.id)}
-                        className={`p-3 border-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
-                          (formData as any).cornerStyle === corner.id
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-3 border-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${(formData as any).cornerStyle === corner.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <span className="text-lg">{corner.icon}</span>
                         <span>{corner.name}</span>
@@ -623,11 +710,10 @@ const QREditPage: React.FC = () => {
                         key={frame.id}
                         type="button"
                         onClick={() => handleInputChange('frameStyle', frame.id)}
-                        className={`p-3 border-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
-                          (formData as any).frameStyle === frame.id
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-3 border-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${(formData as any).frameStyle === frame.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <span className="text-lg">{frame.icon}</span>
                         <span>{frame.name}</span>
@@ -708,7 +794,7 @@ const QREditPage: React.FC = () => {
             {/* Current QR Code Info */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Current QR Code</h3>
-              
+
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-gray-700">QR Code ID</label>

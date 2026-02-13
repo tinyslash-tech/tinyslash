@@ -40,7 +40,7 @@ const JobDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-white pt-20 flex justify-center items-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
           <p className="text-gray-500">Loading job details...</p>
         </div>
       </div>
@@ -98,7 +98,7 @@ const JobDetail: React.FC = () => {
             <div className="flex-shrink-0 mt-6 md:mt-0">
               <Link
                 to={`/careers/apply?jobId=${job.id}`}
-                className="inline-flex justify-center items-center w-full md:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:-translate-y-1"
+                className="inline-flex justify-center items-center w-full md:w-auto px-8 py-4 bg-black hover:bg-gray-800 text-white font-bold rounded-lg shadow-lg shadow-gray-500/30 transition-all hover:-translate-y-1"
               >
                 Apply Now <ArrowRight className="w-5 h-5 ml-2" />
               </Link>

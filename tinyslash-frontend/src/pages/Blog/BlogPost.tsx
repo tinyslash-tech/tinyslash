@@ -100,7 +100,7 @@ const BlogPostPage: React.FC = () => {
                 <Share2 size={20} /> Share this article
               </h3>
               <div className="flex gap-4">
-                <button className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
+                <button className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-black hover:text-white transition-all">
                   <Twitter size={18} />
                 </button>
                 <button className="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center hover:bg-blue-900 transition-all">

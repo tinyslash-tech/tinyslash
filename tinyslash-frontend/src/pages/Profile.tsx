@@ -333,7 +333,7 @@ const SubscriptionSection: React.FC = () => {
           <>
             <button
               onClick={() => window.location.href = '/pricing'}
-              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center justify-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               <CreditCard className="w-4 h-4 mr-2" />
               Manage Billing
@@ -451,7 +451,7 @@ const Profile: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSave}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Changes</span>
@@ -460,7 +460,7 @@ const Profile: React.FC = () => {
             ) : (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
               >
                 <Edit3 className="w-4 h-4" />
                 <span>Edit Profile</span>
@@ -489,7 +489,7 @@ const Profile: React.FC = () => {
                     {isEditing && (
                       <button
                         onClick={handleAvatarChange}
-                        className="absolute bottom-1 right-1 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg"
+                        className="absolute bottom-1 right-1 w-10 h-10 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shadow-lg"
                       >
                         <Camera className="w-5 h-5" />
                       </button>
@@ -752,7 +752,7 @@ const Profile: React.FC = () => {
                         disabled={!isEditing}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 transition-colors"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black transition-colors"></div>
                     </label>
                   </div>
                 ))}
@@ -784,7 +784,7 @@ const Profile: React.FC = () => {
                       disabled={!isEditing}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 transition-colors"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black transition-colors"></div>
                   </label>
                 </div>
 
@@ -805,7 +805,7 @@ const Profile: React.FC = () => {
                       disabled={!isEditing}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 transition-colors"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black transition-colors"></div>
                   </label>
                 </div>
               </div>

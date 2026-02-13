@@ -106,7 +106,11 @@ const UnifiedDashboard: React.FC = () => {
       case 'dashboard':
         return <DashboardOverview onCreateClick={handleCreateClick} />;
       case 'create':
-        return <CreateSection mode={createMode} onModeChange={setCreateMode} />;
+        return <CreateSection
+          mode={createMode}
+          onModeChange={setCreateMode}
+          onNavigateToFiles={() => setActiveSection('file-to-url')}
+        />;
       case 'links':
         return <LinksManager onCreateClick={() => handleCreateClick('url')} />;
       case 'qr-codes':

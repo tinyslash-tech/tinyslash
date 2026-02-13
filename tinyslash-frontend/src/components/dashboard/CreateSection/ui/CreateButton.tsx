@@ -30,6 +30,7 @@ export const CreateButton: React.FC<CreateButtonProps> = ({
   return (
     <div className="pt-2">
       <button
+        type="button"
         onClick={onClick}
         disabled={isLoading || disabled}
         className={`w-full flex items-center justify-center space-x-2 py-3 sm:py-4 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform transition-all duration-200 active:scale-[0.98] ${(isLoading || disabled) ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-0.5'

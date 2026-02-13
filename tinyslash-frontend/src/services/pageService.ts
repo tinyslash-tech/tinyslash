@@ -13,6 +13,17 @@ export const pageService = {
     return response.data;
   },
 
+  uploadAsset: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<{ url: string }>('/pages/upload-asset', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   getAll: async () => {
     const response = await api.get<Page[]>('/pages');
     return response.data;

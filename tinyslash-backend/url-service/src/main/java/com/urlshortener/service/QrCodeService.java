@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
@@ -39,20 +40,40 @@ public class QrCodeService {
 
     private static final Logger logger = LoggerFactory.getLogger(QrCodeService.class);
 
-    @Autowired
-    private QrCodeRepository qrCodeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private CacheService cacheService;
-
-    @Autowired
-    private SecurityService securityService;
+    private final QrCodeRepository qrCodeRepository;
+    private final UserRepository userRepository;
+    private final CacheService cacheService;
+    private final SecurityService securityService;
+    private final StorageService storageService;
 
     @Value("${app.shorturl.domain:https://pebly.vercel.app}")
     private String shortUrlDomain;
+
+    @Autowired
+    public QrCodeService(QrCodeRepository qrCodeRepository,
+            UserRepository userRepository,
+            CacheService cacheService,
+            SecurityService securityService,
+            StorageService storageService) {
+        this.qrCodeRepository = qrCodeRepository;
+        this.userRepository = userRepository;
+        this.cacheService = cacheService;
+        this.securityService = securityService;
+        this.storageService = storageService;
+    }
+
+    public String uploadLogo(MultipartFile file, String userId) throws IOException {
+        String path = "qr-logos/" + userId + "/" + System.currentTimeMillis() + "-" + file.getOriginalFilename();
+        String storedPath = storageService.uploadFile(file, path);
+        String publicUrl = storageService.getPublicUrl(storedPath);
+
+        // If no public URL (GridFS), we might need a controller endpoint to serve it.
+        // For R2, we get the public URL.
+        // If publicUrl is null, it means we probably need to construct a local proxy
+        // URL or handle it differently.
+        // For now, assuming R2 returns a valid URL or we use the stored path.
+        return publicUrl != null ? publicUrl : storedPath;
+    }
 
     public QrCode createQrCode(String content, String contentType, String userId,
             String title, String description, String style,
@@ -141,9 +162,12 @@ public class QrCodeService {
             qrCode.setSecondaryColor(configContainer.getSecondaryColor());
             qrCode.setCenterText(configContainer.getCenterText());
             qrCode.setCenterTextColor(configContainer.getCenterTextColor());
+            // Logo Configs
+            qrCode.setLogoUrl(configContainer.getLogoUrl()); // Copy Logo URL
             qrCode.setLogoSize(configContainer.getLogoSize());
             qrCode.setLogoOpacity(configContainer.getLogoOpacity());
             qrCode.setLogoCornerRadius(configContainer.getLogoCornerRadius());
+
             qrCode.setCenterTextFontSize(configContainer.getCenterTextFontSize());
             qrCode.setCenterTextFontFamily(configContainer.getCenterTextFontFamily());
             qrCode.setCenterTextBackgroundColor(configContainer.getCenterTextBackgroundColor());
@@ -177,6 +201,7 @@ public class QrCodeService {
 
             // For now, we'll store as base64 in the qrImagePath field
             // In production, you might want to store in GridFS or file system
+            // TODO: Move this to StorageService as well for uniformity if needed
             String base64Image = Base64.getEncoder().encodeToString(qrImageBytes);
             qrCode.setQrImagePath("data:image/" + format.toLowerCase() + ";base64," + base64Image);
 
@@ -369,6 +394,8 @@ public class QrCodeService {
             existing.setCenterText(updates.getCenterText());
         if (updates.getCenterTextColor() != null)
             existing.setCenterTextColor(updates.getCenterTextColor());
+        if (updates.getLogoUrl() != null)
+            existing.setLogoUrl(updates.getLogoUrl()); // Update logo URL
         if (updates.getLogoSize() != null)
             existing.setLogoSize(updates.getLogoSize());
         if (updates.getLogoOpacity() != null)

@@ -52,6 +52,42 @@ interface AdvancedSettingsProps {
   upgradeModal: any;
 }
 
+// Reusable Accordion Section
+const AccordionSection = ({
+  title,
+  icon: Icon,
+  isOpen,
+  setIsOpen,
+  headerColorClass,
+  children
+}: {
+  title: string,
+  icon: any,
+  isOpen: boolean,
+  setIsOpen: (v: boolean) => void,
+  headerColorClass: string,
+  children: React.ReactNode
+}) => (
+  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 mb-4">
+    <button
+      onClick={() => setIsOpen(!isOpen)}
+      className={`w-full flex items-center justify-between p-4 font-medium transition-colors ${isOpen ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'}`}
+    >
+      <span className={`flex items-center ${isOpen ? 'text-gray-900' : 'text-gray-600'}`}>
+        <Icon className={`w-5 h-5 mr-3 ${headerColorClass}`} />
+        {title}
+      </span>
+      {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+    </button>
+
+    {isOpen && (
+      <div className="p-4 sm:p-6 border-t border-gray-100 bg-white animate-fadeIn">
+        {children}
+      </div>
+    )}
+  </div>
+);
+
 export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   mode,
   selectedDomain,
@@ -87,42 +123,6 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   const [isBasicOpen, setIsBasicOpen] = useState(false);
   const [isGrowthOpen, setIsGrowthOpen] = useState(false);
   const [isSecurityOpen, setIsSecurityOpen] = useState(false);
-
-  // Reusable Accordion Section
-  const AccordionSection = ({
-    title,
-    icon: Icon,
-    isOpen,
-    setIsOpen,
-    headerColorClass,
-    children
-  }: {
-    title: string,
-    icon: any,
-    isOpen: boolean,
-    setIsOpen: (v: boolean) => void,
-    headerColorClass: string,
-    children: React.ReactNode
-  }) => (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 mb-4">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between p-4 font-medium transition-colors ${isOpen ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'}`}
-      >
-        <span className={`flex items-center ${isOpen ? 'text-gray-900' : 'text-gray-600'}`}>
-          <Icon className={`w-5 h-5 mr-3 ${headerColorClass}`} />
-          {title}
-        </span>
-        {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-      </button>
-
-      {isOpen && (
-        <div className="p-4 sm:p-6 border-t border-gray-100 bg-white animate-fadeIn">
-          {children}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="space-y-2">
@@ -250,30 +250,31 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
       </AccordionSection>
 
       {/* 2. Growth & Marketing */}
-      {/* 2. Growth & Marketing */}
-      <AccordionSection
-        title="Growth & Marketing"
-        icon={Sparkles}
-        isOpen={isGrowthOpen}
-        setIsOpen={setIsGrowthOpen}
-        headerColorClass="text-purple-600"
-      >
-        <GrowthMarketing
-          smartLinkPreview={smartLinkPreview}
-          setSmartLinkPreview={setSmartLinkPreview}
-          geoConfig={geoConfig}
-          setGeoConfig={setGeoConfig}
-          deepLinkConfig={deepLinkConfig}
-          setDeepLinkConfig={setDeepLinkConfig}
-          leadLockConfig={leadLockConfig}
-          setLeadLockConfig={setLeadLockConfig}
-          smartActionConfig={smartActionConfig}
-          setSmartActionConfig={setSmartActionConfig}
-          featureAccess={featureAccess}
-          upgradeModal={upgradeModal}
-          mode={mode}
-        />
-      </AccordionSection>
+      {mode !== 'file' && (
+        <AccordionSection
+          title="Growth & Marketing"
+          icon={Sparkles}
+          isOpen={isGrowthOpen}
+          setIsOpen={setIsGrowthOpen}
+          headerColorClass="text-purple-600"
+        >
+          <GrowthMarketing
+            smartLinkPreview={smartLinkPreview}
+            setSmartLinkPreview={setSmartLinkPreview}
+            geoConfig={geoConfig}
+            setGeoConfig={setGeoConfig}
+            deepLinkConfig={deepLinkConfig}
+            setDeepLinkConfig={setDeepLinkConfig}
+            leadLockConfig={leadLockConfig}
+            setLeadLockConfig={setLeadLockConfig}
+            smartActionConfig={smartActionConfig}
+            setSmartActionConfig={setSmartActionConfig}
+            featureAccess={featureAccess}
+            upgradeModal={upgradeModal}
+            mode={mode}
+          />
+        </AccordionSection>
+      )}
 
       {/* 3. Security & Trust */}
       <AccordionSection

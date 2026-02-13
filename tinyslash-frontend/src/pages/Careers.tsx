@@ -46,7 +46,7 @@ const Careers: React.FC = () => {
           <div className="flex justify-center">
             <a
               href="#open-positions"
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 group"
+              className="px-8 py-4 bg-black hover:bg-blue-500 text-white font-semibold rounded-lg transition-all shadow-lg shadow-gray-500/30 flex items-center gap-2 group"
             >
               View Open Roles
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -112,7 +112,7 @@ const Careers: React.FC = () => {
 
           {loading ? (
             <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
               <p className="text-gray-500">Loading open roles...</p>
             </div>
           ) : (
@@ -125,7 +125,7 @@ const Careers: React.FC = () => {
                   <>
                     <div className="mb-20">
                       <h3 className="text-2xl font-bold text-slate-800 mb-8 flex items-center gap-2">
-                        <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
+                        <span className="w-2 h-8 bg-black rounded-full"></span>
                         Full-time Opportunities
                       </h3>
                       {fullTimeJobs.length > 0 ? (
@@ -296,7 +296,7 @@ const BenefitCard: React.FC<{ icon: React.ReactNode; title: string; description:
 
 const ProcessStep: React.FC<{ number: string; title: string; description: string }> = ({ number, title, description }) => (
   <div className="bg-white md:bg-transparent p-6 md:p-0 rounded-xl shadow-sm md:shadow-none border md:border-none border-gray-100 text-center relative z-10">
-    <div className="w-10 h-10 bg-blue-600 text-white font-bold rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-slate-50">
+    <div className="w-10 h-10 bg-black text-white font-bold rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-slate-50">
       {number}
     </div>
     <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>

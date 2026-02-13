@@ -607,6 +607,38 @@ public class QrCodeController {
         }
     }
 
+    @PostMapping("/upload-logo")
+    public ResponseEntity<Map<String, Object>> uploadLogo(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("userId") String userId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            if (userId == null || userId.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "User ID is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Check subscription limits if necessary (e.g. canCustomizeQrCodes)
+            // For now, allowing upload, but creation/update might block usage if not
+            // premium
+
+            String logoUrl = qrCodeService.uploadLogo(file, userId);
+
+            response.put("success", true);
+            response.put("message", "Logo uploaded successfully");
+            response.put("url", logoUrl);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to upload logo: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     @PostMapping("/{qrCodeId}/scan")
     public ResponseEntity<Map<String, Object>> recordScan(@PathVariable String qrCodeId,
             @RequestBody Map<String, String> request) {

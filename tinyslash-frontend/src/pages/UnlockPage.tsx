@@ -159,7 +159,7 @@ const UnlockPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center space-x-2"
+                className="w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center space-x-2"
               >
                 {loading ? (
                   <span>Verifying...</span>

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
+import { pageService } from '../../../services/pageService';
 import { Page, PageBlock } from '../../../types/page';
 import {
   Plus, GripVertical, Trash2, Link2, Type, Image as ImageIcon,
@@ -174,6 +176,63 @@ const BlockEditor = ({ block, onChange }: { block: PageBlock, onChange: (c: any)
           placeholder="Enter text..."
           className="w-full text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 font-medium"
         />
+      );
+    case 'IMAGE':
+      return (
+        <div className="space-y-2">
+          {block.content.url ? (
+            <div className="relative group">
+              <img src={block.content.url} alt={block.content.alt || 'Block Image'} className="w-full h-32 object-cover rounded-lg border border-gray-200" />
+              <button
+                onClick={() => onChange({ ...block.content, url: '' })}
+                className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-sm hover:bg-red-50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                <p className="text-xs text-gray-500">Click to upload image</p>
+              </div>
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+
+                  // We need to import toast and pageService at top level
+                  // For now assuming passed in or available in scope. 
+                  // Actually BlockEditor is defined outside component, so we need to pass service or handle logic.
+                  // BETTER: Allow BlockEditor to handle upload if we move it or use prop.
+                  // Since this is a simple function, we can just use the imported service.
+
+                  const toastId = toast.loading('Uploading image...');
+                  try {
+                    const response = await pageService.uploadAsset(file);
+                    if (response.url) {
+                      onChange({ ...block.content, url: response.url });
+                      toast.success('Image uploaded', { id: toastId });
+                    }
+                  } catch (error) {
+                    console.error(error);
+                    toast.error('Upload failed', { id: toastId });
+                  }
+                }}
+              />
+            </label>
+          )}
+          <input
+            type="text"
+            value={block.content.alt || ''}
+            onChange={(e) => onChange({ ...block.content, alt: e.target.value })}
+            placeholder="Alt Text (Accessibility)"
+            className="w-full text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
       );
     case 'SOCIAL':
       return (

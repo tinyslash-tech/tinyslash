@@ -83,7 +83,7 @@ const FileViewer: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
           <p className="text-gray-600">Loading file...</p>
         </div>
       </div>
@@ -100,7 +100,7 @@ const FileViewer: React.FC = () => {
           <p className="text-sm text-gray-500 mb-4">File ID: {fileId}</p>
           <button
             onClick={() => window.location.href = '/'}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Go Home
           </button>
@@ -130,7 +130,7 @@ const FileViewer: React.FC = () => {
             </div>
             <button
               onClick={downloadFile}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2"
             >
               <Download className="w-4 h-4" />
               <span>Download</span>
@@ -163,7 +163,7 @@ const FileViewer: React.FC = () => {
                   <p className="text-gray-600">Preview not available for this file type</p>
                   <button
                     onClick={downloadFile}
-                    className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="mt-4 bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
                   >
                     Download to View
                   </button>
@@ -177,7 +177,7 @@ const FileViewer: React.FC = () => {
               <p className="text-gray-600 mb-4">This file type cannot be previewed in the browser.</p>
               <button
                 onClick={downloadFile}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >
                 Download File
               </button>

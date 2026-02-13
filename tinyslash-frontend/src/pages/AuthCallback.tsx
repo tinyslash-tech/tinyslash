@@ -155,7 +155,7 @@ const AuthCallback: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+      <div className={`${status === 'loading' ? '' : 'bg-white shadow-xl p-8'} rounded-2xl max-w-md w-full text-center transition-all duration-300`}>
         <div className="mb-6">
           {status === 'loading' && (
             // Spinner removed
@@ -185,16 +185,16 @@ const AuthCallback: React.FC = () => {
 
         {status === 'loading' && (
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-3 h-3 bg-black rounded-full animate-bounce"></div>
-            <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-3 h-3 bg-black rounded-full animate-bounce-high"></div>
+            <div className="w-3 h-3 bg-black rounded-full animate-bounce-high" style={{ animationDelay: '0.1s' }}></div>
+            <div className="w-3 h-3 bg-black rounded-full animate-bounce-high" style={{ animationDelay: '0.2s' }}></div>
           </div>
         )}
 
         {status === 'error' && (
           <button
             onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Return to Home
           </button>

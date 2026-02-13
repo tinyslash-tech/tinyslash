@@ -118,7 +118,7 @@ const TeamInvite: React.FC = () => {
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => navigate('/dashboard')}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="w-full px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg transition-colors"
           >
             Go to Dashboard
           </button>
@@ -185,7 +185,7 @@ const TeamInvite: React.FC = () => {
           <button
             onClick={handleAcceptInvite}
             disabled={isAccepting}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-black hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50"
           >
             {isAccepting ? (
               <>

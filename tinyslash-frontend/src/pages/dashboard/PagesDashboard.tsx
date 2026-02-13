@@ -75,7 +75,7 @@ const PagesDashboard = () => {
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+          className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg transition-colors font-medium"
         >
           <Plus className="w-5 h-5" />
           Create New Page
@@ -201,7 +201,7 @@ const PagesDashboard = () => {
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+                  className="px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg font-medium disabled:opacity-50"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Page'}
                 </button>

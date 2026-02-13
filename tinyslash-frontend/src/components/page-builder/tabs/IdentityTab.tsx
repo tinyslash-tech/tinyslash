@@ -17,25 +17,13 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({ page, onChange }) => {
 
     const toastId = toast.loading('Uploading image...');
     try {
-      // Backend now supports generic file upload, let's use that
-      // Assuming pageService.uploadImage is implemented or we use a direct upload endpoint
-      // For now, let's implement a simple upload in pageService if not exists, 
-      // or just mock it if we don't have the endpoint handy in this context. 
-      // Checking pageService.ts from previous steps... 
-      // It has uploadFileToBackend. Let's use that.
-
-      // We need to implement pageService.uploadImage or similar.
-      // Let's assume we can add it or use an existing one. 
-      // The previous pageService.ts had `uploadFile` and `uploadFileToBackend`.
-
-      const response = await pageService.uploadFile(file); // We need to ensure this method exists/works for public assets
-
-      // If the service returns a url, use it.
+      const response = await pageService.uploadAsset(file);
       if (response.url) {
-        onChange({ avatarUrl: response.url }); // Or distinct URL field
+        onChange({ avatarUrl: response.url });
         toast.success('Avatar updated', { id: toastId });
       }
     } catch (error) {
+      console.error('Upload failed:', error);
       toast.error('Upload failed', { id: toastId });
     }
   };
@@ -61,15 +49,20 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({ page, onChange }) => {
                 </div>
               )}
               <div>
-                {/* We will leave this simple for now and just use a text input or placeholder for actual upload implementation if service is missing */}
-                <input
-                  type="text"
-                  value={page.avatarUrl || ''}
-                  onChange={(e) => onChange({ avatarUrl: e.target.value })}
-                  placeholder="Image URL (https://...)"
-                  className="block w-full text-sm border-gray-300 rounded mb-2"
-                />
-                <p className="text-xs text-gray-500">Enter an image URL for your profile picture.</p>
+                <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  <Upload className="-ml-1 mr-2 w-4 h-4" />
+                  Upload Image
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+                <div className="mt-2 text-xs text-gray-500">
+                  <p>Recommended: Square image, at least 200x200px.</p>
+                  <p>Max file size: 2MB. Supports JPG, PNG.</p>
+                </div>
               </div>
             </div>
           </div>

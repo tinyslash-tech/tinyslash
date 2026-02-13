@@ -275,7 +275,7 @@ const Analytics: React.FC = () => {
                     setError(null);
                     loadAnalytics();
                   }}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   Try Again
                 </button>
@@ -302,7 +302,7 @@ const Analytics: React.FC = () => {
             <p className="text-gray-600 mb-6">The requested link analytics could not be found.</p>
             <button
               onClick={() => navigate('/dashboard')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
             >
               Back to Dashboard
             </button>
@@ -574,7 +574,7 @@ const Analytics: React.FC = () => {
             <p className="text-gray-600 mb-6">Something went wrong while displaying the analytics.</p>
             <button
               onClick={() => navigate('/dashboard')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
             >
               Back to Dashboard
             </button>

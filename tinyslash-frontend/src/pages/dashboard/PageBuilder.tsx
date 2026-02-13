@@ -121,7 +121,7 @@ const PageBuilder = () => {
             className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm
                     ${hasUnsavedChanges
-                ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                ? 'bg-black text-white hover:bg-gray-800 hover:shadow-md'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }
                 `}
@@ -136,7 +136,7 @@ const PageBuilder = () => {
       <div className="flex-1 flex overflow-hidden">
 
         {/* Sidebar Tabs */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col z-10">
+        <div className="w-96 bg-white border-r border-gray-200 flex flex-col z-10">
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-100">
             {tabs.map((tab) => (
@@ -144,7 +144,7 @@ const PageBuilder = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as Tab)}
                 className={`flex-1 flex flex-col items-center justify-center py-3 border-b-2 transition-colors ${activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                  ? 'border-black text-blue-600 bg-blue-50/50'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
               >

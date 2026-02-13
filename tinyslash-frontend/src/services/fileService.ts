@@ -224,6 +224,32 @@ class FileService {
   }
 
   /**
+   * Update file details
+   */
+  async updateFile(fileCode: string, updates: any): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      // Ensure userId is present
+      const userId = this.getUserId();
+      const payload = { ...updates, userId };
+
+      const response = await fetch(`${API_BASE_URL}/files/${fileCode}`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update file: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Update file error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get file statistics
    */
   async getFileStats(): Promise<{ success: boolean; data: FileStats }> {

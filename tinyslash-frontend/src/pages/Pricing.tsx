@@ -220,10 +220,10 @@ const Pricing: React.FC = () => {
 
           {/* STARTER Plan */}
           <motion.div
-            className="border-2 border-blue-600 rounded-2xl p-6 flex flex-col relative shadow-xl transform scale-105 z-10 bg-white"
+            className="border-2 border-black rounded-2xl p-6 flex flex-col relative shadow-xl transform scale-105 z-10 bg-white"
           >
             <div className="absolute top-0 right-0 left-0 -mt-3 flex justify-center">
-              <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Most Popular</span>
+              <span className="bg-black text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Most Popular</span>
             </div>
             <div className="mb-4 mt-2">
               <h3 className="text-lg font-bold text-blue-600">Starter</h3>
@@ -236,7 +236,7 @@ const Pricing: React.FC = () => {
             </div>
             <button
               onClick={() => handleRazorpayPayment(billingCycle === 'monthly' ? 'STARTER_MONTHLY' : 'STARTER_YEARLY', 'Starter', billingCycle === 'monthly' ? 99 : 999)}
-              className="w-full py-2.5 rounded-lg bg-blue-600 font-semibold text-white hover:bg-blue-700 transition-colors mb-6 shadow-md"
+              className="w-full py-2.5 rounded-lg bg-black font-semibold text-white hover:bg-gray-800 transition-colors mb-6 shadow-md"
             >
               Upgrade to Starter
             </button>

@@ -143,7 +143,7 @@ const RedirectPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {loading ? 'Verifying...' : 'Continue'}
             </button>
@@ -162,7 +162,7 @@ const RedirectPage: React.FC = () => {
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => window.location.href = '/'}
-            className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 font-medium"
+            className="bg-black text-white py-2 px-6 rounded-lg hover:bg-gray-800 font-medium"
           >
             Go Home
           </button>

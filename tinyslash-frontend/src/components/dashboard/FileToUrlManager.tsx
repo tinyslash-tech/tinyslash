@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  File, 
-  Image, 
-  FileText, 
-  Download, 
-  Copy, 
-  ExternalLink, 
+import {
+  File,
+  Image,
+  FileText,
+  Download,
+  Copy,
+  ExternalLink,
   Trash2,
   Eye,
   Search,
@@ -45,10 +45,10 @@ interface FileToUrlManagerProps {
 const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // Use React Query for fast loading with caching
   const { data: rawFiles, isLoading, isFetching, error, refetch } = useUserFiles();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBy, setFilterBy] = useState<'all' | 'image' | 'document' | 'video' | 'audio' | 'other'>('all');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -60,7 +60,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
     fileName: file.originalFileName || file.fileName,
     fileType: file.fileType || file.mimeType,
     fileSize: file.fileSize || 0,
-    shortUrl: file.fileUrl || file.shortUrl,
+    shortUrl: file.shortUrl || file.fileUrl,
     originalUrl: file.fileUrl || file.shortUrl,
     clicks: file.totalClicks || file.clicks || 0,
     createdAt: file.uploadedAt || file.createdAt,
@@ -154,7 +154,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/files/${fileCode}?userId=${user?.id}`, {
         method: 'DELETE',
         headers: {
@@ -214,7 +214,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
 
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/files/bulk-delete`, {
         method: 'POST',
         headers: {
@@ -228,7 +228,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setSelectedFiles(new Set());
         refetch();
@@ -250,7 +250,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
   const downloadFile = async (fileCode: string, fileName: string) => {
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
-      
+
       // Record download analytics
       try {
         await fetch(`${apiUrl}/v1/files/${fileCode}/download`, {
@@ -269,10 +269,10 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
       } catch (analyticsError) {
         console.warn('Failed to record download analytics:', analyticsError);
       }
-      
+
       // Download the file
       const response = await fetch(`${apiUrl}/v1/files/${fileCode}`);
-      
+
       if (!response.ok) {
         throw new Error('Download failed');
       }
@@ -286,9 +286,9 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast.success('Download started');
-      
+
       // Refresh the file list to update download counts
       setTimeout(() => {
         refetch();
@@ -309,7 +309,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${apiUrl}/v1/files/${fileCode}`, {
         method: 'PUT',
         headers: {
@@ -323,7 +323,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Refresh the data after successful update
         refetch();
@@ -352,7 +352,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
         <div className="text-red-600 mb-4">Failed to load file links</div>
-        <button 
+        <button
           onClick={handleRefresh}
           className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
         >
@@ -379,7 +379,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
             </div>
           </div>
         </div>
-        
+
         {/* Stats Cards Skeleton */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCardSkeleton />
@@ -387,7 +387,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
           <StatCardSkeleton />
           <StatCardSkeleton />
         </div>
-        
+
         {/* Table Skeleton */}
         <TableSkeleton />
       </div>
@@ -443,7 +443,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
             )}
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Your File Links ({fileLinks.length})</h3>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -455,7 +455,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-auto"
               />
             </div>
-            
+
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as any)}
@@ -560,121 +560,121 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
                     onChange={() => toggleSelectFile(fileLink.id)}
                     className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                   />
-                  
+
                   <div className="flex-1 flex flex-col space-y-3">
-                  {/* Header Row - File Icon, Name and Size */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      {getFileIcon(fileLink.fileType)}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 truncate text-sm sm:text-base">{fileLink.fileName}</h4>
-                        <div className="flex items-center space-x-2 text-xs text-gray-500">
-                          <span>{formatFileSize(fileLink.fileSize)}</span>
-                          {fileLink.isPasswordProtected && (
-                            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">🔒</span>
-                          )}
-                          {fileLink.expiresAt && (
-                            <span className="bg-red-100 text-red-800 px-2 py-1 rounded">⏰</span>
-                          )}
+                    {/* Header Row - File Icon, Name and Size */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        {getFileIcon(fileLink.fileType)}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate text-sm sm:text-base">{fileLink.fileName}</h4>
+                          <div className="flex items-center space-x-2 text-xs text-gray-500">
+                            <span>{formatFileSize(fileLink.fileSize)}</span>
+                            {fileLink.isPasswordProtected && (
+                              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">🔒</span>
+                            )}
+                            {fileLink.expiresAt && (
+                              <span className="bg-red-100 text-red-800 px-2 py-1 rounded">⏰</span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                        <Eye className="w-3 h-3" />
+                        <span>{fileLink.clicks}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
-                      <Eye className="w-3 h-3" />
-                      <span>{fileLink.clicks}</span>
+
+                    {/* Short URL Row */}
+                    <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                      <code className="text-blue-600 font-mono text-xs sm:text-sm flex-1 truncate">
+                        {fileLink.shortUrl}
+                      </code>
+                      <div className="flex items-center space-x-1 ml-2">
+                        <button
+                          onClick={() => copyToClipboard(fileLink.shortUrl)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors touch-manipulation"
+                          title="Copy"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => window.open(fileLink.shortUrl, '_blank')}
+                          className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors touch-manipulation"
+                          title="Open"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Short URL Row */}
-                  <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
-                    <code className="text-blue-600 font-mono text-xs sm:text-sm flex-1 truncate">
-                      {fileLink.shortUrl}
-                    </code>
-                    <div className="flex items-center space-x-1 ml-2">
-                      <button
-                        onClick={() => copyToClipboard(fileLink.shortUrl)}
-                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors touch-manipulation"
-                        title="Copy"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => window.open(fileLink.shortUrl, '_blank')}
-                        className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors touch-manipulation"
-                        title="Open"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Stats Row */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center space-x-3">
-                      <span className="flex items-center space-x-1">
-                        <Download className="w-3 h-3" />
-                        <span>{fileLink.downloadCount}</span>
-                      </span>
-                      <span>{new Date(fileLink.createdAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Tags */}
-                  {fileLink.tags && fileLink.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {fileLink.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                          {tag}
+
+                    {/* Stats Row */}
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center space-x-3">
+                        <span className="flex items-center space-x-1">
+                          <Download className="w-3 h-3" />
+                          <span>{fileLink.downloadCount}</span>
                         </span>
-                      ))}
-                      {fileLink.tags.length > 3 && (
-                        <span className="text-xs text-gray-500">+{fileLink.tags.length - 3} more</span>
-                      )}
+                        <span>{new Date(fileLink.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}</span>
+                      </div>
                     </div>
-                  )}
-                  
-                  {/* Bottom Row - Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <div className="text-xs text-gray-500">
-                      File Link
-                    </div>
-                    
-                    {/* Touch-Friendly Action Buttons */}
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={() => {
-                          // Since there's no specific file analytics endpoint, show a message
-                          toast('File analytics feature coming soon! For now, check your general analytics.', { icon: 'ℹ️' });
-                          // Alternative: navigate to user analytics
-                          // navigate(`/dashboard/analytics/user/${user?.id}`);
-                        }}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
-                        title="Analytics"
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => downloadFile(fileLink.shortCode, fileLink.fileName)}
-                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors touch-manipulation"
-                        title="Download"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => deleteFileLink(fileLink.shortCode)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+
+                    {/* Tags */}
+                    {fileLink.tags && fileLink.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {fileLink.tags.slice(0, 3).map(tag => (
+                          <span key={tag} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                            {tag}
+                          </span>
+                        ))}
+                        {fileLink.tags.length > 3 && (
+                          <span className="text-xs text-gray-500">+{fileLink.tags.length - 3} more</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bottom Row - Actions */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <div className="text-xs text-gray-500">
+                        File Link
+                      </div>
+
+                      {/* Touch-Friendly Action Buttons */}
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => {
+                            // Since there's no specific file analytics endpoint, show a message
+                            toast('File analytics feature coming soon! For now, check your general analytics.', { icon: 'ℹ️' });
+                            // Alternative: navigate to user analytics
+                            // navigate(`/dashboard/analytics/user/${user?.id}`);
+                          }}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
+                          title="Analytics"
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => downloadFile(fileLink.shortCode, fileLink.fileName)}
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors touch-manipulation"
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => deleteFileLink(fileLink.shortCode)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
                 </div>
               </div>
             ))}

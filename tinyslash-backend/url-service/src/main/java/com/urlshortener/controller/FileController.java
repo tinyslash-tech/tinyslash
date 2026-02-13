@@ -149,6 +149,7 @@ public class FileController {
             fileData.put("hasQrCode", file.isHasQrCode());
             fileData.put("hasQrCode", file.isHasQrCode());
             fileData.put("fileUrl", file.getFileUrl());
+            fileData.put("shortUrl", file.getShortUrl()); // Added shortUrl
 
             // Add Trust Verification Status
             boolean isTrustVerified = false;
@@ -194,6 +195,7 @@ public class FileController {
                 fileData.put("id", file.getId());
                 fileData.put("fileCode", file.getFileCode());
                 fileData.put("fileUrl", file.getFileUrl());
+                fileData.put("shortUrl", file.getShortUrl()); // Added shortUrl
                 fileData.put("originalFileName", file.getOriginalFileName());
                 fileData.put("fileType", file.getFileType());
                 fileData.put("fileSize", file.getFileSize());
@@ -290,6 +292,8 @@ public class FileController {
                 updates.setDescription((String) request.get("description"));
             if (request.containsKey("password"))
                 updates.setPassword((String) request.get("password"));
+            if (request.containsKey("shortUrl"))
+                updates.setShortUrl((String) request.get("shortUrl"));
 
             UploadedFile updated = fileUploadService.updateFile(fileCode, userId, updates);
 

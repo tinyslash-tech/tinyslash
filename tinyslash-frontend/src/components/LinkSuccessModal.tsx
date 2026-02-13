@@ -10,6 +10,7 @@ interface LinkSuccessModalProps {
   originalUrl: string;
   qrCode?: string;
   type: 'url' | 'qr' | 'file';
+  onCopy?: () => void;
 }
 
 const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
@@ -18,12 +19,14 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
   shortUrl,
   originalUrl,
   qrCode,
-  type
+  type,
+  onCopy
 }) => {
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(shortUrl);
       toast.success('Link copied to clipboard!');
+      if (onCopy) onCopy();
     } catch (err) {
       toast.error('Failed to copy link');
     }
@@ -93,7 +96,7 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          
+
           <motion.div
             className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -123,7 +126,7 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
                 <div className="text-2xl font-bold text-blue-600 mb-4 break-all">
                   {shortUrl}
                 </div>
-                
+
                 <div className="flex gap-3 justify-center">
                   <button
                     onClick={viewDetails}
@@ -132,7 +135,7 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
                     <BarChart3 className="w-4 h-4" />
                     <span>View link details</span>
                   </button>
-                  
+
                   <button
                     onClick={copyToClipboard}
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -147,9 +150,9 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
             {/* QR Code Display */}
             {qrCode && (
               <div className="text-center mb-6">
-                <img 
-                  src={qrCode} 
-                  alt="QR Code" 
+                <img
+                  src={qrCode}
+                  alt="QR Code"
                   className="w-32 h-32 mx-auto border rounded-lg"
                 />
               </div>

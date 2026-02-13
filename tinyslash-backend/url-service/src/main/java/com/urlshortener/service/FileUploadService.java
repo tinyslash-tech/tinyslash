@@ -7,28 +7,22 @@ import com.urlshortener.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.gridfs.GridFsTemplate;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.mongodb.client.gridfs.model.GridFSFile;
-import org.springframework.data.mongodb.gridfs.GridFsResource;
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.GZIPInputStream;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
+import java.io.ByteArrayOutputStream;
 
 @Service
 public class FileUploadService {
@@ -37,7 +31,7 @@ public class FileUploadService {
 
     private final UploadedFileRepository uploadedFileRepository;
     private final UserRepository userRepository;
-    private final GridFsTemplate gridFsTemplate;
+    private final StorageService storageService;
     private final CacheService cacheService;
     private final SubscriptionService subscriptionService;
 
@@ -47,12 +41,12 @@ public class FileUploadService {
     @Autowired
     public FileUploadService(UploadedFileRepository uploadedFileRepository,
             UserRepository userRepository,
-            GridFsTemplate gridFsTemplate,
+            StorageService storageService,
             CacheService cacheService,
             SubscriptionService subscriptionService) {
         this.uploadedFileRepository = uploadedFileRepository;
         this.userRepository = userRepository;
-        this.gridFsTemplate = gridFsTemplate;
+        this.storageService = storageService;
         this.cacheService = cacheService;
         this.subscriptionService = subscriptionService;
     }
@@ -116,49 +110,27 @@ public class FileUploadService {
         }
 
         try {
-            // Compress file if it's large (> 5MB) to optimize database storage
-            byte[] fileData;
-            boolean isCompressed = false;
+            // We are NOT compressing files here anymore because StorageService handles the
+            // stream directly
+            // and we want to keep it simple. If compression is needed, it should be done
+            // before
+            // passing to StorageService or inside an implementation if specific to storage.
+            // For now, removing the local compression logic to streamline abstraction.
+            // If the user wants compression back, we can add it as a utility before upload.
 
-            if (file.getSize() > 5 * 1024 * 1024) { // 5MB threshold
-                try {
-                    byte[] compressedData = compressFile(file);
-                    if (compressedData.length < file.getSize()) {
-                        fileData = compressedData;
-                        isCompressed = true;
-                        uploadedFile.setFileSize(compressedData.length); // Update with compressed size
-                    } else {
-                        fileData = file.getBytes();
-                    }
-                } catch (Exception e) {
-                    // If compression fails, use original file
-                    fileData = file.getBytes();
-                }
-            } else {
-                fileData = file.getBytes();
-            }
+            // Upload via StorageService
+            // We use fileCode as the path/key
+            String storageId = storageService.uploadFile(file, uploadedFile.getFileCode());
 
-            // Store file in GridFS
-            if (gridFsTemplate != null) {
-                org.bson.types.ObjectId fileId = gridFsTemplate.store(
-                        new ByteArrayInputStream(fileData),
-                        uploadedFile.getFileCode(),
-                        file.getContentType());
+            uploadedFile.setGridFsFileId(storageId); // Reusing this field to store Storage ID/Key
+            uploadedFile.setStoredFileName(uploadedFile.getFileCode());
 
-                uploadedFile.setGridFsFileId(fileId.toString());
-                uploadedFile.setStoredFileName(uploadedFile.getFileCode());
-            } else {
-                // Fallback: store file metadata only (no actual file storage)
-                uploadedFile.setGridFsFileId("no-gridfs-" + uploadedFile.getFileCode());
-                uploadedFile.setStoredFileName(uploadedFile.getFileCode());
-                logger.warn("GridFS not available, storing file metadata only");
-            }
-
-            // Add compression metadata
-            if (isCompressed) {
-                uploadedFile.setDescription(
-                        (uploadedFile.getDescription() != null ? uploadedFile.getDescription() + " " : "") +
-                                "[Compressed for storage optimization]");
+            // Check if public access URL is available
+            String publicUrl = storageService.getPublicUrl(uploadedFile.getFileCode());
+            if (publicUrl != null) {
+                // If R2/S3 public access is enabled, use that URL
+                uploadedFile.setFileUrl(publicUrl);
+                logger.info("Using public URL for file: {}", publicUrl);
             }
 
             // Save metadata to database
@@ -185,7 +157,7 @@ public class FileUploadService {
         return uploadedFileRepository.findByFileCode(fileCode);
     }
 
-    public GridFsResource getFileContent(String fileCode) {
+    public Resource getFileContent(String fileCode) {
         Optional<UploadedFile> fileOpt = uploadedFileRepository.findByFileCode(fileCode);
 
         if (fileOpt.isEmpty()) {
@@ -199,22 +171,15 @@ public class FileUploadService {
             throw new RuntimeException("File has expired");
         }
 
-        // Get file from GridFS
-        if (gridFsTemplate == null) {
-            throw new RuntimeException("File storage not available");
+        try {
+            // Get file content from StorageService
+            // Using fileCode as key because that's what we used on upload
+            byte[] content = storageService.downloadFile(fileCode);
+
+            return new ByteArrayResource(content);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to retrieve file content: " + e.getMessage());
         }
-
-        GridFSFile gridFSFile = gridFsTemplate.findOne(
-                new Query(Criteria.where("filename").is(fileCode)));
-
-        if (gridFSFile == null) {
-            throw new RuntimeException("File content not found");
-        }
-
-        // Update access statistics
-        updateFileStats(file);
-
-        return gridFsTemplate.getResource(gridFSFile);
     }
 
     @Cacheable(value = "userFiles", key = "#userId")
@@ -253,10 +218,12 @@ public class FileUploadService {
         }
         if (updates.getExpiresAt() != null)
             existing.setExpiresAt(updates.getExpiresAt());
-        if (updates.getTags() != null)
-            existing.setTags(updates.getTags());
         if (updates.getCategory() != null)
             existing.setCategory(updates.getCategory());
+        if (updates.getShortUrl() != null) {
+            existing.setShortUrl(updates.getShortUrl());
+            existing.setHasShortUrl(true);
+        }
 
         existing.setUpdatedAt(LocalDateTime.now());
 
@@ -284,13 +251,8 @@ public class FileUploadService {
             throw new RuntimeException("Unauthorized to delete this file");
         }
 
-        // Delete from GridFS (actual file content)
-        if (gridFsTemplate != null) {
-            gridFsTemplate.delete(new Query(Criteria.where("filename").is(fileCode)));
-            logger.info("Deleted file content from GridFS: {}", fileCode);
-        } else {
-            logger.warn("GridFS not available, skipping file content deletion");
-        }
+        // Delete from Storage
+        storageService.deleteFile(fileCode);
 
         // Hard delete from database - actually remove the record
         uploadedFileRepository.delete(existing);
@@ -385,97 +347,6 @@ public class FileUploadService {
             cacheService.invalidateUserAnalytics(file.getUserId());
 
             logger.debug("Recorded download for file: {}", fileCode);
-        }
-    }
-
-    private byte[] compressFile(MultipartFile file) throws IOException {
-        String contentType = file.getContentType();
-
-        // Compress images
-        if (contentType != null && contentType.startsWith("image/")) {
-            return compressImage(file);
-        }
-
-        // Compress other files using GZIP
-        return compressWithGzip(file.getBytes());
-    }
-
-    private byte[] compressImage(MultipartFile file) throws IOException {
-        BufferedImage originalImage = ImageIO.read(file.getInputStream());
-
-        if (originalImage == null) {
-            // If we can't read as image, fall back to GZIP compression
-            return compressWithGzip(file.getBytes());
-        }
-
-        // Calculate new dimensions (max 1920x1080 for large images)
-        int originalWidth = originalImage.getWidth();
-        int originalHeight = originalImage.getHeight();
-        int maxWidth = 1920;
-        int maxHeight = 1080;
-
-        int newWidth = originalWidth;
-        int newHeight = originalHeight;
-
-        // Only compress if image is larger than max dimensions
-        if (originalWidth > maxWidth || originalHeight > maxHeight) {
-            double widthRatio = (double) maxWidth / originalWidth;
-            double heightRatio = (double) maxHeight / originalHeight;
-            double ratio = Math.min(widthRatio, heightRatio);
-
-            newWidth = (int) (originalWidth * ratio);
-            newHeight = (int) (originalHeight * ratio);
-        }
-
-        // Create compressed image
-        BufferedImage compressedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = compressedImage.createGraphics();
-
-        // Set high quality rendering hints
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
-        g2d.dispose();
-
-        // Convert to byte array
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String formatName = getImageFormat(file.getContentType());
-        ImageIO.write(compressedImage, formatName, baos);
-
-        byte[] compressedBytes = baos.toByteArray();
-
-        // Only return compressed version if it's actually smaller
-        return compressedBytes.length < file.getSize() ? compressedBytes : file.getBytes();
-    }
-
-    private byte[] compressWithGzip(byte[] data) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzipOut = new GZIPOutputStream(baos)) {
-            gzipOut.write(data);
-        }
-
-        byte[] compressedData = baos.toByteArray();
-
-        // Only return compressed version if it's actually smaller (some files don't
-        // compress well)
-        return compressedData.length < data.length ? compressedData : data;
-    }
-
-    private String getImageFormat(String contentType) {
-        if (contentType == null)
-            return "jpg";
-
-        switch (contentType.toLowerCase()) {
-            case "image/png":
-                return "png";
-            case "image/gif":
-                return "gif";
-            case "image/webp":
-                return "webp";
-            default:
-                return "jpg";
         }
     }
 }

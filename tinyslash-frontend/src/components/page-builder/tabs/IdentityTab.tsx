@@ -22,9 +22,10 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({ page, onChange }) => {
         onChange({ avatarUrl: response.url });
         toast.success('Avatar updated', { id: toastId });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload failed:', error);
-      toast.error('Upload failed', { id: toastId });
+      const errorMessage = error.response?.data?.error || 'Upload failed';
+      toast.error(errorMessage, { id: toastId });
     }
   };
 

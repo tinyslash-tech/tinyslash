@@ -5,6 +5,7 @@ import { Page } from '../../types/page';
 import toast from 'react-hot-toast';
 import { Loader2, ExternalLink, Edit, Trash2, Layout, Plus, Wand2, Globe, BarChart3 } from 'lucide-react';
 import React from 'react';
+import { LivePreviewCard } from '../../components/page-builder/LivePreviewCard';
 
 const PagesDashboard = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const PagesDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['pages'] });
       setIsCreateModalOpen(false);
       toast.success('Page created successfully!');
-      navigate(`/dashboard/pages/builder/${data.id}`);
+      navigate(`/dashboard/pages/builder/${data.id}?new=true`);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to create page');
@@ -94,57 +95,49 @@ const PagesDashboard = () => {
       </div>
 
       {pages && pages.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {pages.map((page: Page) => (
-            <div key={page.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-32 bg-gray-100 flex items-center justify-center border-b border-gray-100">
-                {page.theme?.background?.startsWith('#') ? (
-                  <div className="w-full h-full" style={{ backgroundColor: page.theme.background }}></div>
-                ) : (
-                  <img src={page.theme?.background || 'https://via.placeholder.com/400x200'} alt="Preview" className="w-full h-full object-cover" />
-                )}
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 line-clamp-1">{page.title || 'Untitled Page'}</h3>
-                    <a href={`/p/${page.slug}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1">
-                      /{page.slug} <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => navigate(`/dashboard/pages/builder/${page.id}`)}
-                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-                      title="Edit Page"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this page?')) {
-                          deleteMutation.mutate(page.id);
-                        }
-                      }}
-                      className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
-                      title="Delete Page"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+            <LivePreviewCard
+              key={page.id}
+              data={page}
+              actions={
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/dashboard/pages/builder/${page.id}`);
+                    }}
+                    className="p-2.5 bg-white text-gray-900 rounded-full hover:bg-gray-50 transition-colors shadow-lg"
+                    title="Edit Page"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`/p/${page.slug}`, '_blank');
+                    }}
+                    className="p-2.5 bg-white text-blue-600 rounded-full hover:bg-blue-50 transition-colors shadow-lg"
+                    title="Preview Live"
+                  >
+                    <ExternalLink size={18} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Are you sure you want to delete this page?')) {
+                        deleteMutation.mutate(page.id);
+                      }
+                    }}
+                    className="p-2.5 bg-white text-red-600 rounded-full hover:bg-red-50 transition-colors shadow-lg"
+                    title="Delete Page"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
-
-                <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <BarChart3 className="w-3 h-3" />
-                    {page.views || 0} views
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-full ${page.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                    {page.published ? 'Published' : 'Draft'}
-                  </span>
-                </div>
-              </div>
-            </div>
+              }
+              onClick={() => navigate(`/dashboard/pages/builder/${page.id}`)}
+            />
           ))}
         </div>
       ) : (

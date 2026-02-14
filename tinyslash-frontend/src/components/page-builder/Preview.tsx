@@ -100,11 +100,7 @@ export const Preview: React.FC<PreviewProps> = ({ page, mode }) => {
   // Frame Containers
   if (mode === 'MOBILE') {
     return (
-      <div className="relative w-[375px] h-[700px] bg-black rounded-[40px] shadow-2xl border-8 border-black overflow-hidden ring-4 ring-gray-900/10 transition-all duration-500 ease-in-out">
-        {/* Status Bar Mockup */}
-        <div className="absolute top-0 w-full h-8 bg-black z-20 flex justify-between items-center px-6">
-          <div className="w-12 h-3 rounded-full bg-gray-800/50"></div>
-        </div>
+      <div className="w-full h-full bg-white overflow-hidden">
         <PreviewContent
           page={page}
           theme={{ ...theme, baseFontSize }} // Pass processed font size
@@ -117,34 +113,9 @@ export const Preview: React.FC<PreviewProps> = ({ page, mode }) => {
     );
   }
 
-  // DESKTOP MODE
+  // DESKTOP MODE (or any non-mobile)
   return (
-    <div className="relative w-full h-full max-w-[1024px] max-h-[700px] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col transition-all duration-500 ease-in-out">
-      {/* Browser Chrome */}
-      <div className="h-10 bg-gray-100 border-b border-gray-200 flex items-center px-4 gap-4 shrink-0">
-        {/* Traffic Lights */}
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20" />
-          <div className="w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500/20" />
-          <div className="w-3 h-3 rounded-full bg-green-400 border border-green-500/20" />
-        </div>
-
-        {/* Address Bar */}
-        <div className="flex-1 flex items-center justify-center px-2">
-          <div className="max-w-xl w-full h-7 bg-white rounded-md border border-gray-200 flex items-center px-3 gap-2 text-xs text-gray-500 shadow-sm">
-            <Lock className="w-3 h-3 text-gray-400" />
-            <span className="text-gray-400">tinyslash.com/p/</span>
-            <span className="text-gray-900 font-medium">{page.slug}</span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="w-14 flex justify-end">
-          <RotateCcw className="w-4 h-4 text-gray-400" />
-        </div>
-      </div>
-
-      {/* Viewport */}
+    <div className="w-full h-full bg-white overflow-hidden flex flex-col">
       <div className="flex-1 overflow-hidden w-full h-full relative">
         <PreviewContent
           page={page}

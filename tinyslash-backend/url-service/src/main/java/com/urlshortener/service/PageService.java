@@ -57,7 +57,7 @@ public class PageService {
           "SOLID", "#ffffff", null, null, null,
           "ROUNDED", "#000000", "#ffffff",
           "Inter", "MD", "NORMAL", "#000000",
-          "MD", null, null, true));
+          "MD", "FILLED", null, null, null, true));
     }
 
     return pageRepository.save(pageData);

@@ -25,26 +25,30 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange }) => 
   }
 };
 
+// Shared input classes for consistency
+const INPUT_CLASSES = "w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-gray-400 transition-all text-sm placeholder:text-gray-400";
+const LABEL_CLASSES = "block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5";
+
 const LinkEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Title <span className="text-red-500">*</span></label>
+      <label className={LABEL_CLASSES}>Title <span className="text-red-500">*</span></label>
       <input
         type="text"
         value={block.content.title || ''}
         onChange={(e) => onChange({ ...block.content, title: e.target.value })}
         placeholder="e.g. Watch my latest video"
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">URL <span className="text-red-500">*</span></label>
+      <label className={LABEL_CLASSES}>URL <span className="text-red-500">*</span></label>
       <input
         type="text"
         value={block.content.url || ''}
         onChange={(e) => onChange({ ...block.content, url: e.target.value })}
         placeholder="https://"
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
     <div className="flex items-center gap-2">
@@ -53,7 +57,7 @@ const LinkEditor = ({ block, onChange }: BlockEditorProps) => (
         checked={block.content.highlight || false}
         onChange={(e) => onChange({ ...block.content, highlight: e.target.checked })}
         id={`highlight-${block.id}`}
-        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        className="rounded border-gray-300 text-black focus:ring-black/10"
       />
       <label htmlFor={`highlight-${block.id}`} className="text-xs text-gray-700 font-medium">Highlight this link</label>
     </div>
@@ -63,14 +67,14 @@ const LinkEditor = ({ block, onChange }: BlockEditorProps) => (
 const HeaderEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Heading Text <span className="text-red-500">*</span></label>
+      <label className={LABEL_CLASSES}>Heading Text <span className="text-red-500">*</span></label>
       <input
         type="text"
         value={block.content.text || ''}
         onChange={(e) => onChange({ ...block.content, text: e.target.value })}
         placeholder="e.g. Shop My Favorites"
         maxLength={60}
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-bold"
+        className={`${INPUT_CLASSES} font-bold`}
       />
       <p className="text-[10px] text-gray-400 mt-1 text-right">{block.content.text?.length || 0}/60</p>
     </div>
@@ -80,25 +84,27 @@ const HeaderEditor = ({ block, onChange }: BlockEditorProps) => (
 const TextEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Body Text <span className="text-red-500">*</span></label>
+      <label className={LABEL_CLASSES}>Body Text <span className="text-red-500">*</span></label>
       <textarea
         value={block.content.text || ''}
         onChange={(e) => onChange({ ...block.content, text: e.target.value })}
         placeholder="Write anything..."
         rows={4}
         maxLength={500}
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-none"
+        className={`${INPUT_CLASSES} resize-none`}
       />
       <p className="text-[10px] text-gray-400 mt-1 text-right">{block.content.text?.length || 0}/500</p>
     </div>
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Alignment</label>
-      <div className="flex bg-gray-100 p-1 rounded-lg w-max">
+      <label className={LABEL_CLASSES}>Alignment</label>
+      <div className="flex bg-gray-100 p-1 rounded-md w-max border border-gray-200">
         {['left', 'center', 'right'].map((align) => (
           <button
             key={align}
             onClick={() => onChange({ ...block.content, align })}
-            className={`px-3 py-1 text-xs font-medium rounded-md capitalize transition-all ${(block.content.align || 'left') === align ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'
+            className={`px-3 py-1 text-xs font-semibold rounded-sm capitalize transition-all ${(block.content.align || 'left') === align
+              ? 'bg-white shadow-sm text-gray-900 border border-gray-100'
+              : 'text-gray-500 hover:text-gray-900'
               }`}
           >
             {align}
@@ -135,10 +141,10 @@ const ImageEditor = ({ block, onChange }: BlockEditorProps) => {
   return (
     <div className="space-y-4 p-1">
       <div>
-        <label className="block text-xs font-semibold text-gray-700 mb-1">Image <span className="text-red-500">*</span></label>
+        <label className={LABEL_CLASSES}>Image <span className="text-red-500">*</span></label>
         {block.content.url ? (
           <div className="relative group">
-            <img src={block.content.url} alt="Preview" className="w-full h-48 object-cover rounded-lg border border-gray-200" />
+            <img src={block.content.url} alt="Preview" className="w-full h-48 object-cover rounded-md border border-gray-200" />
             <button
               onClick={() => onChange({ ...block.content, url: '' })}
               className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-md text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
@@ -147,7 +153,7 @@ const ImageEditor = ({ block, onChange }: BlockEditorProps) => {
             </button>
           </div>
         ) : (
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
               <p className="text-xs text-gray-500 font-medium">Click to upload image</p>
@@ -158,23 +164,23 @@ const ImageEditor = ({ block, onChange }: BlockEditorProps) => {
         )}
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-700 mb-1">Link URL (optional)</label>
+        <label className={LABEL_CLASSES}>Link URL (optional)</label>
         <input
           type="text"
           value={block.content.linkUrl || ''}
           onChange={(e) => onChange({ ...block.content, linkUrl: e.target.value })}
           placeholder="https://"
-          className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          className={INPUT_CLASSES}
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-700 mb-1">Alt Text (optional)</label>
+        <label className={LABEL_CLASSES}>Alt Text (optional)</label>
         <input
           type="text"
           value={block.content.alt || ''}
           onChange={(e) => onChange({ ...block.content, alt: e.target.value })}
           placeholder="Describe the image"
-          className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          className={INPUT_CLASSES}
         />
       </div>
     </div>
@@ -184,13 +190,13 @@ const ImageEditor = ({ block, onChange }: BlockEditorProps) => {
 const VideoEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Video URL <span className="text-red-500">*</span></label>
+      <label className={LABEL_CLASSES}>Video URL <span className="text-red-500">*</span></label>
       <input
         type="text"
         value={block.content.url || ''}
         onChange={(e) => onChange({ ...block.content, url: e.target.value })}
         placeholder="e.g. https://youtube.com/watch?v=..."
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
       <p className="text-[10px] text-gray-400 mt-1">Supports YouTube, Vimeo, and TikTok.</p>
     </div>
@@ -221,11 +227,11 @@ const SocialEditor = ({ block, onChange }: BlockEditorProps) => {
     <div className="space-y-4 p-1">
       <div className="space-y-3">
         {links.map((link: any, index: number) => (
-          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-200">
             <select
               value={link.platform}
               onChange={(e) => updateLink(index, 'platform', e.target.value)}
-              className="text-sm border-gray-300 rounded bg-white w-32 focus:ring-blue-500 focus:border-blue-500"
+              className="text-sm border-gray-200 rounded-md bg-white w-32 focus:ring-black/5 focus:border-gray-400"
             >
               <option value="instagram">Instagram</option>
               <option value="tiktok">TikTok</option>
@@ -241,16 +247,16 @@ const SocialEditor = ({ block, onChange }: BlockEditorProps) => {
               value={link.url}
               onChange={(e) => updateLink(index, 'url', e.target.value)}
               placeholder="URL"
-              className="flex-1 text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 text-sm bg-white border-gray-200 rounded-md focus:ring-black/5 focus:border-gray-400 focus:outline-none px-3 py-2"
             />
-            <button onClick={() => removeLink(index)} className="p-1 text-gray-400 hover:text-red-500">
+            <button onClick={() => removeLink(index)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
         ))}
       </div>
 
-      <button onClick={addLink} className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700">
+      <button onClick={addLink} className="flex items-center gap-1 text-sm font-semibold text-black hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md transition-colors">
         <Plus className="w-4 h-4" /> Add Social Profile
       </button>
     </div>
@@ -260,38 +266,38 @@ const SocialEditor = ({ block, onChange }: BlockEditorProps) => {
 const FormEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Form Title</label>
+      <label className={LABEL_CLASSES}>Form Title</label>
       <input
         type="text"
         value={block.content.title || ''}
         onChange={(e) => onChange({ ...block.content, title: e.target.value })}
         placeholder="e.g. Subscribe"
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
-    <div className="space-y-2">
-      <label className="block text-xs font-semibold text-gray-700">Fields</label>
+    <div className="space-y-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+      <label className={LABEL_CLASSES}>Fields</label>
       <div className="flex items-center gap-2">
-        <input type="checkbox" checked readOnly className="rounded text-blue-600 border-gray-300" />
-        <span className="text-sm text-gray-600">Email (Required)</span>
+        <input type="checkbox" checked readOnly className="rounded border-gray-300 text-black" />
+        <span className="text-sm text-gray-700 font-medium">Email (Required)</span>
       </div>
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
           checked={block.content.collectName || false}
           onChange={(e) => onChange({ ...block.content, collectName: e.target.checked })}
-          className="rounded text-blue-600 border-gray-300"
+          className="rounded border-gray-300 text-black focus:ring-black/10"
         />
-        <span className="text-sm text-gray-600">Name</span>
+        <span className="text-sm text-gray-900">Name</span>
       </div>
     </div>
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Button Text</label>
+      <label className={LABEL_CLASSES}>Button Text</label>
       <input
         type="text"
         value={block.content.buttonText || 'Subscribe'}
         onChange={(e) => onChange({ ...block.content, buttonText: e.target.value })}
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
   </div>
@@ -300,22 +306,22 @@ const FormEditor = ({ block, onChange }: BlockEditorProps) => (
 const EmailEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Headline</label>
+      <label className={LABEL_CLASSES}>Headline</label>
       <input
         type="text"
         value={block.content.title || ''}
         onChange={(e) => onChange({ ...block.content, title: e.target.value })}
         placeholder="Join my mailing list"
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Button Text</label>
+      <label className={LABEL_CLASSES}>Button Text</label>
       <input
         type="text"
         value={block.content.buttonText || 'Sign Up'}
         onChange={(e) => onChange({ ...block.content, buttonText: e.target.value })}
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
   </div>
@@ -324,13 +330,15 @@ const EmailEditor = ({ block, onChange }: BlockEditorProps) => (
 const DividerEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Style</label>
+      <label className={LABEL_CLASSES}>Style</label>
       <div className="flex gap-2">
         {['solid', 'dotted', 'empty'].map(s => (
           <button
             key={s}
             onClick={() => onChange({ ...block.content, style: s })}
-            className={`px-3 py-1.5 text-xs rounded border capitalize ${(block.content.style || 'solid') === s ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-gray-200 text-gray-600'
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md border capitalize transition-all ${(block.content.style || 'solid') === s
+              ? 'bg-black text-white border-black'
+              : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
           >
             {s}
@@ -344,23 +352,23 @@ const DividerEditor = ({ block, onChange }: BlockEditorProps) => (
 const PaymentEditor = ({ block, onChange }: BlockEditorProps) => (
   <div className="space-y-4 p-1">
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Label <span className="text-red-500">*</span></label>
+      <label className={LABEL_CLASSES}>Label <span className="text-red-500">*</span></label>
       <input
         type="text"
         value={block.content.label || ''}
         onChange={(e) => onChange({ ...block.content, label: e.target.value })}
         placeholder="e.g. Buy me a coffee"
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">Payment URL <span className="text-red-500">*</span></label>
+      <label className={LABEL_CLASSES}>Payment URL <span className="text-red-500">*</span></label>
       <input
         type="text"
         value={block.content.url || ''}
         onChange={(e) => onChange({ ...block.content, url: e.target.value })}
         placeholder="https://buymeacoffee.com/..."
-        className="w-full text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        className={INPUT_CLASSES}
       />
     </div>
   </div>

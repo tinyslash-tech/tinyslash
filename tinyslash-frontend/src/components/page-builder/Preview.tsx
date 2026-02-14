@@ -7,6 +7,7 @@ import {
   Instagram, Twitter, Linkedin, Youtube, Facebook, Github, Globe,
   Lock, RotateCcw, BadgeCheck
 } from 'lucide-react';
+import { SocialLinks } from './blocks/SocialLinks';
 
 interface PreviewProps {
   page: Page;
@@ -212,51 +213,6 @@ const PreviewContent: React.FC<any> = ({ page, theme, getBackgroundStyle, getBut
               groupedBlocks.push(block);
             });
 
-            const getSocialPlatform = (platform: string, url: string) => {
-              // Use explicit platform if available (new structure), otherwise fallback to url detection (old structure)
-              if (platform) {
-                switch (platform) {
-                  case 'instagram': return { icon: Instagram, color: '#E1306C' };
-                  case 'twitter': return { icon: Twitter, color: '#1DA1F2' };
-                  case 'linkedin': return { icon: Linkedin, color: '#0077B5' };
-                  case 'youtube': return { icon: Youtube, color: '#FF0000' };
-                  case 'facebook': return { icon: Facebook, color: '#1877F2' };
-                  case 'github': return { icon: Github, color: '#333333' };
-                  case 'tiktok': return { icon: Video, color: '#000000' }; // Using Video icon as placeholder for TikTok if not available
-                  default: return { icon: Globe, color: theme.textColor };
-                }
-              }
-
-              // Legacy URL detection
-              const lowerUrl = (url || '').toLowerCase();
-              if (lowerUrl.includes('instagram')) return { icon: Instagram, color: '#E1306C' };
-              if (lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) return { icon: Twitter, color: '#1DA1F2' };
-              if (lowerUrl.includes('linkedin')) return { icon: Linkedin, color: '#0077B5' };
-              if (lowerUrl.includes('youtube')) return { icon: Youtube, color: '#FF0000' };
-              if (lowerUrl.includes('facebook')) return { icon: Facebook, color: '#1877F2' };
-              if (lowerUrl.includes('github')) return { icon: Github, color: '#333333' };
-              return { icon: Globe, color: theme.textColor };
-            };
-
-            const getSocialSizeClass = () => {
-              // Return exact dimensions if number (new style), else legacy classes
-              if (typeof theme.socialIconSize === 'number') return 'custom-size';
-              return theme.socialIconSize || 'MD';
-            };
-
-            const socialSizeValue = typeof theme.socialIconSize === 'number' ? theme.socialIconSize : 48; // fallback px
-            const socialSizeMap: any = {
-              SM: 'w-8 h-8 p-1.5',
-              MD: 'w-12 h-12 p-3',
-              LG: 'w-16 h-16 p-4'
-            };
-            const iconSizeMap: any = {
-              SM: 'w-4 h-4',
-              MD: 'w-6 h-6',
-              LG: 'w-8 h-8'
-            }
-            const currentSize = getSocialSizeClass();
-
             return groupedBlocks.map((block: any) => {
 
               // SOCIAL BLOCK (New Structure: list of links)
@@ -265,44 +221,7 @@ const PreviewContent: React.FC<any> = ({ page, theme, getBackgroundStyle, getBut
                 // Fallback for old structure (single url) - wrap in array
                 const displayLinks = links.length > 0 ? links : (block.content.url ? [{ platform: block.content.platform, url: block.content.url }] : []);
 
-                return (
-                  <div key={block.id} className="flex flex-wrap justify-center gap-4 py-2 w-full">
-                    {displayLinks.map((link: any, idx: number) => {
-                      const { icon: Icon, color } = getSocialPlatform(link.platform, link.url);
-
-                      const isMonochrome = theme.socialStyle === 'MONOCHROME';
-                      const isOutline = theme.socialStyle === 'OUTLINE';
-
-                      const iconColor = isMonochrome ? (theme.socialIconColor || theme.textColor) : isOutline ? color : '#ffffff';
-                      const backgroundColor = isOutline ? 'transparent' : isMonochrome ? 'transparent' : color;
-                      const border = isOutline ? `2px solid ${color}` : isMonochrome ? `2px solid ${theme.socialIconColor || theme.textColor}` : 'none';
-
-                      return (
-                        <a
-                          key={`${block.id}-${idx}`}
-                          href={link.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-all hover:shadow-md ${currentSize !== 'custom-size' ? socialSizeMap[currentSize] : ''}`}
-                          style={currentSize === 'custom-size' ? {
-                            width: `${socialSizeValue}px`,
-                            height: `${socialSizeValue}px`,
-                            padding: `${socialSizeValue * 0.25}px`, // 25% padding
-                            color: iconColor,
-                            backgroundColor: backgroundColor,
-                            border: border
-                          } : {
-                            color: iconColor,
-                            backgroundColor: backgroundColor,
-                            border: border
-                          }}
-                        >
-                          <Icon className={currentSize !== 'custom-size' ? iconSizeMap[currentSize] : 'w-full h-full'} />
-                        </a>
-                      );
-                    })}
-                  </div>
-                );
+                return <SocialLinks key={block.id} links={displayLinks} theme={theme} previewMode={true} />;
               }
 
               return (

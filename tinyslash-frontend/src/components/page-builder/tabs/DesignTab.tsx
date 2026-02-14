@@ -155,7 +155,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
   ];
 
   return (
-    <div className="space-y-8 pb-24">
+    <div className="space-y-6 pb-24 px-1">
 
       {/* THEME PRESETS */}
       <Section title="Themes" icon={Sparkles}>
@@ -445,7 +445,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
         </div>
       </Section>
 
-      <hr className="border-gray-100" />
+
 
       {/* SOCIAL ICONS */}
       <Section title="Social Icons" icon={Share2}>
@@ -464,6 +464,14 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
             value={typeof theme.socialIconSize === 'number' ? theme.socialIconSize : 48}
             min={24} max={80} step={4}
             onChange={(val: number) => updateTheme({ socialIconSize: val })}
+            unit="px"
+          />
+
+          <SliderControl
+            label="Icon Spacing"
+            value={theme.socialIconSpacing || 16}
+            min={4} max={48} step={4}
+            onChange={(val: number) => updateTheme({ socialIconSpacing: val })}
             unit="px"
           />
 
@@ -489,7 +497,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
         </div>
       </Section>
 
-      <hr className="border-gray-100" />
+
 
       {/* ADVANCED */}
       <Section title="Advanced" icon={Settings}>
@@ -534,47 +542,66 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
 // HELPER COMPONENTS
 
 const Section = ({ title, icon: Icon, children }: any) => (
-  <div>
-    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-      <Icon className="w-4 h-4" /> {title}
+  <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-5 flex items-center gap-2.5 border-b border-gray-50 pb-3">
+      <div className="p-1.5 bg-gray-50 rounded-lg text-gray-700">
+        <Icon className="w-4 h-4" />
+      </div>
+      {title}
     </h3>
-    {children}
+    <div className="space-y-5">
+      {children}
+    </div>
   </div>
 );
 
 const SegmentedControl = ({ options, value, onChange }: any) => (
-  <div className="flex bg-gray-100 p-1 rounded-lg">
+  <div className="flex bg-gray-100/80 p-1.5 rounded-xl border border-gray-100/50">
     {options.map((opt: string) => (
       <button
         key={opt}
         onClick={() => onChange(opt)}
-        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all capitalize ${value === opt ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-200 capitalize ${value === opt
+          ? 'bg-white text-gray-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] ring-1 ring-black/5'
+          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
           }`}
       >
-        {opt.toLowerCase()}
+        {opt.toLowerCase().replace('_', ' ')}
       </button>
     ))}
   </div>
 );
 
 const ColorPicker = ({ label, value, onChange }: any) => (
-  <div>
-    <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <div className="flex items-center gap-2 border border-gray-200 p-1.5 rounded-lg bg-white">
-      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-gray-200 shadow-sm shrink-0">
+  <div className="group">
+    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 block group-hover:text-gray-900 transition-colors">{label}</label>
+    <div className="flex items-center gap-3 p-2 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors shadow-sm">
+      <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shadow-inner shrink-0 ring-1 ring-black/5">
+        <div className="absolute inset-0 z-0 bg-gray-100 bg-[url('https://t3.ftcdn.net/jpg/02/64/08/98/360_F_264089856_1o1j1a1n1b1n1c1.jpg')] bg-contain opacity-20"></div>
+        <div
+          className="absolute inset-0 z-10"
+          style={{ backgroundColor: value }}
+        />
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 p-0 m-0 border-0 cursor-pointer"
+          className="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 p-0 m-0 border-0 cursor-pointer opacity-0"
         />
       </div>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="flex-1 text-xs outline-none text-gray-700 font-mono uppercase"
-      />
+      <div className="flex-1 flex flex-col">
+        <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Hex Code</span>
+        <div className="flex items-center">
+          <span className="text-gray-400 text-sm mr-0.5">#</span>
+          <input
+            type="text"
+            value={value.replace('#', '')}
+            onChange={(e) => onChange(`#${e.target.value}`)}
+            className="w-full text-sm font-mono font-medium text-gray-900 outline-none uppercase bg-transparent placeholder-gray-300"
+            placeholder="000000"
+          />
+        </div>
+      </div>
     </div>
   </div>
 );
@@ -582,26 +609,62 @@ const ColorPicker = ({ label, value, onChange }: any) => (
 const OptionButton = ({ active, onClick, label, preview }: any) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-lg transition-all ${active ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+    className={`group flex flex-col items-center justify-center gap-3 p-4 border rounded-xl transition-all duration-200 ${active
+      ? 'border-black bg-gray-900 text-white shadow-lg scale-[1.02]'
+      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
       }`}
   >
-    {preview}
-    <span className="text-xs font-medium">{label}</span>
+    <div className={`transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-105'}`}>
+      {preview}
+    </div>
+    <span className={`text-xs font-semibold tracking-wide ${active ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'}`}>{label}</span>
   </button>
 );
 
-const SliderControl = ({ label, value, min, max, step, onChange, unit }: any) => (
-  <div>
-    <div className="flex justify-between items-center mb-1">
-      <label className="text-xs font-medium text-gray-500">{label}</label>
-      <span className="text-xs text-gray-900 font-medium">{value}{unit}</span>
+const SliderControl = ({ label, value, min, max, step, onChange, unit }: any) => {
+  const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+
+  return (
+    <div className="group pt-6 pb-2">
+      <div className="flex justify-between items-center mb-1">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</label>
+      </div>
+      <div className="relative h-6 flex items-center select-none touch-none">
+        {/* Track Background */}
+        <div className="absolute w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          {/* Filled Track */}
+          <div
+            className="h-full bg-black rounded-full transition-all duration-75 ease-out"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+
+        {/* Floating Tooltip */}
+        <div
+          className="absolute -top-8 -translate-x-1/2 flex flex-col items-center transition-all duration-75 ease-out pointer-events-none"
+          style={{ left: `${percentage}%` }}
+        >
+          <div className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1 whitespace-nowrap">
+            {value}{unit}
+          </div>
+          <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-black -mt-1.5"></div>
+        </div>
+
+        {/* Thumb (Native Input) */}
+        <input
+          type="range"
+          min={min} max={max} step={step}
+          value={value}
+          onChange={(e) => onChange(parseInt(e.target.value))}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 scale-110"
+        />
+
+        {/* Visual Thumb (Visible) */}
+        <div
+          className="absolute h-5 w-5 bg-white border-2 border-black rounded-full shadow-md -translate-x-1/2 pointer-events-none transition-all duration-75 ease-out group-hover:scale-110"
+          style={{ left: `${percentage}%` }}
+        />
+      </div>
     </div>
-    <input
-      type="range"
-      min={min} max={max} step={step}
-      value={value}
-      onChange={(e) => onChange(parseInt(e.target.value))}
-      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-    />
-  </div>
-);
+  );
+};

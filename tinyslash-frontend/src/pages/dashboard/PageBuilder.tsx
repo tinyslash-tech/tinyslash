@@ -16,6 +16,8 @@ import { SettingsTab } from '../../components/page-builder/tabs/SettingsTab';
 import { AnalyticsTab } from '../../components/page-builder/tabs/AnalyticsTab';
 import { Preview } from '../../components/page-builder/Preview';
 
+import { useDebounce } from '../../hooks/useDebounce';
+
 type Tab = 'PROFILE' | 'CONTENT' | 'DESIGN' | 'SETTINGS' | 'ANALYTICS';
 
 const PageBuilder = () => {
@@ -24,8 +26,12 @@ const PageBuilder = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState<Page | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('PROFILE');
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [previewMode, setPreviewMode] = useState<'MOBILE' | 'DESKTOP'>('MOBILE');
+
+  // Debounce the page object updates by 1000ms (1 second)
+  const debouncedPage = useDebounce(page, 1000);
 
   // Fetch Page Data
   const { data: fetchedPage, isLoading } = useQuery({
@@ -35,7 +41,7 @@ const PageBuilder = () => {
   });
 
   useEffect(() => {
-    if (fetchedPage) {
+    if (fetchedPage && !page) {
       setPage(fetchedPage);
     }
   }, [fetchedPage]);
@@ -44,24 +50,46 @@ const PageBuilder = () => {
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Page>) => pageService.update(id!, data),
     onSuccess: (data) => {
-      setPage(data);
-      setHasUnsavedChanges(false);
-      toast.success('Changes saved successfully!');
+      // Don't update full page state to avoid cursor jumps, just confirm save
+      setLastSaved(new Date());
+      setIsSaving(false);
       queryClient.invalidateQueries({ queryKey: ['page', id] });
     },
-    onError: () => toast.error('Failed to save changes')
+    onError: () => {
+      setIsSaving(false);
+      toast.error('Failed to auto-save');
+    }
   });
+
+  // Auto-Save Effect
+  useEffect(() => {
+    if (debouncedPage && page) {
+      // Only save if there are discrepancies or if it's a genuine update
+      // Comparing specific fields might be too heavy, so we rely on the debounced value changing 
+      // from the initial fetch or previous save.
+      // However, on first load, debouncedPage equals page. We need to avoid saving on mount.
+      // For simplicity in this user request, we assume any change to debouncedPage triggers save
+      // as long as it's not the initial null state.
+
+      // We check if the debounced page is actually different from what we last fetched/saved?
+      // A simple way is to track if 'hasUnsavedChanges' was true. 
+      // But we removed that state. Let's re-introduce a 'isDirty' flag or just save on debounce.
+
+      // To prevent initial save on mount, we can check if page is defined.
+      // Realistically, comparing JSON strings is a quick dirty check for this scale.
+      const isDifferent = JSON.stringify(debouncedPage) !== JSON.stringify(fetchedPage);
+
+      if (isDifferent) {
+        setIsSaving(true);
+        updateMutation.mutate(debouncedPage);
+      }
+    }
+  }, [debouncedPage]);
+
 
   const handleUpdate = (updates: Partial<Page>) => {
     if (!page) return;
-    setPage({ ...page, ...updates });
-    setHasUnsavedChanges(true); // Mark as unsaved
-  };
-
-  const handleSave = () => {
-    if (page) {
-      updateMutation.mutate(page);
-    }
+    setPage(prev => prev ? ({ ...prev, ...updates }) : null);
   };
 
   if (isLoading || !page) return (
@@ -96,9 +124,28 @@ const PageBuilder = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          {/* Saving Indicator */}
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+            {isSaving ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : lastSaved ? (
+              <>
+                <span className="text-green-600">Saved</span>
+                <span className="text-gray-400">• {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </>
+            ) : (
+              <span>All changes saved</span>
+            )}
+          </div>
+
           {/* Publish Toggle */}
-          <div className="flex items-center gap-2 mr-2 border-r border-gray-200 pr-4">
+          <div className="h-6 w-px bg-gray-200 mx-2"></div>
+
+          <div className="flex items-center gap-2">
             <span className={`text-xs font-bold uppercase tracking-wider ${page.published ? 'text-green-600' : 'text-gray-400'}`}>
               {page.published ? 'Published' : 'Draft'}
             </span>
@@ -116,23 +163,15 @@ const PageBuilder = () => {
             </button>
           </div>
 
-          <span className={`text-xs font-medium px-2 py-1 rounded-full ${hasUnsavedChanges ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-            {hasUnsavedChanges ? 'Unsaved Changes' : 'Saved'}
-          </span>
-          <button
-            onClick={handleSave}
-            disabled={!hasUnsavedChanges || updateMutation.isPending}
-            className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm
-                    ${hasUnsavedChanges
-                ? 'bg-black text-white hover:bg-gray-800 hover:shadow-md'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }
-                `}
+          <a
+            href={`/p/${page.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors ml-2"
           >
-            {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes
-          </button>
+            <Monitor className="w-4 h-4" />
+            Go Live
+          </a>
         </div>
       </header>
 

@@ -5,8 +5,9 @@ import { pageService } from '../../services/pageService';
 import { Page, PageBlock } from '../../types/page';
 import {
   Loader2, Share2, Layout, Link2,
-  Instagram, Twitter, Linkedin, Youtube, Facebook, Github, Globe
+  Instagram, Twitter, Linkedin, Youtube, Facebook, Github, Globe, Video
 } from 'lucide-react';
+import { SocialLinks } from '../../components/page-builder/blocks/SocialLinks';
 import { PageBranding } from '../../components/page-builder/PageBranding';
 import { Helmet } from 'react-helmet-async';
 
@@ -180,36 +181,6 @@ const PublicPage = () => {
                 groupedBlocks.push(block);
               });
 
-              const getSocialPlatform = (url: string) => {
-                const lowerUrl = url.toLowerCase();
-                if (lowerUrl.includes('instagram')) return { icon: Instagram, color: '#E1306C' };
-                if (lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) return { icon: Twitter, color: '#1DA1F2' };
-                if (lowerUrl.includes('linkedin')) return { icon: Linkedin, color: '#0077B5' };
-                if (lowerUrl.includes('youtube')) return { icon: Youtube, color: '#FF0000' };
-                if (lowerUrl.includes('facebook')) return { icon: Facebook, color: '#1877F2' };
-                if (lowerUrl.includes('github')) return { icon: Github, color: '#333333' };
-                return { icon: Globe, color: theme.textColor };
-              };
-
-              const getSocialSizeClass = () => {
-                // Return exact dimensions if number (new style), else legacy classes
-                if (typeof theme.socialIconSize === 'number') return 'custom-size';
-                return theme.socialIconSize || 'MD';
-              };
-
-              const socialSizeValue = typeof theme.socialIconSize === 'number' ? theme.socialIconSize : 48; // fallback px
-              const socialSizeMap: any = {
-                SM: 'p-1.5 sm:p-2',
-                MD: 'p-3 sm:p-4',
-                LG: 'p-4 sm:p-5'
-              };
-              const iconSizeMap: any = {
-                SM: 'w-4 h-4 sm:w-5 sm:h-5',
-                MD: 'w-6 h-6 sm:w-7 sm:h-7',
-                LG: 'w-8 h-8 sm:w-10 sm:h-10'
-              }
-              const currentSize = getSocialSizeClass();
-
               return groupedBlocks.map(block => {
 
                 // SOCIAL BLOCK
@@ -218,44 +189,7 @@ const PublicPage = () => {
                   const links = block.content.links || [];
                   const displayLinks = links.length > 0 ? links : (block.content.url ? [{ platform: block.content.platform, url: block.content.url }] : []);
 
-                  return (
-                    <div key={block.id} className="w-full animate-fade-in-up flex flex-wrap justify-center gap-4 sm:gap-6 py-4">
-                      {displayLinks.map((link: any, idx: number) => {
-                        const { icon: Icon, color } = getSocialPlatform(link.url);
-
-                        const isMonochrome = theme.socialStyle === 'MONOCHROME';
-                        const isOutline = theme.socialStyle === 'OUTLINE';
-
-                        const iconColor = isMonochrome ? (theme.socialIconColor || theme.textColor) : isOutline ? color : '#ffffff';
-                        const backgroundColor = isOutline ? 'transparent' : isMonochrome ? 'transparent' : color;
-                        const border = isOutline ? `2px solid ${color}` : isMonochrome ? `2px solid ${theme.socialIconColor || theme.textColor}` : 'none';
-
-                        return (
-                          <a
-                            key={`${block.id}-${idx}`}
-                            href={link.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`flex items-center justify-center rounded-full shadow-sm hover:shadow-md hover:scale-110 transition-all ${currentSize !== 'custom-size' ? socialSizeMap[currentSize] : ''}`}
-                            style={currentSize === 'custom-size' ? {
-                              width: `${socialSizeValue}px`,
-                              height: `${socialSizeValue}px`,
-                              padding: `${socialSizeValue * 0.25}px`, // 25% padding
-                              color: iconColor,
-                              backgroundColor: backgroundColor,
-                              border: border
-                            } : {
-                              color: iconColor,
-                              backgroundColor: backgroundColor,
-                              border: border
-                            }}
-                          >
-                            <Icon className={currentSize !== 'custom-size' ? iconSizeMap[currentSize] : 'w-full h-full'} />
-                          </a>
-                        );
-                      })}
-                    </div>
-                  );
+                  return <SocialLinks key={block.id} links={displayLinks} theme={theme} />;
                 }
 
                 return (

@@ -42,6 +42,7 @@ export interface PageTheme {
   // Social Icons
   socialStyle: 'FILLED' | 'OUTLINE' | 'MONOCHROME';
   socialIconSize?: 'SM' | 'MD' | 'LG' | number; // Can be enum or px value
+  socialIconSpacing?: number; // Gap in px
   socialIconColor?: string; // Used for custom color or monochrome override
   socialBackgroundColor?: string;
 

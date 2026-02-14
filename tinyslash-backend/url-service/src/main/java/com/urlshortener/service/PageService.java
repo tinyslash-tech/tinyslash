@@ -31,9 +31,11 @@ public class PageService {
     String storedPath = storageService.uploadFile(file, path);
     String publicUrl = storageService.getPublicUrl(storedPath);
 
-    // If no public URL (GridFS), we might need a controller endpoint to serve it.
     // For R2, we get the public URL.
-    return publicUrl != null ? publicUrl : storedPath;
+    if (publicUrl == null) {
+      throw new IllegalStateException("Public storage domain not configured (R2_PUBLIC_DOMAIN missing)");
+    }
+    return publicUrl;
   }
 
   public List<Page> getUserPages(String userId) {

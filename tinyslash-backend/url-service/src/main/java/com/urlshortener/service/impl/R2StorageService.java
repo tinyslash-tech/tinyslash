@@ -94,7 +94,8 @@ public class R2StorageService implements StorageService {
   @Override
   public String getPublicUrl(String path) {
     if (publicDomain != null && !publicDomain.isEmpty()) {
-      return publicDomain + "/" + path;
+      String domain = publicDomain.endsWith("/") ? publicDomain.substring(0, publicDomain.length() - 1) : publicDomain;
+      return domain + "/" + path;
     }
     return null;
   }

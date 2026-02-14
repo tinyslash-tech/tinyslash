@@ -19,10 +19,13 @@ spring:
         max-connection-idle-time: 600000
         connect-timeout: 10000
 
-  # Common JWT Config
   jwt:
     secret: ${JWT_SECRET:defaultSecretKeyForDevelopmentOnlyDoNotUseInProduction}
     expiration: 86400000 # 24h
+
+  # Caching Config
+  cache:
+    type: ${CACHE_TYPE:redis}
 
 # Actuator for Health Checks
 management:

@@ -13,18 +13,26 @@ export const pageService = {
     return response.data;
   },
 
-  uploadAsset: async (file: File) => {
+  uploadAsset: async (file: File): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post<{ url: string }>('/pages/upload-asset', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    const response = await api.post('/v1/files/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
-  getAll: async () => {
+  submitLead: async (pageId: string, ownerId: string, data: any) => {
+    const response = await api.post(`/v1/leads/page/${pageId}?ownerId=${ownerId}`, data);
+    return response.data;
+  },
+
+  getLeads: async (userId: string, pageId: string) => {
+    const response = await api.get(`/v1/leads?userId=${userId}&pageId=${pageId}`);
+    return response.data;
+  },
+
+  getAll: async (): Promise<Page[]> => {
     const response = await api.get<Page[]>('/pages');
     return response.data;
   },

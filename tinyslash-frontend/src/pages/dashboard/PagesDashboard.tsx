@@ -48,11 +48,22 @@ const PagesDashboard = () => {
       theme: { // Default theme
         background: '#ffffff',
         backgroundType: 'SOLID',
-        buttonStyle: 'ROUNDED',
+        buttonShape: 'ROUNDED',
+        buttonStyle: 'FILLED',
+        buttonShadow: 'NONE',
         font: 'Inter',
         textColor: '#000000',
         buttonColor: '#000000',
         buttonTextColor: '#ffffff',
+        socialStyle: 'FILLED',
+        socialIconSize: 'MD',
+        profileImageStyle: 'CIRCLE',
+        profileImageSize: 'MD',
+        nameSize: 'MD',
+        pageMaxWidth: 680,
+        contentSpacing: 'NORMAL',
+        bannerType: 'NONE',
+        bannerHeight: 150,
         showBranding: true
       }
     });

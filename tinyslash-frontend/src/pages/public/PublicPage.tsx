@@ -59,14 +59,65 @@ const PublicPage = () => {
     }
   };
 
+  /* Update theme-based styles */
   const getButtonStyle = () => {
-    return {
-      backgroundColor: theme.buttonStyle === 'OUTLINE' ? 'transparent' : theme.buttonColor,
-      color: theme.buttonStyle === 'OUTLINE' ? theme.buttonColor : theme.buttonTextColor,
-      border: theme.buttonStyle === 'OUTLINE' ? `2px solid ${theme.buttonColor}` : 'none',
-      borderRadius: theme.buttonStyle === 'ROUNDED' ? '999px' : theme.buttonStyle === 'SHARP' ? '0px' : '12px'
+    // Helper to get button padding based on numeric scale (0-100) or legacy ENUM
+    const getPadding = () => {
+      // Legacy fallback
+      if (typeof theme.buttonSize === 'string') return theme.buttonSize === 'SM' ? '0.75rem 1.25rem' : theme.buttonSize === 'LG' ? '1.25rem 2rem' : '1rem 1.5rem';
+
+      // Numeric scale (0-100) -> map to padding
+      const scale = typeof theme.buttonSize === 'number' ? theme.buttonSize : 50;
+      const vPad = 0.5 + (scale / 100) * 1.0; // 0.5rem - 1.5rem
+      const hPad = 1.0 + (scale / 100) * 2.0; // 1rem - 3rem
+      return `${vPad}rem ${hPad}rem`;
     };
+
+    const base: React.CSSProperties = {
+      backgroundColor: theme.buttonStyle === 'OUTLINE' ? 'transparent' : theme.buttonStyle === 'SOFT' ? `${theme.buttonColor}20` : theme.buttonColor,
+      color: theme.buttonStyle === 'OUTLINE' || theme.buttonStyle === 'SOFT' ? theme.buttonColor : theme.buttonTextColor,
+      border: theme.buttonStyle === 'OUTLINE' ? `2px solid ${theme.buttonColor}` : 'none',
+      borderRadius: theme.buttonShape === 'ROUNDED' ? '12px' : theme.buttonShape === 'PILL' ? '999px' : '0px',
+      boxShadow: theme.buttonShadow === 'GLOW' ? `0 0 20px ${theme.buttonColor}80` :
+        theme.buttonShadow === 'STRONG' ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' :
+          theme.buttonShadow === 'SUBTLE' ? '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' : 'none',
+
+      // Dynamic Sizing
+      padding: getPadding(),
+      fontSize: theme.buttonTextSize ? `${theme.buttonTextSize}px` : 'inherit',
+      fontFamily: theme.buttonFont || 'inherit',
+    };
+    return base;
   };
+
+  // Content Container Style
+  const getContentStyle = () => ({
+    maxWidth: `${theme.pageMaxWidth || 680}px`,
+    width: '100%',
+    // Center horizontally in container
+    margin: '0 auto',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: theme.contentSpacing === 'COMPACT' ? '12px' : theme.contentSpacing === 'RELAXED' ? '32px' : '20px',
+  });
+
+  // Profile Image Style
+  const getProfileImageStyle = () => ({
+    borderRadius: theme.profileImageStyle === 'CIRCLE' ? '9999px' : theme.profileImageStyle === 'ROUNDED' ? '24px' : '0px',
+    width: theme.profileImageSize === 'SM' ? '80px' : theme.profileImageSize === 'LG' ? '120px' : '96px',
+    height: theme.profileImageSize === 'SM' ? '80px' : theme.profileImageSize === 'LG' ? '120px' : '96px',
+  });
+
+  // Helper to handle font size standardizing
+  const getBaseFontSize = () => {
+    if (typeof theme.fontSize === 'number') return theme.fontSize;
+    // Legacy map
+    if (theme.fontSize === 'SM') return 14;
+    if (theme.fontSize === 'LG') return 18;
+    return 16;
+  };
+
+  const baseFontSize = getBaseFontSize();
 
   return (
     <>
@@ -83,7 +134,22 @@ const PublicPage = () => {
           fontFamily: theme.font
         }}
       >
-        <div className="w-full max-w-[680px] px-6 py-16 flex flex-col items-center min-h-[calc(100vh-40px)]">
+        {/* Banner */}
+        {theme.bannerType && theme.bannerType !== 'NONE' && (
+          <div
+            className="w-full bg-cover bg-center bg-no-repeat"
+            style={{
+              height: `${theme.bannerHeight || 150}px`,
+              background: theme.bannerType === 'GRADIENT'
+                ? `linear-gradient(to right, ${theme.bannerGradientStart || '#ff00cc'}, ${theme.bannerGradientEnd || '#333399'})`
+                : `url(${theme.bannerImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          />
+        )}
+
+        <div className={`w-full px-6 flex flex-col items-center min-h-[calc(100vh-40px)] ${theme.bannerType && theme.bannerType !== 'NONE' ? '-mt-12' : 'py-16'}`}>
 
           {/* Profile Header */}
           <div className="flex flex-col items-center mb-10 text-center">
@@ -91,7 +157,8 @@ const PublicPage = () => {
               <img
                 src={page.avatarUrl}
                 alt={page.title}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover mb-6 shadow-xl ring-4 ring-white/20"
+                className={`object-cover mb-6 shadow-xl ring-4 ${theme.bannerType && theme.bannerType !== 'NONE' ? 'ring-white bg-white relative z-10' : 'ring-white/20'}`}
+                style={getProfileImageStyle()}
               />
             )}
             <h1 className="text-2xl sm:text-3xl font-extrabold mb-3 tracking-tight drop-shadow-sm">{page.title}</h1>
@@ -103,29 +170,14 @@ const PublicPage = () => {
           </div>
 
           {/* Blocks */}
-          {/* Blocks */}
-          <div className="w-full space-y-4 sm:space-y-6">
+          <div style={getContentStyle()}>
             {(() => {
               const visibleBlocks = page.blocks.filter((b: PageBlock) => b.visible).sort((a: PageBlock, b: PageBlock) => a.order - b.order);
               const groupedBlocks: any[] = [];
               let currentSocialGroup: any = null;
 
               visibleBlocks.forEach(block => {
-                if (block.type === 'SOCIAL') {
-                  if (!currentSocialGroup) {
-                    currentSocialGroup = {
-                      id: `group-${block.id}`,
-                      type: 'SOCIAL_GROUP',
-                      blocks: [block]
-                    };
-                    groupedBlocks.push(currentSocialGroup);
-                  } else {
-                    currentSocialGroup.blocks.push(block);
-                  }
-                } else {
-                  currentSocialGroup = null;
-                  groupedBlocks.push(block);
-                }
+                groupedBlocks.push(block);
               });
 
               const getSocialPlatform = (url: string) => {
@@ -139,37 +191,66 @@ const PublicPage = () => {
                 return { icon: Globe, color: theme.textColor };
               };
 
-              const socialSizeMap = {
+              const getSocialSizeClass = () => {
+                // Return exact dimensions if number (new style), else legacy classes
+                if (typeof theme.socialIconSize === 'number') return 'custom-size';
+                return theme.socialIconSize || 'MD';
+              };
+
+              const socialSizeValue = typeof theme.socialIconSize === 'number' ? theme.socialIconSize : 48; // fallback px
+              const socialSizeMap: any = {
                 SM: 'p-1.5 sm:p-2',
                 MD: 'p-3 sm:p-4',
                 LG: 'p-4 sm:p-5'
               };
-              const iconSizeMap = {
+              const iconSizeMap: any = {
                 SM: 'w-4 h-4 sm:w-5 sm:h-5',
                 MD: 'w-6 h-6 sm:w-7 sm:h-7',
                 LG: 'w-8 h-8 sm:w-10 sm:h-10'
               }
-              const currentSize = theme.socialIconSize || 'MD';
+              const currentSize = getSocialSizeClass();
 
-              return groupedBlocks.map(group => {
-                if (group.type === 'SOCIAL_GROUP') {
+              return groupedBlocks.map(block => {
+
+                // SOCIAL BLOCK
+                if (block.type === 'SOCIAL') {
+                  // Check for links array or fallback to single url
+                  const links = block.content.links || [];
+                  const displayLinks = links.length > 0 ? links : (block.content.url ? [{ platform: block.content.platform, url: block.content.url }] : []);
+
                   return (
-                    <div key={group.id} className="w-full animate-fade-in-up flex flex-wrap justify-center gap-4 sm:gap-6 py-4">
-                      {group.blocks.map((block: PageBlock) => {
-                        const { icon: Icon, color } = getSocialPlatform(block.content.url);
-                        // Default background is #e8e8e8 (light gray)
-                        const bgStyle = { backgroundColor: theme.socialBackgroundColor || '#e8e8e8' };
+                    <div key={block.id} className="w-full animate-fade-in-up flex flex-wrap justify-center gap-4 sm:gap-6 py-4">
+                      {displayLinks.map((link: any, idx: number) => {
+                        const { icon: Icon, color } = getSocialPlatform(link.url);
+
+                        const isMonochrome = theme.socialStyle === 'MONOCHROME';
+                        const isOutline = theme.socialStyle === 'OUTLINE';
+
+                        const iconColor = isMonochrome ? (theme.socialIconColor || theme.textColor) : isOutline ? color : '#ffffff';
+                        const backgroundColor = isOutline ? 'transparent' : isMonochrome ? 'transparent' : color;
+                        const border = isOutline ? `2px solid ${color}` : isMonochrome ? `2px solid ${theme.socialIconColor || theme.textColor}` : 'none';
 
                         return (
                           <a
-                            key={block.id}
-                            href={block.content.url}
+                            key={`${block.id}-${idx}`}
+                            href={link.url}
                             target="_blank"
                             rel="noreferrer"
-                            className={`rounded-full shadow-sm hover:shadow-md hover:scale-110 transition-all ${socialSizeMap[currentSize]}`}
-                            style={{ color: color, ...bgStyle }}
+                            className={`flex items-center justify-center rounded-full shadow-sm hover:shadow-md hover:scale-110 transition-all ${currentSize !== 'custom-size' ? socialSizeMap[currentSize] : ''}`}
+                            style={currentSize === 'custom-size' ? {
+                              width: `${socialSizeValue}px`,
+                              height: `${socialSizeValue}px`,
+                              padding: `${socialSizeValue * 0.25}px`, // 25% padding
+                              color: iconColor,
+                              backgroundColor: backgroundColor,
+                              border: border
+                            } : {
+                              color: iconColor,
+                              backgroundColor: backgroundColor,
+                              border: border
+                            }}
                           >
-                            <Icon className={iconSizeMap[currentSize]} />
+                            <Icon className={currentSize !== 'custom-size' ? iconSizeMap[currentSize] : 'w-full h-full'} />
                           </a>
                         );
                       })}
@@ -177,7 +258,6 @@ const PublicPage = () => {
                   );
                 }
 
-                const block = group;
                 return (
                   <div key={block.id} className="w-full animate-fade-in-up">
 
@@ -190,10 +270,12 @@ const PublicPage = () => {
                         className={`
                                 block w-full text-center transition-all hover:scale-[1.02] active:scale-[0.98]
                                 shadow-md hover:shadow-xl backdrop-blur-sm
-                                ${theme.fontSize === 'SM' ? 'py-3 sm:py-4 px-5 sm:px-6 text-sm sm:text-base' : theme.fontSize === 'LG' ? 'py-5 sm:py-6 px-8 sm:px-10 text-lg sm:text-xl' : 'py-4 sm:py-5 px-6 text-base sm:text-lg'}
                                 ${theme.fontWeight === 'BOLD' ? 'font-bold' : theme.fontWeight === 'SEMIBOLD' ? 'font-semibold' : 'font-semibold'}
                             `}
-                        style={getButtonStyle()}
+                        style={{
+                          ...getButtonStyle(),
+                          fontSize: baseFontSize ? `${baseFontSize}px` : undefined
+                        }}
                       >
                         {block.content.title}
                       </a>
@@ -202,16 +284,17 @@ const PublicPage = () => {
                     {/* HEADER */}
                     {block.type === 'HEADER' && (
                       <h2 className={`text-center mt-6 mb-2 opacity-95
-                          ${theme.fontSize === 'SM' ? 'text-lg' : theme.fontSize === 'LG' ? 'text-3xl' : 'text-xl'}
                           ${theme.fontWeight === 'BOLD' ? 'font-extrabold' : theme.fontWeight === 'SEMIBOLD' ? 'font-bold' : 'font-bold'}
-                      `}>{block.content.text}</h2>
+                      `}
+                        style={{ fontSize: `${baseFontSize * 1.5}px` }}
+                      >{block.content.text}</h2>
                     )}
 
                     {/* TEXT */}
                     {block.type === 'TEXT' && (
-                      <p className={`text-center opacity-85 leading-relaxed px-4
-                          ${theme.fontSize === 'SM' ? 'text-xs sm:text-sm' : theme.fontSize === 'LG' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}
-                      `}>{block.content.text}</p>
+                      <p className="text-center opacity-85 leading-relaxed px-4"
+                        style={{ fontSize: `${baseFontSize}px` }}
+                      >{block.content.text}</p>
                     )}
 
                     {/* IMAGE */}
@@ -226,10 +309,67 @@ const PublicPage = () => {
                       <div className="bg-white p-6 rounded-2xl shadow-lg text-gray-900 mx-auto w-full max-w-sm">
                         <h3 className="text-lg font-bold mb-1">{block.content.title}</h3>
                         <p className="text-xs text-gray-500 mb-4">Subscribe to our newsletter</p>
-                        <div className="flex gap-2">
-                          <input type="email" placeholder="Email Address" className="flex-1 text-sm border-gray-200 bg-gray-50 rounded-lg px-3 outline-none focus:ring-2 focus:ring-black" />
-                          <button className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800">Join</button>
-                        </div>
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          const form = e.target as HTMLFormElement;
+                          const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+                          if (email) {
+                            pageService.submitLead(page.id, page.userId, { email, type: 'FORM' })
+                              .then(() => {
+                                alert('Thanks for subscribing!'); // Replace with better toast
+                                form.reset();
+                              })
+                              .catch(() => alert('Something went wrong.'));
+                          }
+                        }} className="flex flex-col gap-3">
+                          <input
+                            name="email"
+                            type="email"
+                            placeholder="Email Address"
+                            required
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all placeholder:text-gray-400"
+                          />
+                          <button
+                            type="submit"
+                            className="w-full px-4 py-3 bg-black text-white text-sm font-bold rounded-md hover:bg-gray-900 shadow-sm transition-all hover:scale-[1.01]"
+                          >
+                            {block.content.buttonText || 'Join'}
+                          </button>
+                        </form>
+                      </div>
+                    )}
+
+                    {/* EMAIL */}
+                    {/* EMAIL */}
+                    {block.type === 'EMAIL' && (
+                      <div className="max-w-md mx-auto">
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          const form = e.target as HTMLFormElement;
+                          const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+                          if (email) {
+                            pageService.submitLead(page.id, page.userId, { email, type: 'EMAIL' })
+                              .then(() => {
+                                alert('Thanks for signing up!');
+                                form.reset();
+                              })
+                              .catch(() => alert('Something went wrong.'));
+                          }
+                        }} className="flex gap-2 p-1.5 bg-white border border-gray-200 rounded-md shadow-sm max-w-md mx-auto">
+                          <input
+                            name="email"
+                            type="email"
+                            required
+                            placeholder="Enter your email"
+                            className="flex-1 px-4 py-2 bg-transparent text-gray-900 placeholder:text-gray-400 outline-none text-sm"
+                          />
+                          <button
+                            type="submit"
+                            className="px-6 py-2 bg-black text-white text-sm font-bold rounded-md hover:bg-gray-900 transition-colors"
+                          >
+                            {block.content.buttonText || 'Sign Up'}
+                          </button>
+                        </form>
                       </div>
                     )}
 
@@ -243,7 +383,7 @@ const PublicPage = () => {
 
         {/* Footer Branding */}
         {theme.showBranding && <PageBranding />}
-      </div>
+      </div >
     </>
   );
 };

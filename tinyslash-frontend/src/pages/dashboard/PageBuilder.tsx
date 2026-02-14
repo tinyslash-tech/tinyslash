@@ -5,24 +5,27 @@ import { pageService } from '../../services/pageService';
 import { Page } from '../../types/page';
 import {
   Loader2, Save, ChevronLeft,
-  User, Palette, Layers, Settings
+  User, Palette, Layers, Settings,
+  Monitor, Smartphone, BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { IdentityTab } from '../../components/page-builder/tabs/IdentityTab';
-import { ThemeTab } from '../../components/page-builder/tabs/ThemeTab';
+import { ProfileTab } from '../../components/page-builder/tabs/ProfileTab';
+import { DesignTab } from '../../components/page-builder/tabs/DesignTab';
 import { ContentTab } from '../../components/page-builder/tabs/ContentTab';
 import { SettingsTab } from '../../components/page-builder/tabs/SettingsTab';
+import { AnalyticsTab } from '../../components/page-builder/tabs/AnalyticsTab';
 import { Preview } from '../../components/page-builder/Preview';
 
-type Tab = 'IDENTITY' | 'THEME' | 'CONTENT' | 'SETTINGS';
+type Tab = 'PROFILE' | 'CONTENT' | 'DESIGN' | 'SETTINGS' | 'ANALYTICS';
 
 const PageBuilder = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState<Page | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('IDENTITY');
+  const [activeTab, setActiveTab] = useState<Tab>('PROFILE');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'MOBILE' | 'DESKTOP'>('MOBILE');
 
   // Fetch Page Data
   const { data: fetchedPage, isLoading } = useQuery({
@@ -52,7 +55,7 @@ const PageBuilder = () => {
   const handleUpdate = (updates: Partial<Page>) => {
     if (!page) return;
     setPage({ ...page, ...updates });
-    setHasUnsavedChanges(true);
+    setHasUnsavedChanges(true); // Mark as unsaved
   };
 
   const handleSave = () => {
@@ -68,9 +71,10 @@ const PageBuilder = () => {
   );
 
   const tabs = [
-    { id: 'IDENTITY', label: 'Identity', icon: User },
-    { id: 'THEME', label: 'Appearance', icon: Palette },
+    { id: 'PROFILE', label: 'Profile', icon: User },
     { id: 'CONTENT', label: 'Content', icon: Layers },
+    { id: 'DESIGN', label: 'Design', icon: Palette },
+    { id: 'ANALYTICS', label: 'Analytics', icon: BarChart3 },
     { id: 'SETTINGS', label: 'Settings', icon: Settings },
   ];
 
@@ -136,7 +140,7 @@ const PageBuilder = () => {
       <div className="flex-1 flex overflow-hidden">
 
         {/* Sidebar Tabs */}
-        <div className="w-96 bg-white border-r border-gray-200 flex flex-col z-10">
+        <div className="w-[500px] bg-white border-r border-gray-200 flex flex-col z-10">
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-100">
             {tabs.map((tab) => (
@@ -156,9 +160,10 @@ const PageBuilder = () => {
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-            {activeTab === 'IDENTITY' && <IdentityTab page={page} onChange={handleUpdate} />}
-            {activeTab === 'THEME' && <ThemeTab page={page} onChange={handleUpdate} />}
+            {activeTab === 'PROFILE' && <ProfileTab page={page} onChange={handleUpdate} />}
             {activeTab === 'CONTENT' && <ContentTab page={page} onChange={handleUpdate} />}
+            {activeTab === 'DESIGN' && <DesignTab page={page} onChange={handleUpdate} />}
+            {activeTab === 'ANALYTICS' && <AnalyticsTab page={page} onChange={handleUpdate} />}
             {activeTab === 'SETTINGS' && <SettingsTab page={page} onChange={handleUpdate} />}
           </div>
         </div>
@@ -168,9 +173,36 @@ const PageBuilder = () => {
           <div className="h-12 flex items-center justify-center border-b border-gray-200 bg-white/50 backdrop-blur-sm text-xs font-medium text-gray-500">
             Live Preview
           </div>
+
           <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative">
-            <div className="absolute inset-0 pattern-grid-lg text-gray-100/50" /> {/* Optional background pattern */}
-            <Preview page={page} />
+            <div className="absolute inset-0 pattern-grid-lg text-gray-100/50" />
+            <Preview page={page} mode={previewMode} />
+          </div>
+
+          {/* View Toggle Footer */}
+          <div className="h-16 border-t border-gray-200 bg-white flex items-center justify-center gap-2 z-10 shrink-0">
+            <div className="flex p-1 bg-gray-100 rounded-lg">
+              <button
+                onClick={() => setPreviewMode('MOBILE')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${previewMode === 'MOBILE'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <Smartphone className="w-4 h-4" />
+                Mobile
+              </button>
+              <button
+                onClick={() => setPreviewMode('DESKTOP')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${previewMode === 'DESKTOP'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <Monitor className="w-4 h-4" />
+                Desktop
+              </button>
+            </div>
           </div>
         </div>
 

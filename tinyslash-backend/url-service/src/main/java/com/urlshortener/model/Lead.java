@@ -14,16 +14,19 @@ public class Lead {
   private String linkId;
 
   @Indexed
+  private String pageId;
+
+  @Indexed
   private String ownerUserId;
 
   @Indexed
   private String qrCodeId;
 
-  private String source = "LINK"; // LINK or QR
+  private String source = "LINK"; // LINK or QR or PAGE
 
   private String email;
   private String whatsapp;
-  private String leadType; // EMAIL or WHATSAPP
+  private String leadType; // EMAIL or WHATSAPP or FORM
 
   private boolean verified;
   private String otp; // Hashed/temporary
@@ -55,6 +58,14 @@ public class Lead {
 
   public void setLinkId(String linkId) {
     this.linkId = linkId;
+  }
+
+  public String getPageId() {
+    return pageId;
+  }
+
+  public void setPageId(String pageId) {
+    this.pageId = pageId;
   }
 
   public String getOwnerUserId() {

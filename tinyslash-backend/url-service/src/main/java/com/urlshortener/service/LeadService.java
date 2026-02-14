@@ -179,4 +179,24 @@ public class LeadService {
     public List<Lead> getLeadsForQrCode(String qrCodeId) {
         return leadRepository.findByQrCodeId(qrCodeId);
     }
+
+    public List<Lead> getLeadsForPage(String pageId) {
+        return leadRepository.findByPageId(pageId);
+    }
+
+    public void savePageLead(String pageId, String ownerUserId, Map<String, String> data, String ip, String userAgent) {
+        Lead lead = new Lead();
+        lead.setPageId(pageId);
+        lead.setOwnerUserId(ownerUserId);
+        lead.setEmail(data.get("email"));
+        // Store other data if needed, or mapped to specific fields
+        lead.setLeadType(data.get("type") != null ? data.get("type") : "FORM");
+        lead.setVerified(true); // Direct submission, no OTP for now unless requested
+        lead.setIp(ip);
+        lead.setUserAgent(userAgent);
+        lead.setCreatedAt(LocalDateTime.now());
+        lead.setCountry("IN");
+        lead.setSource("PAGE");
+        leadRepository.save(lead);
+    }
 }

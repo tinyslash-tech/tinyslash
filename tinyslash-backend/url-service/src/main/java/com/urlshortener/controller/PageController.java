@@ -76,7 +76,7 @@ public class PageController {
     try {
       String assetUrl = pageService.uploadAsset(file, user.getId());
       return ResponseEntity.ok(java.util.Map.of("url", assetUrl));
-    } catch (java.io.IOException e) {
+    } catch (Exception e) {
       return ResponseEntity.internalServerError()
           .body(java.util.Map.of("error", "Failed to upload asset: " + e.getMessage()));
     }

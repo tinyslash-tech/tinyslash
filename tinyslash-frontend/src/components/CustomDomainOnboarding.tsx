@@ -266,7 +266,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                 <button
                   onClick={handleAddDomain}
                   disabled={!domainName.trim() || isAdding}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                  className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                 >
                   {isAdding ? 'Adding Domain...' : 'Add Domain →'}
                 </button>
@@ -404,7 +404,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                   </button>
                   <button
                     onClick={() => setStep(3)}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
                   >
                     I've Added the DNS Records →
                   </button>
@@ -488,7 +488,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                       onComplete(addedDomain);
                       toast.success('Custom domain setup complete! 🎉');
                     }}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                    className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
                   >
                     Complete Setup ✨
                   </button>

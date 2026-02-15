@@ -2,28 +2,94 @@ import React, { useState } from 'react';
 import { Page } from '../../../types/page';
 import {
   Globe, Shield, Trash2, Eye, Copy, ExternalLink,
-  Share2, Image as ImageIcon, BarChart3, Puzzle, AlertTriangle, Plus
+  Share2, Image as ImageIcon, BarChart3, Puzzle, AlertTriangle, Plus, Loader2, CheckCircle2, XCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { pageService } from '../../../services/pageService';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCustomDomains } from '../../../components/dashboard/CreateSection/hooks/useCustomDomains';
+import { useSlugCheck } from '../../../hooks/useSlugCheck';
+import { sanitizeSlug } from '../../../utils/sanitizeSlug';
 
 interface SettingsTabProps {
   page: Page;
   onChange: (updates: Partial<Page>) => void;
 }
 
+// Sub-component for Slug Editing to isolate hook state
+const SlugEditor = ({ currentSlug, pageId, onCancel, onSave }: { currentSlug: string, pageId: string, onCancel: () => void, onSave: (s: string) => void }) => {
+  const { slug, setSlug, status, suggestions, selectSuggestion } = useSlugCheck(currentSlug, pageId);
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <div className="flex items-center">
+          <span className="bg-gray-100 border border-r-0 border-gray-300 text-gray-500 px-3 py-2 rounded-l-lg text-sm select-none">
+            tinyslash.com/p/
+          </span>
+          <input
+            type="text"
+            value={slug}
+            onChange={(e) => setSlug(sanitizeSlug(e.target.value))}
+            className={`flex-1 w-full px-3 py-2 border rounded-r-lg focus:ring-2 outline-none transition-colors
+              ${status === 'TAKEN' || status === 'RESERVED' ? 'border-red-300 focus:ring-red-200' :
+                status === 'AVAILABLE' ? 'border-green-300 focus:ring-green-200' :
+                  'border-gray-300 focus:ring-blue-500'}
+            `}
+            autoFocus
+          />
+          {/* Status Icon */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            {status === 'CHECKING' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+            {status === 'AVAILABLE' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+            {status === 'TAKEN' && <XCircle className="w-4 h-4 text-red-500" />}
+            {status === 'RESERVED' && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+          </div>
+        </div>
+      </div>
+
+      {/* Feedback */}
+      <div className="text-xs">
+        {status === 'AVAILABLE' && <p className="text-green-600 font-medium">Slug available!</p>}
+        {status === 'TAKEN' && (
+          <div className="space-y-2">
+            <p className="text-red-600 font-medium">Taken. Try these:</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map(s => (
+                <button key={s} onClick={() => selectSuggestion(s)} className="px-2 py-1 bg-gray-100 hover:bg-gray-200 border rounded-md text-gray-700">
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {status === 'RESERVED' && <p className="text-amber-600 font-medium">Reserved word.</p>}
+        {status === 'RATE_LIMITED' && <p className="text-red-600">Too many requests. Slow down.</p>}
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <button onClick={onCancel} className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+        <button
+          onClick={() => onSave(slug)}
+          disabled={status !== 'AVAILABLE' && slug !== currentSlug}
+          className="px-3 py-1.5 text-sm bg-black text-white rounded-lg disabled:opacity-50"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { customDomains } = useCustomDomains(); // Fix: Use the hook
-  const [copySuccess, setCopySuccess] = useState(''); // Fix: Add state
+  const { customDomains } = useCustomDomains();
+  const [copySuccess, setCopySuccess] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingSlug, setEditingSlug] = useState(false);
-  const [tempSlug, setTempSlug] = useState(page.slug);
 
   const deleteMutation = useMutation({
     mutationFn: pageService.delete,
@@ -42,16 +108,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
       deleteMutation.mutate(page.id);
     } else {
       toast.error('Page name does not match');
-    }
-  };
-
-  const handleSlugUpdate = () => {
-    if (tempSlug && tempSlug !== page.slug) {
-      onChange({ slug: tempSlug });
-      setEditingSlug(false);
-      toast.success('URL updated');
-    } else {
-      setEditingSlug(false);
     }
   };
 
@@ -159,42 +215,60 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
             <label className="block text-sm font-bold text-gray-700 mb-2">
               {page.customDomain ? 'Page Path (Optional)' : 'URL Slug'}
             </label>
-            <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-black transition-all">
-              <span className="text-gray-400 font-medium select-none">
-                {page.customDomain ? `https://${page.customDomain}/` : 'tinyslash.com/p/'}
-              </span>
-              <input
-                type="text"
-                value={page.slug}
-                onChange={(e) => onChange({ slug: e.target.value })}
-                className="flex-1 bg-transparent border-none outline-none text-gray-900 font-bold placeholder:text-gray-300"
-                placeholder="my-page"
-              />
-              <button
-                onClick={() => {
-                  const url = page.customDomain
-                    ? `https://${page.customDomain}/${page.slug}`
-                    : `${window.location.origin}/p/${page.slug}`;
-                  navigator.clipboard.writeText(url);
-                  setCopySuccess('Copied!');
-                  setTimeout(() => setCopySuccess(''), 2000);
+
+            {!editingSlug ? (
+              <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl group hover:border-gray-300 transition-all">
+                <span className="text-gray-400 font-medium select-none">
+                  {page.customDomain ? `https://${page.customDomain}/` : 'tinyslash.com/p/'}
+                </span>
+                <span className="flex-1 font-bold text-gray-900">{page.slug}</span>
+
+                <button
+                  onClick={() => setEditingSlug(true)}
+                  className="px-3 py-1.5 text-xs font-bold bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 shadow-sm"
+                >
+                  Change
+                </button>
+
+                <div className="h-4 w-px bg-gray-300 mx-1"></div>
+
+                <button
+                  onClick={() => {
+                    const url = page.customDomain
+                      ? `https://${page.customDomain}/${page.slug}`
+                      : `${window.location.origin}/p/${page.slug}`;
+                    navigator.clipboard.writeText(url);
+                    setCopySuccess('Copied!');
+                    setTimeout(() => setCopySuccess(''), 2000);
+                  }}
+                  className="p-2 text-gray-400 hover:text-black transition-colors relative"
+                  title="Copy Link"
+                >
+                  {copySuccess ? <span className="text-green-500 font-bold text-xs absolute -top-8 left-1/2 -translate-x-1/2 bg-white shadow-md px-2 py-1 rounded-md">Copied!</span> : null}
+                  <Copy className="w-4 h-4" />
+                </button>
+                <a
+                  href={page.customDomain ? `https://${page.customDomain}/${page.slug}` : `/p/${page.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                  title="Open Page"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            ) : (
+              <SlugEditor
+                currentSlug={page.slug}
+                pageId={page.id}
+                onCancel={() => setEditingSlug(false)}
+                onSave={(newSlug) => {
+                  onChange({ slug: newSlug });
+                  setEditingSlug(false);
+                  toast.success('URL updated');
                 }}
-                className="p-2 text-gray-400 hover:text-black transition-colors relative group"
-                title="Copy Link"
-              >
-                {copySuccess ? <span className="text-green-500 font-bold text-xs absolute -top-8 left-1/2 -translate-x-1/2 bg-white shadow-md px-2 py-1 rounded-md">Copied!</span> : null}
-                <Copy className="w-5 h-5" />
-              </button>
-              <a
-                href={page.customDomain ? `https://${page.customDomain}/${page.slug}` : `/p/${page.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                title="Open Page"
-              >
-                <ExternalLink className="w-5 h-5" />
-              </a>
-            </div>
+              />
+            )}
           </div>
         </div>
       </section>

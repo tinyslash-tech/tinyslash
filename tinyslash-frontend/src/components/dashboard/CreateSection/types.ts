@@ -87,6 +87,7 @@ export interface ShortenedLink {
   shortCode: string;
   shortUrl: string;
   originalUrl: string;
+  title?: string;
   qrCode?: string;
   clicks: number;
   createdAt: string;

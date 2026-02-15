@@ -74,11 +74,13 @@ const RedirectPage: React.FC = () => {
             window.location.href = data.data.originalUrl;
           }, 1000);
         } else if (data.data.fileUrl || data.data.downloadUrl) {
-          // File download
-          const downloadUrl = data.data.fileUrl || data.data.downloadUrl;
-          setTimeout(() => {
-            window.location.href = downloadUrl;
-          }, 1000);
+          // Navigate to File Preview Page
+          // Pass fileData and password in state to avoid re-fetching/re-entering
+          // Use 'replace' to avoid back-button loops
+          window.location.replace(`/file/${data.data.fileCode || shortCode}`);
+          // Note: we are not passing state here because window.location.replace handles full reload
+          // Ideally we use navigate() from react-router but this component uses window.location for external redirects
+          // Let's stick to window.location for now as it handles the "exit" from the redirect logic cleanly
         } else if (data.data.content) {
           // QR code content redirect
           setTimeout(() => {

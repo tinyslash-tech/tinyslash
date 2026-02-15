@@ -112,7 +112,7 @@ const FileAnalyticsPage: React.FC = () => {
     if (fileType.startsWith('image/')) return <Image className="w-6 h-6 text-green-600" />;
     if (fileType.startsWith('video/')) return <Video className="w-6 h-6 text-purple-600" />;
     if (fileType.startsWith('audio/')) return <Music className="w-6 h-6 text-orange-600" />;
-    if (fileType.includes('pdf') || fileType.includes('document') || fileType.includes('text')) 
+    if (fileType.includes('pdf') || fileType.includes('document') || fileType.includes('text'))
       return <FileText className="w-6 h-6 text-blue-600" />;
     return <File className="w-6 h-6 text-gray-600" />;
   };
@@ -125,11 +125,11 @@ const FileAnalyticsPage: React.FC = () => {
 
   const downloadFile = async () => {
     if (!analytics) return;
-    
+
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
       const response = await fetch(`${apiUrl}/v1/files/${analytics.fileCode}`);
-      
+
       if (!response.ok) {
         throw new Error('Download failed');
       }
@@ -143,7 +143,7 @@ const FileAnalyticsPage: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast.success('Download started');
     } catch (error) {
       console.error('Download failed:', error);
@@ -174,6 +174,7 @@ const FileAnalyticsPage: React.FC = () => {
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Analytics Not Available</h2>
             <p className="text-gray-600 mb-4">{error || 'File analytics could not be loaded'}</p>
+            <p className="text-xs text-gray-400 mb-6 font-mono">File Code: {fileCode}</p>
             <button
               onClick={() => navigate('/dashboard/file-links')}
               className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
@@ -298,8 +299,8 @@ const FileAnalyticsPage: React.FC = () => {
                       <span className="text-sm text-gray-600">{country}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-black h-2 rounded-full" 
+                          <div
+                            className="bg-black h-2 rounded-full"
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>
@@ -318,8 +319,8 @@ const FileAnalyticsPage: React.FC = () => {
                       <span className="text-sm text-gray-600">{city}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full" 
+                          <div
+                            className="bg-green-600 h-2 rounded-full"
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>
@@ -350,8 +351,8 @@ const FileAnalyticsPage: React.FC = () => {
                       <span className="text-sm text-gray-600">{device}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-purple-600 h-2 rounded-full" 
+                          <div
+                            className="bg-purple-600 h-2 rounded-full"
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>
@@ -370,8 +371,8 @@ const FileAnalyticsPage: React.FC = () => {
                       <span className="text-sm text-gray-600">{os}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-orange-600 h-2 rounded-full" 
+                          <div
+                            className="bg-orange-600 h-2 rounded-full"
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>
@@ -402,8 +403,8 @@ const FileAnalyticsPage: React.FC = () => {
                       <span className="text-sm text-gray-600">{hour}:00</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full" 
+                          <div
+                            className="bg-green-600 h-2 rounded-full"
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>
@@ -422,8 +423,8 @@ const FileAnalyticsPage: React.FC = () => {
                       <span className="text-sm text-gray-600">{day}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-black h-2 rounded-full" 
+                          <div
+                            className="bg-black h-2 rounded-full"
                             style={{ width: `${(count / analytics.totalDownloads) * 100}%` }}
                           ></div>
                         </div>

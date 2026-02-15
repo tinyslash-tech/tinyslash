@@ -21,9 +21,13 @@ public class PageService {
   private final StorageService storageService;
 
   @Autowired
-  public PageService(PageRepository pageRepository, StorageService storageService) {
+  private SlugService slugService;
+
+  @Autowired
+  public PageService(PageRepository pageRepository, StorageService storageService, SlugService slugService) {
     this.pageRepository = pageRepository;
     this.storageService = storageService;
+    this.slugService = slugService;
   }
 
   public String uploadAsset(MultipartFile file, String userId) throws IOException {
@@ -44,11 +48,24 @@ public class PageService {
 
   public Page createPage(User user, Page pageData) {
     // Enforce Limits based on plan (simulated logic for now)
-    // Check if slug is taken
-    if (pageRepository.existsBySlug(pageData.getSlug())) {
-      throw new IllegalArgumentException("Slug already exists");
+
+    // Slug Logic
+    String rawSlug = pageData.getSlug();
+    if (rawSlug == null || rawSlug.trim().isEmpty()) {
+      // Auto-generate from title if missing
+      rawSlug = pageData.getTitle();
     }
 
+    String safeSlug = slugService.sanitizeSlug(rawSlug);
+    if (safeSlug.isEmpty()) {
+      safeSlug = "page-" + UUID.randomUUID().toString().substring(0, 6);
+    }
+
+    if (slugService.isSlugReserved(safeSlug)) {
+      throw new IllegalArgumentException("Slug is reserved: " + safeSlug);
+    }
+
+    pageData.setSlug(safeSlug);
     pageData.setUserId(user.getId());
 
     // Use default theme if null
@@ -60,7 +77,11 @@ public class PageService {
           "MD", "FILLED", null, null, null, true));
     }
 
-    return pageRepository.save(pageData);
+    try {
+      return pageRepository.save(pageData);
+    } catch (org.springframework.dao.DuplicateKeyException e) {
+      throw new IllegalArgumentException("Slug is already taken: " + safeSlug);
+    }
   }
 
   public Page updatePage(String userId, String pageId, Page updates) {
@@ -80,10 +101,23 @@ public class PageService {
 
     // Handle slug updates if changed
     if (updates.getSlug() != null && !updates.getSlug().equals(existing.getSlug())) {
-      if (pageRepository.existsBySlug(updates.getSlug())) {
-        throw new IllegalArgumentException("Slug already exists");
+      String safeSlug = slugService.sanitizeSlug(updates.getSlug());
+
+      if (safeSlug.equals(existing.getSlug())) {
+        return pageRepository.save(existing); // No change after sanitization
       }
-      existing.setSlug(updates.getSlug());
+
+      if (slugService.isSlugReserved(safeSlug)) {
+        throw new IllegalArgumentException("Slug is reserved: " + safeSlug);
+      }
+
+      existing.setSlug(safeSlug);
+
+      try {
+        return pageRepository.save(existing);
+      } catch (org.springframework.dao.DuplicateKeyException e) {
+        throw new IllegalArgumentException("Slug is already taken: " + safeSlug);
+      }
     }
 
     return pageRepository.save(existing);

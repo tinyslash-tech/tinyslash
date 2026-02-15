@@ -5,6 +5,8 @@ import { SecurityError } from '../ui/SecurityError';
 interface QrCreateProps {
   qrText: string;
   setQrText: (value: string) => void;
+  campaignName: string;
+  setCampaignName: (value: string) => void;
   errorMessage: string | null;
   setErrorMessage: (msg: string | null) => void;
   isEditMode: boolean;
@@ -15,6 +17,8 @@ interface QrCreateProps {
 export const QrCreate: React.FC<QrCreateProps> = ({
   qrText,
   setQrText,
+  campaignName,
+  setCampaignName,
   errorMessage,
   setErrorMessage,
   isEditMode,
@@ -25,6 +29,17 @@ export const QrCreate: React.FC<QrCreateProps> = ({
     <div>
       <div className="mb-5">
         <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">
+          Campaign Name <span className="text-gray-400 font-normal">(Optional)</span>
+        </label>
+        <input
+          type="text"
+          placeholder="e.g., Summer Sale 2024"
+          value={campaignName}
+          onChange={(e) => setCampaignName(e.target.value)}
+          className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base mb-4"
+        />
+
+        <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">
           QR Code Type {isEditMode && <span className="text-xs font-normal text-gray-500 ml-2">(Cannot be changed while editing)</span>}
         </label>
         <div className="grid grid-cols-2 gap-4">
@@ -32,20 +47,20 @@ export const QrCreate: React.FC<QrCreateProps> = ({
             onClick={() => !isEditMode && setQrType("dynamic")}
             disabled={isEditMode}
             className={`p-3 rounded-lg border-2 text-center transition-all ${qrType === "dynamic"
-              ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500 opacity-100"
+              ? "border-black bg-gray-50 text-black ring-1 ring-black opacity-100"
               : "border-gray-200 text-gray-600 bg-white opacity-50 cursor-not-allowed"}`}
           >
-            <div className="font-semibold flex items-center justify-center gap-2"><span>⚡️</span> Dynamic</div>
+            <div className="font-semibold flex items-center justify-center gap-2">Dynamic</div>
             <div className="text-xs mt-1 text-gray-500">Update destination anytime</div>
           </button>
           <button
             onClick={() => !isEditMode && setQrType("static")}
             disabled={isEditMode}
             className={`p-3 rounded-lg border-2 text-center transition-all ${qrType === "static"
-              ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500 opacity-100"
+              ? "border-black bg-gray-50 text-black ring-1 ring-black opacity-100"
               : "border-gray-200 text-gray-600 bg-white opacity-50 cursor-not-allowed"}`}
           >
-            <div className="font-semibold flex items-center justify-center gap-2"><span>🔒</span> Static</div>
+            <div className="font-semibold flex items-center justify-center gap-2">Static</div>
             <div className="text-xs mt-1 text-gray-500">Permanent, unchangeable</div>
           </button>
         </div>

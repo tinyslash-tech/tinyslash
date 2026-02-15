@@ -67,6 +67,20 @@ public class PageController {
     return ResponseEntity.ok(pageService.getPageById(id, user.getId()));
   }
 
+  @Autowired
+  private com.urlshortener.service.SlugService slugService;
+
+  @GetMapping("/check-slug")
+  public ResponseEntity<com.urlshortener.dto.SlugCheckResponse> checkSlugAvailability(
+      @RequestParam String slug,
+      @RequestParam(required = false) String pageId) {
+
+    // Basic Rate Limiting (TODO: Move to filter/interceptor with Bucket4j)
+    // For now, we rely on the service to process the request rapidly.
+
+    return ResponseEntity.ok(slugService.checkSlugAvailability(slug, pageId));
+  }
+
   @PostMapping("/upload-asset")
   public ResponseEntity<java.util.Map<String, String>> uploadAsset(
       @RequestParam("file") org.springframework.web.multipart.MultipartFile file,

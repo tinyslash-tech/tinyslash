@@ -10,6 +10,7 @@ interface UseCreateHandlerProps {
   selectedDomain: string;
   urlInput: string;
   qrText: string;
+  campaignName?: string; // Optional new prop
   selectedFile: File | null;
   customAlias: string;
   password: string;
@@ -45,6 +46,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     selectedDomain,
     urlInput,
     qrText,
+    campaignName,
     selectedFile,
     customAlias,
     password,
@@ -254,6 +256,11 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         shortCode,
         shortUrl: initialShortUrl,
         originalUrl,
+        title: mode === 'url'
+          ? `Dashboard URL - ${shortCode}`
+          : mode === 'file'
+            ? (selectedFile?.name || `File Share - ${shortCode}`)
+            : (campaignName || smartLinkPreview.title || `Dashboard QR - ${shortCode}`),
         clicks: 0,
         createdAt: new Date().toISOString(),
         customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined,
@@ -275,7 +282,12 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         // Construct Payload with new features
         const commonPayload = {
           userId: user?.id || 'anonymous-user',
-          title: mode === 'url' ? `Dashboard URL - ${shortCode}` : mode === 'file' ? (selectedFile?.name || `File Share - ${shortCode}`) : `Dashboard QR - ${shortCode}`,
+          title: mode === 'url'
+            ? `Dashboard URL - ${shortCode}`
+            : mode === 'file'
+              ? (selectedFile?.name || `File Share - ${shortCode}`)
+              // Use campaignName if available, else fallback
+              : (campaignName || smartLinkPreview.title || `Dashboard QR - ${shortCode}`),
           description: 'Created via Dashboard',
 
           // Legacy Features

@@ -32,18 +32,22 @@ interface CreateSectionProps {
   mode: CreateMode;
   onModeChange: (mode: CreateMode) => void;
   onNavigateToFiles?: () => void;
+  onNavigateToQR?: () => void;
+  onNavigateToLinks?: () => void;
 }
 
-const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNavigateToFiles }) => {
+const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNavigateToFiles, onNavigateToQR, onNavigateToLinks }) => {
   const { user } = useAuth();
   const { planInfo, checkAccess, showUpgradeModal } = useSubscription();
   const upgradeModal = useUpgradeModal();
   const featureAccess = useFeatureAccess(user);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Local State
   const [urlInput, setUrlInput] = useState('');
   const [qrText, setQrText] = useState('');
+  const [campaignName, setCampaignName] = useState(''); // New State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customAlias, setCustomAlias] = useState('');
   const [password, setPassword] = useState('');
@@ -131,6 +135,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
     selectedDomain,
     urlInput,
     qrText,
+    campaignName, // Pass to hook
     selectedFile,
     customAlias,
     password,
@@ -172,6 +177,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
       setIsEditMode(true);
       setEditQRId(editData.id);
       setQrText(editData.content || '');
+      setCampaignName(editData.title || ''); // Populate title if editing
       setQrType(editData.isDynamic ? "dynamic" : "static");
 
       setQrCustomization({
@@ -205,6 +211,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
     if (!isEditMode) {
       setUrlInput('');
       setQrText('');
+      setCampaignName('');
       setSelectedFile(null);
       setCustomAlias('');
       setPassword('');
@@ -309,6 +316,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
               <QrCreate
                 qrText={qrText}
                 setQrText={setQrText}
+                campaignName={campaignName} // Pass props
+                setCampaignName={setCampaignName} // Pass props
                 errorMessage={errorMessage}
                 setErrorMessage={setErrorMessage}
                 isEditMode={isEditMode}
@@ -388,6 +397,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
             setShowSuccessModal(false);
             if (mode === 'file' && onNavigateToFiles) {
               onNavigateToFiles();
+            } else if (mode === 'url' && onNavigateToLinks) {
+              onNavigateToLinks();
             }
           }}
           shortUrl={result.shortUrl || ''}
@@ -396,9 +407,12 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
           type={mode}
           onCopy={() => {
             if (mode === 'file' && onNavigateToFiles) {
-              // Small delay to let toast show
               setTimeout(() => {
                 onNavigateToFiles();
+              }, 500);
+            } else if (mode === 'url' && onNavigateToLinks) {
+              setTimeout(() => {
+                onNavigateToLinks();
               }, 500);
             }
           }}
@@ -408,10 +422,16 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
       {showQRSuccessModal && result && (
         <QRSuccessModal
           isOpen={showQRSuccessModal}
-          onClose={() => setShowQRSuccessModal(false)}
+          onClose={() => {
+            setShowQRSuccessModal(false);
+            if (onNavigateToQR) {
+              onNavigateToQR();
+            }
+          }}
           qrCanvas={canvasRef.current}
           shortUrl={result.shortUrl || ''}
           originalUrl={result.originalUrl || ''}
+          title={result.title || campaignName || smartLinkPreview.title || qrText || `QR Code`}
           qrCustomization={qrCustomization}
           onCustomize={() => {
             setShowQRSuccessModal(false);

@@ -39,6 +39,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/urls/*/click").permitAll()
                                                 .requestMatchers("/api/v1/qr/*/scan").permitAll()
                                                 .requestMatchers("/api/v1/files/view/**").permitAll()
+                                                .requestMatchers("/api/v1/files/*/preview").permitAll()
+                                                .requestMatchers("/api/v1/files/*/download").permitAll()
                                                 .requestMatchers("/api/actuator/**").permitAll()
                                                 .requestMatchers("/api/database/**").permitAll()
                                                 .requestMatchers("/api/domains/**").permitAll()

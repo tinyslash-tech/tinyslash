@@ -2,6 +2,10 @@ server:
   port: ${PORT:8080}
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   application:
     name: tinyslash-url-service
   
@@ -78,3 +82,71 @@ app:
     proxy-target: ${PROXY_TARGET:tinyslash.com}
     ssl:
       provider: ${SSL_PROVIDER:CLOUDFLARE}
+
+slug:
+  reserved-words:
+    - admin
+    - api
+    - app
+    - auth
+    - billing
+    - blog
+    - careers
+    - checkout
+    - connect
+    - contact
+    - dashboard
+    - docs
+    - download
+    - explore
+    - faq
+    - features
+    - feedback
+    - forgot-password
+    - health
+    - help
+    - home
+    - integrations
+    - internal
+    - invite
+    - jobs
+    - legal
+    - login
+    - logout
+    - onboarding
+    - pages
+    - partners
+    - plans
+    - pricing
+    - privacy
+    - profile
+    - register
+    - reset-password
+    - search
+    - security
+    - settings
+    - setup
+    - signup
+    - sitemap
+    - status
+    - subscribe
+    - support
+    - templates
+    - terms
+    - unsubscribe
+    - upgrade
+    - verify
+    - webhooks
+    - widget
+    - official
+    - verified
+    - staff
+    - team
+    - moderator
+    - mod
+    - null
+    - undefined
+    - test
+    - example
+    - demo
+    - sample

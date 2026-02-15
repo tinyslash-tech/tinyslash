@@ -300,7 +300,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
         <div className="text-red-600 mb-4">Failed to load links</div>
         <button
           onClick={handleRefresh}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800"
         >
           Try Again
         </button>
@@ -313,7 +313,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
     return (
       <div className="space-y-6">
         {/* Header Skeleton */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6">
+        <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="h-8 bg-white/20 rounded w-48 mb-2"></div>
@@ -334,11 +334,11 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6">
+        <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">Links Manager</h2>
-              <p className="text-blue-100">Manage and track your short links</p>
+              <p className="text-white/70">Manage and track your short links</p>
             </div>
             <button
               onClick={handleRefresh}
@@ -350,7 +350,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
             </button>
             <button
               onClick={onCreateClick}
-              className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-2"
+              className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-2"
             >
               <Plus className="w-5 h-5" />
               <span>Create Link</span>
@@ -367,7 +367,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
           </p>
           <button
             onClick={onCreateClick}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Create Your First Link
           </button>
@@ -379,11 +379,11 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
+      <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">Links Manager</h2>
-            <p className="text-blue-100 text-sm sm:text-base">
+            <p className="text-white/70 text-sm sm:text-base">
               Manage and track your short links ({filteredLinks.length} links)
             </p>
           </div>
@@ -398,7 +398,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
             </button>
             <button
               onClick={onCreateClick}
-              className="bg-white text-blue-600 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
+              className="bg-white text-black px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden xs:inline">Create Link</span>
@@ -542,7 +542,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <div className={`w-2 h-2 rounded-full ${link.type === 'url' ? 'bg-blue-500' :
-                            link.type === 'qr' ? 'bg-purple-500' : 'bg-green-500'
+                          link.type === 'qr' ? 'bg-purple-500' : 'bg-green-500'
                           }`} />
                         <span className="text-xs font-medium text-gray-500 uppercase">
                           {link.type === 'url' ? 'Short Link' : link.type === 'qr' ? 'QR Code' : 'File Link'}

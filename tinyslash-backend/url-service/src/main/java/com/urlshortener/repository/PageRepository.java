@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Collection;
 
 @Repository
 public interface PageRepository extends MongoRepository<Page, String> {
@@ -16,4 +17,9 @@ public interface PageRepository extends MongoRepository<Page, String> {
   Optional<Page> findByCustomDomain(String customDomain);
 
   boolean existsBySlug(String slug);
+
+  // Review #4: Efficient edit-mode check — avoids loading full Page document
+  boolean existsBySlugAndIdNot(String slug, String id);
+
+  List<Page> findBySlugIn(Collection<String> slugs);
 }

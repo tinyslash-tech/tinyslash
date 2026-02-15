@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import com.urlshortener.model.QrCode;
 
 @RestController
 @RequestMapping("/api/v1/dashboard")
@@ -27,6 +31,12 @@ public class DashboardController {
 
     @Autowired
     private CacheService cacheService;
+
+    @Value("${app.shorturl.domain:https://pebly.vercel.app}")
+    private String shortUrlDomain;
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
 
     /**
      * Get comprehensive dashboard overview with caching
@@ -91,11 +101,65 @@ public class DashboardController {
         try {
             logger.debug("Fetching QR codes for user: {}", userId);
 
-            var qrCodes = dashboardService.getUserQRCodes(userId);
+            List<QrCode> qrCodes = dashboardService.getUserQRCodes(userId);
+
+            List<Map<String, Object>> qrCodesData = qrCodes.stream().map(qr -> {
+                Map<String, Object> qrData = new HashMap<>();
+                qrData.put("id", qr.getId());
+                qrData.put("qrCode", qr.getQrCode());
+                qrData.put("qrImageUrl", qr.getQrImageUrl());
+                qrData.put("qrImagePath", qr.getQrImagePath());
+                qrData.put("content", qr.getContent());
+                qrData.put("contentType", qr.getContentType());
+                qrData.put("title", qr.getTitle());
+                qrData.put("description", qr.getDescription());
+                qrData.put("style", qr.getStyle());
+                qrData.put("foregroundColor", qr.getForegroundColor());
+                qrData.put("backgroundColor", qr.getBackgroundColor());
+                qrData.put("size", qr.getSize());
+                qrData.put("format", qr.getFormat());
+
+                // Add Advanced Fields
+                qrData.put("trustBadge", qr.isTrustBadge());
+                qrData.put("frameStyle", qr.getFrameStyle());
+                qrData.put("frameColor", qr.getFrameColor());
+                qrData.put("frameText", qr.getFrameText());
+                qrData.put("frameTextColor", qr.getFrameTextColor());
+                qrData.put("gradientType", qr.getGradientType());
+                qrData.put("gradientDirection", qr.getGradientDirection());
+                qrData.put("secondaryColor", qr.getSecondaryColor());
+                qrData.put("centerText", qr.getCenterText());
+                qrData.put("centerTextColor", qr.getCenterTextColor());
+                qrData.put("logoSize", qr.getLogoSize());
+                qrData.put("logoOpacity", qr.getLogoOpacity());
+                qrData.put("logoCornerRadius", qr.getLogoCornerRadius());
+                qrData.put("centerTextFontSize", qr.getCenterTextFontSize());
+                qrData.put("centerTextFontFamily", qr.getCenterTextFontFamily());
+                qrData.put("centerTextBackgroundColor", qr.getCenterTextBackgroundColor());
+                qrData.put("centerTextBold", qr.isCenterTextBold());
+                qrData.put("centerTextOpacity", qr.getCenterTextOpacity());
+                qrData.put("centerTextBackgroundOpacity", qr.getCenterTextBackgroundOpacity());
+                qrData.put("centerTextBackgroundRadius", qr.getCenterTextBackgroundRadius());
+                qrData.put("margin", qr.getMargin());
+
+                qrData.put("totalScans", qr.getTotalScans());
+                qrData.put("uniqueScans", qr.getUniqueScans());
+                qrData.put("shortCode", qr.getShortCode());
+                qrData.put("isDynamic", qr.isDynamic());
+                qrData.put("shortUrl", qr.isTrustBadge()
+                        ? frontendUrl + "/verified/" + qr.getShortCode()
+                        : (qr.isDynamic() && qr.getShortCode() != null
+                                ? shortUrlDomain + "/q/" + qr.getShortCode()
+                                : null));
+                qrData.put("createdAt", qr.getCreatedAt());
+                qrData.put("updatedAt", qr.getUpdatedAt());
+                qrData.put("lastScannedAt", qr.getLastScannedAt());
+                return qrData;
+            }).toList();
 
             response.put("success", true);
-            response.put("count", qrCodes.size());
-            response.put("data", qrCodes);
+            response.put("count", qrCodesData.size());
+            response.put("data", qrCodesData);
             response.put("cached", true);
 
             return ResponseEntity.ok(response);

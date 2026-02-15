@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Download, Copy } from 'lucide-react';
+import { X, Download, Copy, ExternalLink, Share2, Plus } from 'lucide-react';
+import { WhatsAppIcon, TelegramIcon, FacebookIcon, XIcon, LinkedInIcon, RedditIcon, EmailIcon } from './SocialIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -11,6 +12,7 @@ interface QRSuccessModalProps {
   qrCanvas: HTMLCanvasElement | null;
   shortUrl: string;
   originalUrl: string;
+  title?: string;
   qrCustomization?: QRCustomization;
   onCustomize?: () => void;
   onCreateAnother?: () => void;
@@ -22,11 +24,14 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
   qrCanvas,
   shortUrl,
   originalUrl,
+  title,
   qrCustomization,
   onCustomize,
   onCreateAnother
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showFormats, setShowFormats] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -65,8 +70,6 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       ctx.fillStyle = config.backgroundColor || '#FFFFFF';
       ctx.fillRect(padding, padding, qrSize, qrSize);
 
-      // Use shortUrl (the generated link) if available, otherwise originalUrl
-      // This ensures dynamic QRs and tracking work correctly.
       const valueToEncode = shortUrl || originalUrl;
 
       const qrData = QRCode.create(valueToEncode, {
@@ -335,7 +338,6 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
 
     ctx.save();
 
-    // Background
     const bgOpacity = config.centerTextBackgroundOpacity ?? 1;
     ctx.globalAlpha = bgOpacity;
     ctx.fillStyle = config.centerTextBackgroundColor || '#FFFFFF';
@@ -356,7 +358,6 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
       ctx.fillRect(bgX, bgY, bgW, bgH);
     }
 
-    // Text
     ctx.globalAlpha = config.centerTextOpacity ?? 1;
     ctx.fillStyle = config.centerTextColor || '#000000';
     ctx.fillText(config.centerText!, x, y);
@@ -413,6 +414,8 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     try {
       const canvas = canvasRef.current;
       const link = document.createElement('a');
+      const filename = `qr-${title?.replace(/\s+/g, '-').toLowerCase() || 'code'}-${new Date().toISOString().split('T')[0]}`;
+
       if (format === 'jpg') {
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
@@ -423,15 +426,15 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
           tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
           tempCtx.drawImage(canvas, 0, 0);
           link.href = tempCanvas.toDataURL('image/jpeg', 0.9);
-          link.download = `qr-code-${Date.now()}.jpg`;
+          link.download = `${filename}.jpg`;
         }
       } else if (format === 'svg') {
-        toast.error('High-quality SVG not supported with custom render yet. Using PNG.');
+        toast.error('SVG not supported yet. Downloading PNG instead.');
         link.href = canvas.toDataURL('image/png');
-        link.download = `qr-code-${Date.now()}.png`;
+        link.download = `${filename}.png`;
       } else {
         link.href = canvas.toDataURL('image/png');
-        link.download = `qr-code-${Date.now()}.png`;
+        link.download = `${filename}.png`;
       }
       link.click();
       toast.success(`Downloaded as ${format.toUpperCase()}!`);
@@ -442,92 +445,217 @@ const QRSuccessModal: React.FC<QRSuccessModalProps> = ({
     }
   };
 
+  const handleClose = () => {
+    onClose();
+  };
+
+  const handleDownloadAndClose = async () => {
+    await downloadQR('png');
+    onClose();
+  };
+
+  const shareToSocial = (platform: string) => {
+    const text = `Check out: ${shortUrl}`;
+    let shareUrl = '';
+
+    switch (platform) {
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        break;
+      case 'telegram':
+        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shortUrl)}&text=${encodeURIComponent(text)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shortUrl)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shortUrl)}`;
+        break;
+      case 'reddit':
+        shareUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(shortUrl)}&title=${encodeURIComponent(text)}`;
+        break;
+      case 'email':
+        shareUrl = `mailto:?subject=${encodeURIComponent('Check out this QR Code')}&body=${encodeURIComponent(text)}`;
+        break;
+    }
+
+    if (shareUrl) window.open(shareUrl, '_blank');
+  };
+
+  // Derive a display title: use provided title, fall back to a readable format
+  const displayTitle = title || 'QR Code';
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
           <motion.div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-4 sm:p-6"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">QR Code Ready! 🎉</h2>
-              <p className="text-gray-600 text-sm">Scan or download your high-quality QR code</p>
+            {/* Header — Green dot + title */}
+            <div className="px-6 pt-5 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <h2 className="text-base font-semibold text-gray-900">QR Code Created</h2>
+              </div>
+              <button onClick={handleClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="flex justify-center mb-6">
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-gray-200 shadow-sm overflow-hidden">
-                <canvas
-                  ref={canvasRef}
-                  className="block w-full h-auto"
-                  style={{
-                    maxHeight: '300px',
-                    maxWidth: '100%',
-                    objectFit: 'contain'
-                  }}
-                />
+            {/* QR Preview + Title */}
+            <div className="px-6 pb-3">
+              <div className="flex justify-center">
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <canvas
+                    ref={canvasRef}
+                    className="block rounded"
+                    style={{
+                      width: '200px',
+                      height: '200px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+              </div>
+              <p className="text-center text-base font-semibold text-gray-900 mt-3">{displayTitle}</p>
+            </div>
+
+            {/* SHORT URL */}
+            <div className="px-6 pb-2.5">
+              <label className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5 block">Short URL</label>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="flex-1 text-sm font-mono text-gray-800 truncate">{shortUrl}</span>
+                <button
+                  onClick={copyToClipboard}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-black hover:bg-gray-200 rounded-md transition-colors"
+                  title="Copy"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
-            <div className="space-y-3 mb-6">
+            {/* DESTINATION */}
+            <div className="px-6 pb-4">
+              <label className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5 block">Destination</label>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="flex-1 text-sm text-gray-600 truncate">{originalUrl}</span>
+                <button
+                  onClick={() => window.open(originalUrl, '_blank')}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-black hover:bg-gray-200 rounded-md transition-colors"
+                  title="Open"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Download Button + Format Selection */}
+            <div className="px-6 pb-3">
               <button
-                onClick={() => downloadQR('png')}
+                onClick={() => setShowFormats(!showFormats)}
                 disabled={isDownloading}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50"
+                className="w-full bg-black text-white py-3 px-4 rounded-xl font-medium hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Download className="w-4 h-4 mr-2" />
-                {isDownloading ? 'Downloading...' : 'Download High-Res PNG'}
+                <Download className="w-4 h-4" />
+                {isDownloading ? 'Downloading...' : (showFormats ? 'Hide Options' : 'Download QR Code')}
               </button>
 
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => downloadQR('jpg')}
-                  disabled={isDownloading}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  Download JPG
-                </button>
-                <button
-                  onClick={() => downloadQR('png')}
-                  disabled={isDownloading}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  Download SVG
-                </button>
-              </div>
+              {/* Format cards */}
+              <AnimatePresence>
+                {showFormats && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="grid grid-cols-3 gap-2 mt-2.5 overflow-hidden"
+                  >
+                    {[
+                      { format: 'png' as const, label: 'PNG', desc: 'Best for web' },
+                      { format: 'svg' as const, label: 'SVG', desc: 'Best for print' },
+                      { format: 'jpg' as const, label: 'JPG', desc: 'Universal' },
+                    ].map(({ format, label, desc }) => (
+                      <button
+                        key={format}
+                        onClick={() => downloadQR(format)}
+                        disabled={isDownloading}
+                        className="flex flex-col items-center py-2.5 px-2 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-400 hover:bg-gray-100 transition-all text-center disabled:opacity-50"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">{label}</span>
+                        <span className="text-[10px] text-gray-400">{desc}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <button
-              onClick={copyToClipboard}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              <Copy className="w-4 h-4" />
-              <span>Copy Short URL</span>
-            </button>
-
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <div className="text-xs text-gray-500 mb-1">Short URL:</div>
-              <div className="text-sm font-mono text-gray-800 break-all">{shortUrl}</div>
-            </div>
-
-            {onCreateAnother && (
-              <div className="text-center mt-4">
+            {/* Bottom Actions — Share + Create Another */}
+            <div className="px-6 pb-5">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 <button
-                  onClick={onCreateAnother}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  onClick={() => setShowShareOptions(!showShareOptions)}
+                  className={`flex items-center justify-center gap-2 py-2.5 border rounded-xl text-sm font-medium transition-colors ${showShareOptions ? 'bg-gray-100 border-gray-300 text-black' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                 >
-                  Create another QR Code →
+                  <Share2 className="w-4 h-4" />
+                  {showShareOptions ? 'Close Share' : 'Share'}
                 </button>
+                {onCreateAnother && (
+                  <button
+                    onClick={onCreateAnother}
+                    className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Another
+                  </button>
+                )}
               </div>
-            )}
+
+              {/* Social Share Grid */}
+              <AnimatePresence>
+                {showShareOptions && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center justify-center gap-4 overflow-hidden py-2"
+                  >
+                    {[
+                      { name: 'whatsapp', icon: <WhatsAppIcon className="w-9 h-9" />, bg: '#25D366' },
+                      { name: 'telegram', icon: <TelegramIcon className="w-9 h-9" />, bg: '#0088CC' },
+                      { name: 'facebook', icon: <FacebookIcon className="w-9 h-9" />, bg: '#1877F2' },
+                      { name: 'twitter', icon: <XIcon className="w-9 h-9" />, bg: '#000000' },
+                      { name: 'linkedin', icon: <LinkedInIcon className="w-9 h-9" />, bg: '#0A66C2' },
+                      { name: 'reddit', icon: <RedditIcon className="w-9 h-9" />, bg: '#FF4500' },
+                      { name: 'email', icon: <EmailIcon className="w-9 h-9" />, bg: '#EA4335' }
+                    ].map((social) => (
+                      <button
+                        key={social.name}
+                        onClick={() => shareToSocial(social.name)}
+                        className="flex items-center justify-center transition-transform hover:scale-110"
+                        style={{ color: social.bg }}
+                        title={`Share on ${social.name.charAt(0).toUpperCase() + social.name.slice(1)}`}
+                      >
+                        {social.icon}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         </div>
       )}

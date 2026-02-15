@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Download, Copy, ExternalLink, Share2, Eye } from 'lucide-react';
+import { X, Download, Copy, ExternalLink, Share2 } from 'lucide-react';
+import { WhatsAppIcon, TelegramIcon, FacebookIcon, XIcon, LinkedInIcon, RedditIcon, EmailIcon } from '../../SocialIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { QRCustomization } from '../CreateSection/types';
@@ -57,6 +58,8 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
   qr
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showFormats, setShowFormats] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Close on Escape key
@@ -541,11 +544,44 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
     }
   };
 
+  const shareToSocial = (platform: string) => {
+    if (!qr) return;
+    const url = (qr.isDynamic && qr.shortUrl) ? qr.shortUrl : qr.url;
+    const text = `Check out this QR Code: ${url}`;
+    let shareUrl = '';
+
+    switch (platform) {
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        break;
+      case 'telegram':
+        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+        break;
+      case 'reddit':
+        shareUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
+        break;
+      case 'email':
+        shareUrl = `mailto:?subject=${encodeURIComponent('Check out this QR Code')}&body=${encodeURIComponent(text)}`;
+        break;
+    }
+
+    if (shareUrl) window.open(shareUrl, '_blank');
+  };
+
   if (!isOpen || !qr) return null;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         {/* Backdrop */}
         <motion.div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm"
@@ -557,120 +593,162 @@ const QRPreviewModal: React.FC<QRPreviewModalProps> = ({
 
         {/* Modal */}
         <motion.div
-          className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden flex flex-col max-h-[90vh]"
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100">
-            <div className="flex items-center space-x-3 overflow-hidden">
-              <div className={`p-2 rounded-lg ${qr.isDynamic ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
-                <Eye className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 truncate max-w-[200px] sm:max-w-xs" title={qr.title}>
-                  {qr.title}
-                </h2>
-                <div className="flex items-center text-xs text-gray-500 space-x-2">
-                  <span className={`px-1.5 py-0.5 rounded font-medium ${qr.isDynamic ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {qr.isDynamic ? 'Dynamic' : 'Static'}
-                  </span>
-                  <span>•</span>
-                  <span>{new Date().toLocaleDateString()}</span>
-                </div>
-              </div>
+          {/* Header — Scan to test dot */}
+          <div className="px-6 pt-5 pb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              <h2 className="text-base font-semibold text-gray-900">Scan to test</h2>
+              <span className="px-1.5 py-0.5 rounded bg-black text-white text-[10px] font-medium uppercase">
+                {qr.isDynamic ? 'Dynamic' : 'Static'}
+              </span>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Content Scrollable */}
-          <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar">
+          <div className="px-6 pb-4 overflow-y-auto custom-scrollbar">
 
-            {/* QR Display */}
-            <div className="flex justify-center mb-8">
-              <div className="relative group">
-                <div className="bg-white p-4 rounded-xl border-2 border-gray-100 shadow-sm">
-                  {/* If we have a pre-generated image from backend, valid, but we use canvas for clean high-res download generation */}
+            {/* QR Preview + Title */}
+            <div className="mb-3">
+              <div className="flex justify-center">
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <canvas
                     ref={canvasRef}
-                    className="w-64 h-64 object-contain rounded-lg"
-                    style={{ maxWidth: '100%', maxHeight: '300px' }}
+                    className="block rounded"
+                    style={{
+                      width: '200px',
+                      height: '200px',
+                      objectFit: 'contain'
+                    }}
                   />
                 </div>
-                {/* Hover Overlay Hint */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <span className="bg-black/75 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md">
-                    High Resolution Preview
-                  </span>
-                </div>
               </div>
+              <p className="text-center text-base font-semibold text-gray-900 mt-3" title={qr.title}>{qr.title}</p>
             </div>
 
-            {/* Actions Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              <button
-                onClick={() => downloadQR('png')}
-                disabled={isDownloading}
-                className="flex items-center justify-center space-x-2 bg-blue-600 text-white py-2.5 px-4 rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm shadow-blue-200"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download PNG</span>
-              </button>
-              <button
-                onClick={() => downloadQR('jpg')}
-                disabled={isDownloading}
-                className="flex items-center justify-center space-x-2 bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download JPG</span>
-              </button>
-            </div>
-
-            {/* Destination URL Card */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <div className="flex items-start justify-between space-x-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Destination</p>
-                  <div className="flex items-center space-x-2 text-sm text-gray-900 font-medium truncate">
-                    {qr.shortUrl ? (
-                      <span className="text-blue-600">{qr.shortUrl}</span>
-                    ) : (
-                      <span className="truncate">{qr.url}</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1 truncate max-w-full">
-                    Target: {qr.url}
-                  </p>
-                </div>
-                <div className="flex space-x-1">
+            {/* SHORT URL */}
+            <div className="mb-2.5">
+              <label className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5 block">Short URL</label>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="flex-1 text-sm font-mono text-gray-800 truncate">{qr.shortUrl || '-'}</span>
+                {qr.shortUrl && (
                   <button
                     onClick={copyToClipboard}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Copy URL"
+                    className="flex-shrink-0 p-1.5 text-gray-400 hover:text-black hover:bg-gray-200 rounded-md transition-colors"
+                    title="Copy"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
-                  <button
-                    onClick={() => window.open((qr.isDynamic && qr.shortUrl) ? qr.shortUrl : qr.url, '_blank')}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Open URL"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                </div>
+                )}
               </div>
             </div>
 
-          </div>
+            {/* DESTINATION */}
+            <div className="mb-4">
+              <label className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5 block">Destination</label>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="flex-1 text-sm text-gray-600 truncate">{qr.url}</span>
+                <button
+                  onClick={() => window.open((qr.isDynamic && qr.shortUrl) ? qr.shortUrl : qr.url, '_blank')}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-black hover:bg-gray-200 rounded-md transition-colors"
+                  title="Open"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center text-xs text-gray-500">
-            <span>{qr.customization.size || 1080}px • {qr.isDynamic ? 'Redirects via Tinyslash' : 'Direct Link'}</span>
-            <button onClick={onClose} className="text-gray-600 hover:text-gray-900 font-medium">Close</button>
+            {/* Download Button + Format Cards */}
+            <div className="mb-3">
+              <button
+                onClick={() => setShowFormats(!showFormats)}
+                disabled={isDownloading}
+                className="w-full bg-black text-white py-3 px-4 rounded-xl font-medium hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                {isDownloading ? 'Downloading...' : (showFormats ? 'Hide Options' : 'Download QR Code')}
+              </button>
+
+              <AnimatePresence>
+                {showFormats && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="grid grid-cols-3 gap-2 mt-2.5 overflow-hidden"
+                  >
+                    {[
+                      { format: 'png' as const, label: 'PNG', desc: 'Best for web' },
+                      { format: 'svg' as const, label: 'SVG', desc: 'Best for print' },
+                      { format: 'jpg' as const, label: 'JPG', desc: 'Universal' },
+                    ].map(({ format, label, desc }) => (
+                      <button
+                        key={format}
+                        onClick={() => downloadQR(format)}
+                        disabled={isDownloading}
+                        className="flex flex-col items-center py-2.5 px-2 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-400 hover:bg-gray-100 transition-all text-center disabled:opacity-50"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">{label}</span>
+                        <span className="text-[10px] text-gray-400">{desc}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Social Share Button & Grid */}
+            <div className="mb-1">
+              <button
+                onClick={() => setShowShareOptions(!showShareOptions)}
+                className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl text-sm font-medium transition-colors mb-2 ${showShareOptions ? 'bg-gray-100 border-gray-300 text-black' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+              >
+                <Share2 className="w-4 h-4" />
+                {showShareOptions ? 'Close Share Options' : 'Share QR Code'}
+              </button>
+
+              <AnimatePresence>
+                {showShareOptions && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center justify-center gap-4 overflow-hidden py-2"
+                  >
+                    {[
+                      { name: 'whatsapp', icon: <WhatsAppIcon className="w-9 h-9" />, bg: '#25D366' },
+                      { name: 'telegram', icon: <TelegramIcon className="w-9 h-9" />, bg: '#0088CC' },
+                      { name: 'facebook', icon: <FacebookIcon className="w-9 h-9" />, bg: '#1877F2' },
+                      { name: 'twitter', icon: <XIcon className="w-9 h-9" />, bg: '#000000' },
+                      { name: 'linkedin', icon: <LinkedInIcon className="w-9 h-9" />, bg: '#0A66C2' },
+                      { name: 'reddit', icon: <RedditIcon className="w-9 h-9" />, bg: '#FF4500' },
+                      { name: 'email', icon: <EmailIcon className="w-9 h-9" />, bg: '#EA4335' }
+                    ].map((social) => (
+                      <button
+                        key={social.name}
+                        onClick={() => shareToSocial(social.name)}
+                        className="flex items-center justify-center transition-transform hover:scale-110"
+                        style={{ color: social.bg }}
+                        title={`Share on ${social.name.charAt(0).toUpperCase() + social.name.slice(1)}`}
+                      >
+                        {social.icon}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </motion.div>
       </div>

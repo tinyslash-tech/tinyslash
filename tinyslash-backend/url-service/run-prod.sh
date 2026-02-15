@@ -15,6 +15,9 @@ export R2_PUBLIC_DOMAIN=$(grep "^R2_PUBLIC_DOMAIN=" ../../.env | cut -d '=' -f2-
 export FILE_STORAGE_TYPE=$(grep "^FILE_STORAGE_TYPE=" ../../.env | cut -d '=' -f2-)
 export CACHE_TYPE=$(grep "^CACHE_TYPE=" ../../.env | cut -d '=' -f2-)
 export JWT_SECRET=$(grep "^JWT_SECRET=" ../../.env | cut -d '=' -f2-)
+export BACKEND_URL=$(grep "^BACKEND_URL=" ../../.env | cut -d '=' -f2-)
+export FRONTEND_URL=$(grep "^FRONTEND_URL=" ../../.env | cut -d '=' -f2-)
+export SHORT_URL_DOMAIN=$(grep "^SHORT_URL_DOMAIN=" ../../.env | cut -d '=' -f2-)
 
 # Redis Configuration
 export REDIS_HOST=$(grep "^REDIS_HOST=" ../../.env | cut -d '=' -f2-)

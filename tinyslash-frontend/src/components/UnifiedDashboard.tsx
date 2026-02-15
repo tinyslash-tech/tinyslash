@@ -110,6 +110,14 @@ const UnifiedDashboard: React.FC = () => {
           mode={createMode}
           onModeChange={setCreateMode}
           onNavigateToFiles={() => setActiveSection('file-to-url')}
+          onNavigateToQR={() => {
+            setActiveSection('qr-codes');
+            navigate('/dashboard/qr-codes');
+          }}
+          onNavigateToLinks={() => {
+            setActiveSection('links');
+            navigate('/dashboard/links');
+          }}
         />;
       case 'links':
         return <LinksManager onCreateClick={() => handleCreateClick('url')} />;

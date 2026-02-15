@@ -32,6 +32,7 @@ interface FileLink {
   createdAt: string;
   downloadCount: number;
   shortCode: string;
+  fileCode: string; // Explicitly added for reliable analytics navigation
   tags?: string[];
   type: 'file';
   isPasswordProtected?: boolean;
@@ -66,6 +67,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
     createdAt: file.uploadedAt || file.createdAt,
     downloadCount: file.downloadCount || 0,
     shortCode: file.shortCode || file.fileCode,
+    fileCode: file.fileCode, // Explicit mapping
     tags: file.tags || [],
     type: 'file' as const,
     isPasswordProtected: file.isPasswordProtected || false,
@@ -251,24 +253,8 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
-      // Record download analytics
-      try {
-        await fetch(`${apiUrl}/v1/files/${fileCode}/download`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ipAddress: 'unknown',
-            userAgent: navigator.userAgent,
-            country: 'unknown',
-            city: 'unknown',
-            deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop'
-          }),
-        });
-      } catch (analyticsError) {
-        console.warn('Failed to record download analytics:', analyticsError);
-      }
+      // Download the file
+      // Analytics are now handled by the backend GET endpoint directly
 
       // Download the file
       const response = await fetch(`${apiUrl}/v1/files/${fileCode}`);
@@ -367,15 +353,16 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
     return (
       <div className="space-y-6">
         {/* Header Skeleton */}
-        <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl p-6">
+        {/* Header Skeleton */}
+        <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="h-8 bg-white/20 rounded w-48 mb-2"></div>
-              <div className="h-4 bg-white/20 rounded w-64"></div>
+              <div className="h-8 bg-white/20 rounded w-48 mb-2 animate-pulse"></div>
+              <div className="h-4 bg-white/20 rounded w-64 animate-pulse"></div>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-24 bg-white/20 rounded-lg"></div>
-              <div className="h-12 w-32 bg-white/20 rounded-lg"></div>
+              <div className="h-10 w-24 bg-white/20 rounded-lg animate-pulse"></div>
+              <div className="h-12 w-32 bg-white/20 rounded-lg animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -397,14 +384,14 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
+      <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="min-w-0">
             <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 sm:mb-2 flex items-center space-x-2">
               <LinkIcon className="w-6 h-6 sm:w-8 sm:h-8" />
               <span>File Links Manager</span>
             </h2>
-            <p className="text-orange-100 text-sm sm:text-base">
+            <p className="text-gray-400 text-sm sm:text-base">
               Manage your file-to-link conversions ({fileLinks.length} files)
             </p>
           </div>
@@ -419,7 +406,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
             </button>
             <button
               onClick={handleCreateFileLink}
-              className="bg-white text-orange-600 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
+              className="bg-white text-black px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden xs:inline">Create File Link</span>
@@ -646,10 +633,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
                       <div className="flex items-center space-x-1">
                         <button
                           onClick={() => {
-                            // Since there's no specific file analytics endpoint, show a message
-                            toast('File analytics feature coming soon! For now, check your general analytics.', { icon: 'ℹ️' });
-                            // Alternative: navigate to user analytics
-                            // navigate(`/dashboard/analytics/user/${user?.id}`);
+                            navigate(`/dashboard/file-links/analytics/${fileLink.fileCode}`);
                           }}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
                           title="Analytics"

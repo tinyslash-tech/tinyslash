@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Copy, ExternalLink, BarChart3 } from 'lucide-react';
+import { X, Copy, ExternalLink, CheckCircle, Share2, Plus } from 'lucide-react';
+import { WhatsAppIcon, TelegramIcon, FacebookIcon, XIcon, LinkedInIcon, RedditIcon, EmailIcon } from './SocialIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -22,24 +23,16 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
   type,
   onCopy
 }) => {
+  const [showShareOptions, setShowShareOptions] = React.useState(false);
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(shortUrl);
-      toast.success('Link copied to clipboard!');
+      toast.success('Copied to clipboard!');
       if (onCopy) onCopy();
     } catch (err) {
-      toast.error('Failed to copy link');
+      toast.error('Failed to copy');
     }
-  };
-
-  const openLink = () => {
-    window.open(shortUrl, '_blank');
-  };
-
-  const viewDetails = () => {
-    // Navigate to analytics page
-    const shortCode = shortUrl.split('/').pop();
-    window.open(`/analytics/${shortCode}`, '_blank');
   };
 
   const shareToSocial = (platform: string) => {
@@ -47,50 +40,46 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
     let shareUrl = '';
 
     switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-        break;
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shortUrl)}`;
-        break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shortUrl)}`;
-        break;
       case 'whatsapp':
         shareUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
         break;
       case 'telegram':
         shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shortUrl)}&text=${encodeURIComponent(text)}`;
         break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shortUrl)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shortUrl)}`;
+        break;
       case 'reddit':
-        shareUrl = `https://reddit.com/submit?url=${encodeURIComponent(shortUrl)}&title=${encodeURIComponent(text)}`;
+        shareUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(shortUrl)}&title=${encodeURIComponent(text)}`;
+        break;
+      case 'email':
+        shareUrl = `mailto:?subject=${encodeURIComponent('Check out this Link')}&body=${encodeURIComponent(text)}`;
         break;
     }
 
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400');
-    }
+    if (shareUrl) window.open(shareUrl, '_blank');
   };
 
   const getTitle = () => {
     switch (type) {
-      case 'url':
-        return 'Your link is ready! 🎉';
-      case 'qr':
-        return 'Your QR code is ready! 🎉';
-      case 'file':
-        return 'Your file link is ready! 🎉';
-      default:
-        return 'Your link is ready! 🎉';
+      case 'file': return 'File Link Created';
+      case 'qr': return 'QR Link Created';
+      default: return 'Link Created';
     }
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -98,127 +87,117 @@ const LinkSuccessModal: React.FC<LinkSuccessModalProps> = ({
           />
 
           <motion.div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {getTitle()}
-              </h2>
-              <p className="text-gray-600">
-                Copy the link below to share it or choose a platform to share it to.
-              </p>
-            </div>
-
-            {/* Short URL Display */}
-            <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 mb-4 break-all">
-                  {shortUrl}
-                </div>
-
-                <div className="flex gap-3 justify-center">
-                  <button
-                    onClick={viewDetails}
-                    className="flex items-center space-x-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>View link details</span>
-                  </button>
-
-                  <button
-                    onClick={copyToClipboard}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Copy className="w-4 h-4" />
-                    <span>Copy link</span>
-                  </button>
-                </div>
+            {/* Header */}
+            <div className="px-6 pt-5 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <h2 className="text-base font-semibold text-gray-900">{getTitle()}</h2>
               </div>
+              <button
+                onClick={onClose}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* QR Code Display */}
+            {/* QR Code (if available) */}
             {qrCode && (
-              <div className="text-center mb-6">
-                <img
-                  src={qrCode}
-                  alt="QR Code"
-                  className="w-32 h-32 mx-auto border rounded-lg"
-                />
+              <div className="px-6 pb-3">
+                <div className="flex justify-center">
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <img
+                      src={qrCode}
+                      alt="QR Code"
+                      className="w-[200px] h-[200px] object-contain rounded"
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Social Share Options */}
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                onClick={() => shareToSocial('whatsapp')}
-                className="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-white text-xs font-bold">W</span>
-                </div>
-                <span className="text-xs text-gray-600">WhatsApp</span>
-              </button>
+            {/* Short URL */}
+            <div className="px-6 pb-2.5">
+              <label className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5 block">Short URL</label>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="flex-1 text-sm font-mono text-gray-800 truncate">{shortUrl}</span>
+                <button
+                  onClick={copyToClipboard}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-black hover:bg-gray-200 rounded-md transition-colors"
+                  title="Copy"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
 
-              <button
-                onClick={() => shareToSocial('telegram')}
-                className="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-white text-xs font-bold">T</span>
-                </div>
-                <span className="text-xs text-gray-600">Telegram</span>
-              </button>
+            {/* Destination */}
+            <div className="px-6 pb-4">
+              <label className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5 block">Destination</label>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="flex-1 text-sm text-gray-600 truncate">{originalUrl}</span>
+                <button
+                  onClick={() => window.open(originalUrl, '_blank')}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-black hover:bg-gray-200 rounded-md transition-colors"
+                  title="Open"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
 
-              <button
-                onClick={() => shareToSocial('twitter')}
-                className="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-8 h-8 bg-blue-400 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-white text-xs font-bold">X</span>
-                </div>
-                <span className="text-xs text-gray-600">Twitter</span>
-              </button>
+            {/* Actions & Sharing */}
+            <div className="px-6 pb-5">
+              <div className="mb-2">
+                <button
+                  onClick={() => setShowShareOptions(!showShareOptions)}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl text-sm font-medium transition-colors ${showShareOptions ? 'bg-gray-100 border-gray-300 text-black' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  <Share2 className="w-4 h-4" />
+                  {showShareOptions ? 'Close Share' : 'Share Link'}
+                </button>
+              </div>
 
-              <button
-                onClick={() => shareToSocial('linkedin')}
-                className="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-white text-xs font-bold">in</span>
-                </div>
-                <span className="text-xs text-gray-600">LinkedIn</span>
-              </button>
-
-              <button
-                onClick={() => shareToSocial('facebook')}
-                className="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-white text-xs font-bold">f</span>
-                </div>
-                <span className="text-xs text-gray-600">Facebook</span>
-              </button>
-
-              <button
-                onClick={() => shareToSocial('reddit')}
-                className="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-white text-xs font-bold">R</span>
-                </div>
-                <span className="text-xs text-gray-600">Reddit</span>
-              </button>
+              {/* Social Share Grid */}
+              <AnimatePresence>
+                {showShareOptions && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center justify-center gap-4 overflow-hidden py-2"
+                  >
+                    {[
+                      { name: 'whatsapp', icon: <WhatsAppIcon className="w-9 h-9" />, bg: '#25D366' },
+                      { name: 'telegram', icon: <TelegramIcon className="w-9 h-9" />, bg: '#0088CC' },
+                      { name: 'facebook', icon: <FacebookIcon className="w-9 h-9" />, bg: '#1877F2' },
+                      { name: 'twitter', icon: <XIcon className="w-9 h-9" />, bg: '#000000' },
+                      { name: 'linkedin', icon: <LinkedInIcon className="w-9 h-9" />, bg: '#0A66C2' },
+                      { name: 'reddit', icon: <RedditIcon className="w-9 h-9" />, bg: '#FF4500' },
+                      { name: 'email', icon: <EmailIcon className="w-9 h-9" />, bg: '#EA4335' }
+                    ].map((social) => (
+                      <button
+                        key={social.name}
+                        onClick={() => shareToSocial(social.name)}
+                        className="flex items-center justify-center transition-transform hover:scale-110"
+                        style={{ color: social.bg }}
+                        title={`Share on ${social.name.charAt(0).toUpperCase() + social.name.slice(1)}`}
+                      >
+                        {social.icon}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         </div>

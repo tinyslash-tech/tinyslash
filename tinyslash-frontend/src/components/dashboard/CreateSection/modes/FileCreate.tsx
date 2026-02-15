@@ -70,7 +70,7 @@ export const FileCreate: React.FC<FileCreateProps> = ({ selectedFile, setSelecte
         />
         <label
           htmlFor="file-upload"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+          className="bg-black text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors"
         >
           Choose File
         </label>

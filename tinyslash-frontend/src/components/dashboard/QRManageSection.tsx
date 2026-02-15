@@ -612,7 +612,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
     return (
       <div className="space-y-6">
         {/* Header Skeleton */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl p-6">
+        <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="h-8 bg-white/20 rounded w-48 mb-2"></div>
@@ -645,7 +645,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
+      <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">QR Code Manager</h2>

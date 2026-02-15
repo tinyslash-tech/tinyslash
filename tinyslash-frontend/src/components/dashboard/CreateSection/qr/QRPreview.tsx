@@ -64,11 +64,8 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
               <div className="relative bg-white p-3 rounded-lg border border-gray-200 shadow-sm mt-2">
 
                 {/* Type Label Chip */}
-                <div className={`absolute -top-3 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 z-10 whitespace-nowrap ${qrType === 'dynamic'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-white'
-                  }`}>
-                  {qrType === 'dynamic' ? '⚡️ Dynamic' : '🔒 Static'}
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 z-10 whitespace-nowrap bg-black text-white">
+                  {qrType === 'dynamic' ? 'Dynamic' : 'Static'}
                 </div>
 
                 <QRCodeGenerator

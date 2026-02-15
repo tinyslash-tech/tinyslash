@@ -322,7 +322,7 @@ public class UrlShorteningService {
 
     private String extractDomainFromUrl(String url) {
         try {
-            java.net.URL parsedUrl = new java.net.URL(url);
+            java.net.URL parsedUrl = java.net.URI.create(url).toURL();
             return parsedUrl.getHost();
         } catch (Exception e) {
             return url;
@@ -437,7 +437,7 @@ public class UrlShorteningService {
 
     private boolean isValidUrl(String url) {
         try {
-            new java.net.URL(url);
+            java.net.URI.create(url).toURL();
             return url.startsWith("http://") || url.startsWith("https://");
         } catch (Exception e) {
             return false;

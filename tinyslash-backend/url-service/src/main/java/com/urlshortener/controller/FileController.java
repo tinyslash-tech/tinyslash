@@ -5,6 +5,7 @@ import com.urlshortener.model.UploadedFile;
 import com.urlshortener.service.FileUploadService;
 import com.urlshortener.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -77,6 +78,67 @@ public class FileController {
 
     @GetMapping("/{fileCode}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileCode,
+            @RequestParam(required = false) String password,
+            jakarta.servlet.http.HttpServletRequest request) {
+        try {
+            Optional<UploadedFile> fileOpt = fileUploadService.getFileByCode(fileCode);
+
+            if (fileOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            UploadedFile file = fileOpt.get();
+
+            // Check password if required
+            if (file.isRequiresPassword()) {
+                if (password == null || !password.equals(file.getPassword())) {
+                    return ResponseEntity.status(401).build();
+                }
+            }
+
+            // Record download analytics (Robust server-side tracking)
+            try {
+                String ipAddress = request.getHeader("CF-Connecting-IP");
+                if (ipAddress == null || ipAddress.isEmpty()) {
+                    ipAddress = request.getHeader("X-Forwarded-For");
+                }
+                if (ipAddress == null || ipAddress.isEmpty()) {
+                    ipAddress = request.getRemoteAddr();
+                }
+
+                String userAgent = request.getHeader("User-Agent");
+                String country = request.getHeader("CF-IPCountry");
+                if (country == null)
+                    country = "unknown";
+
+                String deviceType = "desktop";
+                if (userAgent != null && (userAgent.toLowerCase().contains("mobile")
+                        || userAgent.toLowerCase().contains("android") || userAgent.toLowerCase().contains("iphone"))) {
+                    deviceType = "mobile";
+                }
+
+                fileUploadService.recordDownload(fileCode, ipAddress, userAgent, country, "unknown", deviceType);
+            } catch (Exception e) {
+                // Log analytics error but don't fail download
+                System.err.println("Failed to record analytics for file download: " + e.getMessage());
+            }
+
+            Resource resource = fileUploadService.getFileContent(fileCode);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(file.getFileType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + file.getOriginalFileName() + "\"")
+                    .body(resource);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+    }
+
+    @GetMapping("/view/{fileCode}")
+    public ResponseEntity<Resource> viewFile(@PathVariable String fileCode,
             @RequestParam(required = false) String password) {
         try {
             Optional<UploadedFile> fileOpt = fileUploadService.getFileByCode(fileCode);
@@ -99,11 +161,93 @@ public class FileController {
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(file.getFileType()))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + file.getOriginalFileName() + "\"")
+                            "inline; filename=\"" + file.getOriginalFileName() + "\"")
                     .body(resource);
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
+        }
+
+    }
+
+    @Value("${app.shorturl.domain}")
+    private String shortUrlDomain;
+
+    @GetMapping("/{fileCode}/preview")
+    public ResponseEntity<Map<String, Object>> getFilePreview(@PathVariable String fileCode,
+            @RequestParam(required = false) String password) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Optional<UploadedFile> fileOpt = fileUploadService.getFileByCode(fileCode);
+
+            if (fileOpt.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "File not found");
+                return ResponseEntity.notFound().build();
+            }
+
+            UploadedFile file = fileOpt.get();
+
+            // Check if file is active
+            if (!file.isActive()) {
+                response.put("success", false);
+                response.put("message", "File is no longer active");
+                return ResponseEntity.status(404).body(response);
+            }
+
+            // Check if file has expired
+            if (file.getExpiresAt() != null && file.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+                response.put("success", false);
+                response.put("message", "File has expired");
+                return ResponseEntity.status(410).body(response);
+            }
+
+            boolean passwordProtected = file.isRequiresPassword();
+            boolean authorized = true;
+
+            // Check password if required and provided
+            if (passwordProtected) {
+                if (password == null || !password.equals(file.getPassword())) {
+                    authorized = false;
+                }
+            }
+
+            Map<String, Object> fileData = new HashMap<>();
+            fileData.put("fileCode", file.getFileCode());
+            fileData.put("fileName", file.getOriginalFileName());
+            fileData.put("fileType", file.getFileType());
+            fileData.put("fileSize", file.getFileSize());
+            fileData.put("uploadedAt", file.getUploadedAt());
+            fileData.put("requiresPassword", passwordProtected);
+            fileData.put("isAuthorized", authorized);
+
+            // Only provide download URL if authorized
+            if (authorized) {
+                String backendUrl = System.getenv("BACKEND_URL");
+                if (backendUrl == null) {
+                    backendUrl = "https://urlshortner-1-hpyu.onrender.com";
+                }
+                fileData.put("downloadUrl", backendUrl + "/api/v1/files/" + fileCode);
+
+                // Set default preview URL to the inline view endpoint
+                fileData.put("previewUrl", backendUrl + "/api/v1/files/view/" + fileCode);
+
+                // We ALWAYS use the internal view endpoint for previews now.
+                // This ensures:
+                // 1. Password protection is enforced (public S3/R2 links bypass this).
+                // 2. Localhost previews work even if the public domain is misconfigured.
+                // 3. Consistent behavior across environments.
+            }
+
+            response.put("success", true);
+            response.put("data", fileData);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

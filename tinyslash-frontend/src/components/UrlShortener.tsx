@@ -33,6 +33,7 @@ const UrlShortener: React.FC = () => {
   const upgradeModal = useUpgradeModal();
   const [activeTab, setActiveTab] = useState<'url' | 'qr' | 'file'>('url');
   const [urlInput, setUrlInput] = useState('');
+  const [title, setTitle] = useState('');
   const [qrText, setQrText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customAlias, setCustomAlias] = useState('');
@@ -202,7 +203,7 @@ const UrlShortener: React.FC = () => {
           password: finalPassword || undefined,
           expirationDays: finalExpirationDays ? parseInt(finalExpirationDays.toString()) : undefined,
           maxClicks: finalMaxClicks ? parseInt(finalMaxClicks.toString()) : undefined,
-          title: `Short link for ${urlInput}`,
+          title: title || `Short link for ${urlInput}`,
           description: 'Created via URL Shortener',
           customDomain: finalDomain !== 'tinyslash.com' ? finalDomain : undefined
         });
@@ -214,7 +215,7 @@ const UrlShortener: React.FC = () => {
           password: finalPassword || undefined,
           expirationDays: finalExpirationDays ? parseInt(finalExpirationDays.toString()) : undefined,
           maxClicks: finalMaxClicks ? parseInt(finalMaxClicks.toString()) : undefined,
-          title: `Short link for ${urlInput}`,
+          title: title || `Short link for ${urlInput}`,
           description: 'Created via URL Shortener',
           customDomain: finalDomain !== 'tinyslash.com' ? finalDomain : undefined
         });
@@ -283,6 +284,7 @@ const UrlShortener: React.FC = () => {
         setExpirationDays('');
         setMaxClicks('');
         setIsOneTime(false);
+        setTitle('');
       }
 
     } catch (error: any) {
@@ -413,19 +415,35 @@ const UrlShortener: React.FC = () => {
         <div className="space-y-4">
           {activeTab === 'url' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter URL to shorten
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  placeholder="https://example.com/very-long-url..."
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                {/* AI Loading indicator removed */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Destination URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    placeholder="https://example.com/very-long-url..."
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Campaign / Title Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Summer Sale 2024, Instagram Bio Link"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+
             </div>
           )}
 

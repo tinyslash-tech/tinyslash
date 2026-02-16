@@ -2,12 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2, Lock, AlertCircle } from 'lucide-react';
 
+import { SmartLinkPreview } from '../components/dashboard/CreateSection/types';
+import { SEO } from '../components/SEO';
+
 const RedirectPage: React.FC = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [password, setPassword] = useState('');
+  const [smartPreviewData, setSmartPreviewData] = useState<SmartLinkPreview | null>(null);
+  const [targetUrl, setTargetUrl] = useState('');
 
   useEffect(() => {
     if (shortCode) {
@@ -70,21 +75,53 @@ const RedirectPage: React.FC = () => {
         // Handle different types of redirects
         if (data.data.originalUrl) {
           // URL redirect
+          let finalUrl = data.data.originalUrl;
+
+          // Helper to ensure protocol
+          if (!/^https?:\/\//i.test(finalUrl)) {
+            finalUrl = 'https://' + finalUrl;
+          }
+
+          // Prevent self-redirect loop
+          if (finalUrl === window.location.href || finalUrl === window.location.href.replace(/\/$/, '')) {
+            setError('Redirect loop detected. Destination cannot be the same as source.');
+            setLoading(false);
+            return;
+          }
+
+          // Check for Smart Link Preview Data
+          const smartPreview = data.data.smartLinkPreview;
+          if (smartPreview && smartPreview.enabled) {
+            setSmartPreviewData(smartPreview);
+            setTargetUrl(finalUrl);
+            setLoading(false);
+            // Auto redirect after 3s if not clicked
+            setTimeout(() => {
+              window.location.href = finalUrl;
+            }, 3000);
+            return;
+          }
+
           setTimeout(() => {
-            window.location.href = data.data.originalUrl;
+            window.location.href = finalUrl;
           }, 1000);
         } else if (data.data.fileUrl || data.data.downloadUrl) {
           // Navigate to File Preview Page
-          // Pass fileData and password in state to avoid re-fetching/re-entering
-          // Use 'replace' to avoid back-button loops
           window.location.replace(`/file/${data.data.fileCode || shortCode}`);
-          // Note: we are not passing state here because window.location.replace handles full reload
-          // Ideally we use navigate() from react-router but this component uses window.location for external redirects
-          // Let's stick to window.location for now as it handles the "exit" from the redirect logic cleanly
         } else if (data.data.content) {
           // QR code content redirect
           setTimeout(() => {
-            window.location.href = data.data.content;
+            let finalContent = data.data.content;
+            // Attempt to redirect if it looks like a URL
+            if (/^https?:\/\//i.test(finalContent) || /^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(finalContent)) {
+              if (!/^https?:\/\//i.test(finalContent)) {
+                finalContent = 'https://' + finalContent;
+              }
+              window.location.href = finalContent;
+            } else {
+              // It's just text, maybe show it? For now, standard behavior
+              window.location.href = data.data.content;
+            }
           }, 1000);
         } else {
           setError('Invalid link or unable to redirect');
@@ -94,7 +131,6 @@ const RedirectPage: React.FC = () => {
         setError('Invalid link or unable to redirect');
         setLoading(false);
       }
-
     } catch (err) {
       console.error('Redirect error:', err);
       setError('An error occurred while processing your request');
@@ -116,6 +152,44 @@ const RedirectPage: React.FC = () => {
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Redirecting...</h2>
           <p className="text-gray-600">Please wait while we redirect you to your destination</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (smartPreviewData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <SEO
+          title={smartPreviewData.title}
+          description={smartPreviewData.description}
+          image={smartPreviewData.image}
+          noindex={true}
+        />
+        <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl overflow-hidden animate-fadeIn">
+          {smartPreviewData.image && (
+            <div className="w-full h-48 sm:h-64 bg-gray-100 relative">
+              <img
+                src={smartPreviewData.image}
+                alt={smartPreviewData.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <div className="p-6 sm:p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">{smartPreviewData.title || 'Redirecting...'}</h1>
+            <p className="text-gray-600 mb-8">{smartPreviewData.description || 'You are being redirected to your destination.'}</p>
+
+            <button
+              onClick={() => window.location.href = targetUrl}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-200 transform hover:-translate-y-0.5"
+            >
+              Continue to Site
+            </button>
+            <div className="mt-4 text-xs text-gray-400">
+              Auto-redirecting in 3 seconds...
+            </div>
+          </div>
         </div>
       </div>
     );

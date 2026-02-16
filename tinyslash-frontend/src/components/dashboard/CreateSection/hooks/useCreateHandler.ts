@@ -257,7 +257,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         shortUrl: initialShortUrl,
         originalUrl,
         title: mode === 'url'
-          ? `Dashboard URL - ${shortCode}`
+          ? (campaignName || `Dashboard URL - ${shortCode}`)
           : mode === 'file'
             ? (selectedFile?.name || `File Share - ${shortCode}`)
             : (campaignName || smartLinkPreview.title || `Dashboard QR - ${shortCode}`),
@@ -283,7 +283,7 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
         const commonPayload = {
           userId: user?.id || 'anonymous-user',
           title: mode === 'url'
-            ? `Dashboard URL - ${shortCode}`
+            ? (campaignName || `Dashboard URL - ${shortCode}`)
             : mode === 'file'
               ? (selectedFile?.name || `File Share - ${shortCode}`)
               // Use campaignName if available, else fallback

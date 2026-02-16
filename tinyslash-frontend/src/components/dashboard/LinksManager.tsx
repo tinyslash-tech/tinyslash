@@ -573,6 +573,14 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
                       </button>
                     </div>
 
+                    {/* Title / Campaign Name */}
+                    {link.title && (
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {link.title}
+                        {link.title.startsWith('Short link for') && <span className="text-xs text-gray-400 font-normal ml-2">(Auto-generated)</span>}
+                      </div>
+                    )}
+
                     {/* Original URL - Truncated */}
                     <p className="text-sm text-gray-600 truncate">{link.originalUrl}</p>
 

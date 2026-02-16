@@ -301,13 +301,108 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>
-                {/* Simple visual placeholder for image upload for now */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mb-2 text-gray-400">
-                    <Share2 className="w-5 h-5" />
-                  </div>
-                  <p className="text-sm font-medium text-gray-900">Upload Preview Image</p>
-                  <p className="text-xs text-gray-500 mt-1">Recommended: 1200x630px (Max 2MB)</p>
+                <div className="flex items-center space-x-2 mb-2">
+                  <button
+                    onClick={async () => {
+                      const urlInput = document.querySelector('input[type="url"]');
+                      // Find the URL input from parent context - this is a bit hacky but we need the current URL
+                      // A better way would be to pass urlInput as prop, but for now we prompt or use a reliable selector
+                      const url = prompt("Enter URL to fetch metadata from:");
+                      if (url) {
+                        try {
+                          const metadata = await import('../../../../services/api').then(m => m.getLinkMetadata(url));
+                          if (metadata.title || metadata.image) {
+                            setSmartLinkPreview({
+                              ...smartLinkPreview,
+                              title: metadata.title || smartLinkPreview.title,
+                              description: metadata.description || smartLinkPreview.description,
+                              image: metadata.image || smartLinkPreview.image
+                            });
+                          } else {
+                            alert("No metadata found for this URL.");
+                          }
+                        } catch (e) {
+                          console.error(e);
+                          alert("Failed to fetch metadata.");
+                        }
+                      }
+                    }}
+                    className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center"
+                  >
+                    <Globe className="w-3 h-3 mr-1" /> Auto-Fill from URL
+                  </button>
+                </div>
+
+                {/* Image Upload Input */}
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center hover:bg-gray-50 transition-colors cursor-pointer relative"
+                  onClick={() => document.getElementById('preview-image-upload')?.click()}
+                >
+                  <input
+                    id="preview-image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert("Image size must be less than 5MB");
+                          return;
+                        }
+
+                        try {
+                          // Show loading state if possible, currently just blocking
+                          const { uploadFileToBackend } = await import('../../../../services/api');
+                          const response = await uploadFileToBackend(file, {
+                            title: 'Smart Preview Image',
+                            isPublic: true
+                          });
+
+                          // Handle various response structures (Robust check)
+                          const uploadedUrl = response.data?.fileUrl || response.fileUrl || response.data?.url || response.url || response.secure_url;
+
+                          if (uploadedUrl) {
+                            setSmartLinkPreview({ ...smartLinkPreview, image: uploadedUrl });
+                          } else {
+                            console.error("Upload failed response:", response);
+                            alert(`Upload succeeded but could not find URL. Response: ${JSON.stringify(response)}`);
+                          }
+                        } catch (err: any) {
+                          console.error("Upload error:", err);
+                          const errorMessage = err.response?.data?.message || err.message || "Failed to upload image";
+                          alert(`Error: ${errorMessage}`);
+                        }
+                      }
+                    }}
+                  />
+
+                  {smartLinkPreview.image ? (
+                    <div className="relative">
+                      <img
+                        src={smartLinkPreview.image}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSmartLinkPreview({ ...smartLinkPreview, image: '' });
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mb-2 text-gray-400">
+                        <Share2 className="w-5 h-5" />
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">Upload Preview Image</p>
+                      <p className="text-xs text-gray-500 mt-1">Recommended: 1200x630px (Max 5MB)</p>
+                    </>
+                  )}
                 </div>
               </div>
             )}

@@ -307,6 +307,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
               <UrlCreate
                 urlInput={urlInput}
                 setUrlInput={setUrlInput}
+                campaignName={campaignName}
+                setCampaignName={setCampaignName}
                 errorMessage={errorMessage}
                 setErrorMessage={setErrorMessage}
               />

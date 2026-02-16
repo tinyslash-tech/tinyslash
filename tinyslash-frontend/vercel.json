@@ -43,11 +43,111 @@
       "destination": "/index.html"
     },
     {
+      "source": "/app",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/qr-generator",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/domains",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/account-settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/short-links",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/qr-codes",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/file-to-link",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pages",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/faq",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/shipping-policy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/cancellation-refund",
+      "destination": "/index.html"
+    },
+    {
       "source": "/solutions",
       "destination": "/index.html"
     },
     {
-      "source": "/([a-zA-Z0-9]{6,12})",
+      "source": "/auth",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/invite",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/file",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/unlock",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/verified",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/redirect",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/p",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/file_(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/qr_(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/([a-zA-Z0-9_-]+)",
       "destination": "https://api.tinyslash.com/$1"
     },
     {

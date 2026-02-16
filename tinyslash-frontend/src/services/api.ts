@@ -403,6 +403,20 @@ export const createShortUrl = async (data: {
   return response.data;
 };
 
+// Metadata Fetching
+export const getLinkMetadata = async (url: string): Promise<{ title: string; description: string; image: string; }> => {
+  try {
+    const response = await apiClient.get(`/v1/urls/metadata`, { params: { url } });
+    if (response.data && response.data.success) {
+      return response.data.data;
+    }
+    return { title: '', description: '', image: '' };
+  } catch (error) {
+    console.error('Failed to fetch metadata:', error);
+    return { title: '', description: '', image: '' };
+  }
+};
+
 export const getUserUrls = async (userId: string): Promise<any> => {
   const response = await apiClient.get(`/v1/dashboard/urls/${userId}`);
   return response.data;
@@ -439,11 +453,10 @@ export const uploadFileToBackend = async (file: File, options: {
       }
     });
 
-    console.log('Making API request to:', `${apiClient.defaults.baseURL}/v1/files/upload`);
-    console.log('apiClient.defaults.baseURL:', apiClient.defaults.baseURL);
-    console.log('Full URL will be:', apiClient.defaults.baseURL + '/v1/files/upload');
+    console.log('Making API request to:', `${fileClient.defaults.baseURL}/v1/files/upload`);
 
-    const response = await apiClient.post('/v1/files/upload', formData, {
+    // Use fileClient for longer timeout (30s)
+    const response = await fileClient.post('/v1/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

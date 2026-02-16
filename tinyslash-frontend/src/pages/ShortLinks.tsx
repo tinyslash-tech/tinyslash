@@ -56,7 +56,7 @@ const ShortLinks: React.FC = () => {
       <SEO
         fullTitle="Advanced URL Shortener | Smart Routing & App Deep Linking | TinySlash"
         description="The smartest URL shortener for serious marketers. Features App Deep-Linking, Geo-Routing, Lead-Lock Access, and Trust Checks."
-        keywords="app deep linking, geo routing, lead capture, secure links, verified links, smart url shortener"
+
       />
       <PublicHeader />
 

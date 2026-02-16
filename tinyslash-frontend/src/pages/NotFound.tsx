@@ -14,7 +14,7 @@ const NotFound: React.FC = () => {
       <SEO
         title="Page Not Found"
         description="The page you are looking for does not exist."
-        keywords="404, page not found, error, tinyslash"
+
       />
       <PublicHeader />
 

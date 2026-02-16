@@ -39,7 +39,7 @@ const QrCodes: React.FC = () => {
       <SEO
         fullTitle="Free Custom QR Code Generator | Dynamic QR Codes | TinySlash"
         description="Create dynamic, customizable QR codes with logo, colors, and frames. Track scans in real-time. Best free QR code generator for business."
-        keywords="qr code generator, custom qr code, dynamic qr code, logo qr code, free qr code, qr tracking, qr analytics"
+
       />
       <PublicHeader />
 

@@ -1,98 +1,142 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core Product Pages -->
   <url>
     <loc>https://tinyslash.com/</loc>
+    <lastmod>2026-02-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://tinyslash.com/pricing</loc>
+    <lastmod>2026-02-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tinyslash.com/signup</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tinyslash.com/short-links</loc>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://tinyslash.com/qr-codes</loc>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://tinyslash.com/file-to-link</loc>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://tinyslash.com/faq</loc>
+    <loc>https://tinyslash.com/pages</loc>
+    <lastmod>2026-02-16</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/login</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/signup</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://tinyslash.com/features</loc>
+    <lastmod>2026-02-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
-  <url>
-    <loc>https://tinyslash.com/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/contact</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/privacy</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/terms</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/cancellation-refund</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/shipping-policy</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://tinyslash.com/careers</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
+
+  <!-- Solutions -->
   <url>
     <loc>https://tinyslash.com/solutions/social-media</loc>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tinyslash.com/solutions/digital-marketing</loc>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://tinyslash.com/solutions/customer-support</loc>
+    <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Informational & Legal -->
+  <url>
+    <loc>https://tinyslash.com/faq</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/about</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/contact</loc>
+    <lastmod>2026-02-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/privacy</loc>
+    <lastmod>2026-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/terms</loc>
+    <lastmod>2026-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/careers</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <!-- Blog Section -->
+  <url>
+    <loc>https://tinyslash.com/blog</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/blog/short-links-ultimate-guide</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/blog/qr-codes-comprehensive-guide</loc>
+    <lastmod>2026-02-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/blog/secure-file-sharing-guide</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tinyslash.com/blog/tinyslash-pages-link-in-bio-guide</loc>
+    <lastmod>2026-02-05</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 </urlset>

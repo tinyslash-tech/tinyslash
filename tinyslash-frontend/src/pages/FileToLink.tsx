@@ -48,7 +48,7 @@ const FileToLink: React.FC = () => {
       <SEO
         fullTitle="Secure File to Link Sharing | Upload & Share | TinySlash"
         description="Upload files and convert them into secure, shareable short links. Set expiration dates, password protection, and track downloads."
-        keywords="file sharing, file to link, upload file, share pdf, secure file sharing, expired link, password protect file"
+
       />
       <PublicHeader />
 

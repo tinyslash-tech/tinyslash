@@ -35,7 +35,7 @@ const BlogPostPage: React.FC = () => {
         title={post.title}
         description={post.excerpt}
         image={post.imageUrl}
-        keywords={post.keywords}
+
         type="article"
       />
       <PublicHeader />

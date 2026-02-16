@@ -16,7 +16,7 @@ const BlogList: React.FC = () => {
       <SEO
         title="TinySlash Blog | Insights on URL Shortening, QR Codes & Marketing"
         description="Stay ahead of the curve with our latest articles on link management, digital marketing trends, and product updates."
-        keywords="tinyslash blog, marketing tips, url shortener guide, qr code best practices"
+
       />
       <PublicHeader />
 

@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /profile
+Disallow: /account-settings
+Disallow: /auth/*
+Disallow: /invite/*
+Disallow: /file/*
 
 Sitemap: https://tinyslash.com/sitemap.xml

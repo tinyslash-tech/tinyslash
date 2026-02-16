@@ -45,7 +45,7 @@ const LandingPage: React.FC = () => {
       <SEO
         title="TinySlash | Best URL Shortener & Branded Link Platform for India"
         description="Shorten, share, and track your links with TinySlash. The best TinyURL & Bitly alternative for custom branded links, dynamic QR codes, and secure trust badges. Start for free today!"
-        keywords="URL shortener, link shortener, short URLs, custom URL shortener, branded links, link management platform, TinyURL alternative, Bitly alternative, QR code generator, dynamic QR codes, link analytics, click tracking, secure URL shortener India, free branded links for developers"
+
       />
       <PublicHeader />
 

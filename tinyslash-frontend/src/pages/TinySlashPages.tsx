@@ -58,7 +58,7 @@ const TinySlashPages: React.FC = () => {
       <SEO
         title="TinySlash Pages | Link in Bio Tool & Microsite Builder"
         description="Create stunning bio pages for your social media. Share all your links, videos, and content in one place with TinySlash Pages."
-        keywords="link in bio, bio page builder, instagram bio link, microsite builder, social media landing page"
+
       />
       <PublicHeader />
 

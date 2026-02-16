@@ -11,6 +11,7 @@ interface SEOProps {
   url?: string;
   noindex?: boolean;
   twitterCard?: 'summary' | 'summary_large_image';
+  structuredData?: object;
 }
 
 export const SEO: React.FC<SEOProps> = ({
@@ -23,6 +24,7 @@ export const SEO: React.FC<SEOProps> = ({
   url,
   noindex = false,
   twitterCard = 'summary_large_image',
+  structuredData,
 }) => {
   const siteTitle = fullTitle ? fullTitle : (title ? `${title} | ${name}` : name);
   const metaDescription = description || "TinySlash - The most powerful URL shortener and QR code generator for your business.";
@@ -69,6 +71,13 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:title" content={siteTitle} />
       <meta name="twitter:description" content={metaDescription} />
       <meta name="twitter:image" content={absoluteImage} />
+
+      {/* Structured Data (JSON-LD) */}
+      {structuredData && (
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      )}
     </Helmet>
   );
 };

@@ -34,17 +34,22 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900 font-sans">
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "name": "TinySlash",
-          "url": "https://tinyslash.com"
-        })}
-      </script>
+
       <SEO
         title="TinySlash | Best URL Shortener & Branded Link Platform for India"
         description="Shorten, share, and track your links with TinySlash. The best TinyURL & Bitly alternative for custom branded links, dynamic QR codes, and secure trust badges. Start for free today!"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "TinySlash",
+          "url": "https://tinyslash.com",
+          "logo": "https://tinyslash.com/logo.png",
+          "sameAs": [
+            "https://twitter.com/tinyslash",
+            "https://instagram.com/tinyslash",
+            "https://linkedin.com/company/tinyslash"
+          ]
+        }}
 
       />
       <PublicHeader />

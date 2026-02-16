@@ -199,7 +199,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#36a1ce] focus:border-transparent"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
                     required
                   />
@@ -215,7 +215,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#36a1ce] focus:border-transparent"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                   placeholder="Enter your email"
                   required
                 />
@@ -231,7 +231,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#36a1ce] focus:border-transparent"
+                    className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                     placeholder="Enter your password"
                     required
                   />
@@ -255,7 +255,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#36a1ce] focus:border-transparent"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                     placeholder="Confirm your password"
                     required
                   />
@@ -265,10 +265,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
               {mode === 'login' && (
                 <div className="flex items-center justify-between">
                   <label className="flex items-center">
-                    <input type="checkbox" className="rounded border-gray-300 text-[#36a1ce] focus:ring-[#36a1ce]" />
+                    <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-600" />
                     <span className="ml-2 text-sm text-gray-600">Remember me</span>
                   </label>
-                  <a href="#" className="text-sm text-[#36a1ce] hover:text-black">
+                  <a href="#" className="text-sm text-blue-600 hover:text-black font-medium">
                     Forgot password?
                   </a>
                 </div>
@@ -296,7 +296,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                 {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
                 <button
                   onClick={() => onSwitchMode(mode === 'login' ? 'signup' : 'login')}
-                  className="text-[#36a1ce] hover:text-black font-semibold"
+                  className="text-blue-600 hover:text-black font-semibold transition-colors"
                 >
                   {mode === 'login' ? 'Sign up' : 'Sign in'}
                 </button>

@@ -10,12 +10,14 @@ try {
 
   // Regex to extract slug and date
   // Matches: slug: 'slug-name', ... date: 'Month DD, YYYY',
-  const regex = /slug:\s*'([^']+)',[\s\S]*?date:\s*'([^']+)'/g;
+  const regex = /slug:\s*'([^']+)',[\s\S]*?date:\s*'([^']+)'(?:,\s*updatedDate:\s*'([^']+)')?/g;
   let match;
   const posts = [];
 
   while ((match = regex.exec(blogPostsContent)) !== null) {
-    posts.push({ slug: match[1], date: match[2] });
+    // Use updatedDate (match[3]) if available, otherwise date (match[2])
+    const date = match[3] || match[2];
+    posts.push({ slug: match[1], date: date });
   }
 
   const formatDate = (dateStr) => {

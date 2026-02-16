@@ -138,7 +138,7 @@ const SupportWidget: React.FC<SupportWidgetProps> = ({ className = '' }) => {
             className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-[#36a1ce] text-white p-4">
+            <div className="bg-blue-600 text-white p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">

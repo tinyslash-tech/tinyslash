@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, User, ArrowLeft, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Share2, Facebook, Twitter, Linkedin, Clock } from 'lucide-react';
 import PublicHeader from '../../components/PublicHeader';
 import Footer from '../../components/Footer';
 import { SEO } from '../../components/SEO';
@@ -63,16 +63,23 @@ const BlogPostPage: React.FC = () => {
               {post.title}
             </h1>
 
-            <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                  <User size={16} />
+            <div className="flex items-center justify-center gap-6 text-sm text-gray-500 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                  <User size={20} />
                 </div>
-                <span className="font-medium text-gray-900">{post.author}</span>
+                <div className="flex flex-col text-left">
+                  <span className="font-bold text-gray-900 leading-tight">{post.author}</span>
+                  {post.authorTitle && <span className="text-xs text-gray-500">{post.authorTitle}</span>}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 border-l border-gray-300 pl-6">
                 <Calendar size={16} />
                 <span>{post.date}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock size={16} />
+                <span>{post.readingTime} min read</span>
               </div>
             </div>
           </motion.div>
@@ -95,19 +102,61 @@ const BlogPostPage: React.FC = () => {
             />
 
             {/* Share */}
+
             <div className="border-t border-gray-100 mt-16 pt-8">
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Share2 size={20} /> Share this article
               </h3>
               <div className="flex gap-4">
-                <button className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-black hover:text-white transition-all">
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(window.location.href);
+                    const text = encodeURIComponent(post.title);
+                    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+                  }}
+                  className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-black hover:text-white transition-all"
+                  aria-label="Share on Twitter"
+                >
                   <Twitter size={18} />
                 </button>
-                <button className="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center hover:bg-blue-900 transition-all">
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(window.location.href);
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+                  }}
+                  className="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center hover:bg-blue-900 transition-all"
+                  aria-label="Share on Facebook"
+                >
                   <Facebook size={18} />
                 </button>
-                <button className="w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center hover:bg-blue-800 transition-all">
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(window.location.href);
+                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+                  }}
+                  className="w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center hover:bg-blue-800 transition-all"
+                  aria-label="Share on LinkedIn"
+                >
                   <Linkedin size={18} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: post.title,
+                        text: post.excerpt,
+                        url: window.location.href,
+                      }).catch(console.error);
+                    } else {
+                      const url = encodeURIComponent(window.location.href);
+                      navigator.clipboard.writeText(window.location.href);
+                      alert('Link copied to clipboard!');
+                    }
+                  }}
+                  className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition-all"
+                  aria-label="Share via..."
+                >
+                  <Share2 size={18} />
                 </button>
               </div>
             </div>

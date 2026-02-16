@@ -12,10 +12,9 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center mb-6">
-              <img src="/logo.webp" alt="Tinyslash Logo" className="w-10 h-10 object-contain mr-2" width="40" height="40" />
-              <span className="text-2xl font-bold">
-                <span className="text-white">Tiny</span>
-                <span className="text-[#36a1ce]">Slash</span>
+              <img src="/logo.webp" alt="Tinyslash Logo" className="w-8 h-8 object-contain" />
+              <span className="text-xl font-bold tracking-tight text-white">
+                Tiny<span className="text-blue-600">Slash</span>
               </span>
             </div>
             <p className="text-gray-300 text-lg mb-6 leading-relaxed">

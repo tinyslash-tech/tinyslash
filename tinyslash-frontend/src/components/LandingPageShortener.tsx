@@ -48,39 +48,36 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
           Enter your content below and we'll get you started with a free account
         </p>
       </div>
-      
+
       {/* Tab Navigation */}
       <div className="flex justify-center mb-8">
         <div className="bg-gray-100 p-1 rounded-xl flex">
           <button
             onClick={() => setActiveTab('url')}
-            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${
-              activeTab === 'url'
+            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${activeTab === 'url'
                 ? 'bg-white text-blue-600 shadow-md'
                 : 'text-gray-600 hover:text-gray-900'
-            }`}
+              }`}
           >
             <Link className="w-4 h-4" />
             <span>URL Shortener</span>
           </button>
           <button
             onClick={() => setActiveTab('qr')}
-            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${
-              activeTab === 'qr'
+            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${activeTab === 'qr'
                 ? 'bg-white text-blue-600 shadow-md'
                 : 'text-gray-600 hover:text-gray-900'
-            }`}
+              }`}
           >
             <QrCode className="w-4 h-4" />
             <span>QR Code</span>
           </button>
           <button
             onClick={() => setActiveTab('file')}
-            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${
-              activeTab === 'file'
+            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2 ${activeTab === 'file'
                 ? 'bg-white text-blue-600 shadow-md'
                 : 'text-gray-600 hover:text-gray-900'
-            }`}
+              }`}
           >
             <Upload className="w-4 h-4" />
             <span>File to Link</span>
@@ -94,13 +91,13 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
         {activeTab === 'url' && (
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-[#36a1ce] rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Link className="w-8 h-8 text-white" />
               </div>
               <h4 className="text-xl font-semibold text-gray-900 mb-2">Shorten Your URL</h4>
               <p className="text-gray-600">Transform long URLs into short, shareable links with analytics</p>
             </div>
-            
+
             <div className="space-y-4">
               <input
                 type="url"
@@ -109,7 +106,7 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
                 onChange={(e) => setUrlInput(e.target.value)}
                 className="w-full px-6 py-4 border-2 border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="w-4 h-4 text-blue-500" />
@@ -131,13 +128,13 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
         {activeTab === 'qr' && (
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-[#36a1ce] rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <QrCode className="w-8 h-8 text-white" />
               </div>
               <h4 className="text-xl font-semibold text-gray-900 mb-2">Generate QR Code</h4>
               <p className="text-gray-600">Create scannable QR codes for any text, URL, or content</p>
             </div>
-            
+
             <div className="space-y-4">
               <textarea
                 placeholder="Enter text, URL, contact info, or any content for your QR code..."
@@ -146,7 +143,7 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
                 rows={3}
                 className="w-full px-6 py-4 border-2 border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
               />
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="w-4 h-4 text-purple-500" />
@@ -174,14 +171,14 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
               <h4 className="text-xl font-semibold text-gray-900 mb-2">File to Link</h4>
               <p className="text-gray-600">Upload files and get shareable links instantly</p>
             </div>
-            
+
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-400 transition-colors bg-gray-50">
               <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h5 className="text-lg font-semibold text-gray-900 mb-2">Upload Any File</h5>
               <p className="text-gray-600 mb-6">
                 Images, PDFs, documents, videos - we support all file types
               </p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-6">
                 <div className="flex items-center justify-center space-x-2">
                   <Crown className="w-4 h-4 text-yellow-500" />
@@ -200,7 +197,7 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
                   <span>Expiration dates</span>
                 </div>
               </div>
-              
+
               <p className="text-sm text-gray-500 mb-4">
                 File upload requires a free account for security and storage management
               </p>
@@ -212,8 +209,8 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
         <div className="text-center">
           <button
             onClick={handleCreate}
-            disabled={isLoading || 
-              (activeTab === 'url' && !urlInput.trim()) || 
+            disabled={isLoading ||
+              (activeTab === 'url' && !urlInput.trim()) ||
               (activeTab === 'qr' && !qrText.trim())
             }
             className="bg-black text-white px-12 py-4 rounded-xl text-lg font-semibold hover:bg-gray-800 hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center space-x-3 mx-auto"
@@ -234,7 +231,7 @@ const LandingPageShortener: React.FC<LandingPageShortenerProps> = ({ onSignupPro
               </>
             )}
           </button>
-          
+
           <p className="text-sm text-gray-500 mt-4">
             Free account • No credit card required • Start in 30 seconds
           </p>

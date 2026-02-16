@@ -66,7 +66,7 @@ const Header: React.FC = () => {
             <img src="/logo.webp" alt="Tinyslash Logo" className="w-8 h-8 object-contain" />
             <span className="text-lg sm:text-xl font-bold">
               <span className="text-black">Tiny</span>
-              <span className="text-[#36a1ce]">Slash</span>
+              <span className="text-blue-600">Slash</span>
             </span>
           </Link>
 

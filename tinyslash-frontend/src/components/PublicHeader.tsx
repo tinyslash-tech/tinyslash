@@ -29,7 +29,7 @@ const PublicHeader: React.FC = () => {
 
   return (
     <>
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-xl z-50 border-b border-gray-100">
+      <nav className="fixed top-0 w-full bg-white z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
@@ -43,7 +43,7 @@ const PublicHeader: React.FC = () => {
               <img src="/logo.webp" alt="Tinyslash Logo" className="w-10 h-10 object-contain" width="40" height="40" />
               <span className="text-xl font-bold tracking-tight">
                 <span className="text-gray-900">Tiny</span>
-                <span className="text-[#36a1ce]">Slash</span>
+                <span className="text-blue-600">Slash</span>
               </span>
             </div>
 
@@ -71,8 +71,8 @@ const PublicHeader: React.FC = () => {
                       File to Link
                     </button>
                     <div className="h-px bg-gray-100 my-1"></div>
-                    <button onClick={() => navigate('/pages')} className="text-left px-4 py-3 hover:bg-purple-50 rounded-lg text-sm text-gray-900 hover:text-purple-600 font-bold transition-colors flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                    <button onClick={() => navigate('/pages')} className="text-left px-4 py-3 hover:bg-blue-50 rounded-lg text-sm text-gray-900 hover:text-blue-600 font-bold transition-colors flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                       TinySlash Pages
                     </button>
                   </div>
@@ -95,7 +95,7 @@ const PublicHeader: React.FC = () => {
               </button>
               <button
                 onClick={() => { setAuthMode('signup'); setIsAuthModalOpen(true); }}
-                className="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
+                className="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
                 Get Started
               </button>

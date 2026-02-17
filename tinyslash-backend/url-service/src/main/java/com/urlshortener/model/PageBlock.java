@@ -29,7 +29,12 @@ public class PageBlock {
     SOCIAL,
     TEXT,
     VIDEO,
-    FORM
+    FORM,
+    EMAIL,
+    DIVIDER,
+    PAYMENT,
+    AFFILIATE,
+    CARD
   }
 
   public String getId() {

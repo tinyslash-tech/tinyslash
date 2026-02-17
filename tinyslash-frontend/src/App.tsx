@@ -320,14 +320,14 @@ const AppContent: React.FC = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster position="top-right" />
+
+          {/* Global Upgrade Modal - New Context System */}
+          <UpgradeModal />
+
+          {/* Global Support Widget */}
+          <SupportWidget />
         </div>
       </Router>
-
-      {/* Global Upgrade Modal - New Context System */}
-      <UpgradeModal />
-
-      {/* Global Support Widget */}
-      <SupportWidget />
     </>
   );
 };

@@ -16,15 +16,22 @@ export const pageService = {
   uploadAsset: async (file: File): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post('/v1/files/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    return response.data;
+    const response = await api.post('/v1/files/upload', formData);
+    // Backend returns { success: true, data: { fileUrl: '...' } }
+    return { url: response.data?.data?.fileUrl };
   },
 
   submitLead: async (pageId: string, ownerId: string, data: any) => {
     const response = await api.post(`/v1/leads/page/${pageId}?ownerId=${ownerId}`, data);
     return response.data;
+  },
+
+  recordView: async (pageId: string) => {
+    try {
+      await api.post(`/v1/pages/${pageId}/view`);
+    } catch (error) {
+      console.error('Failed to record view', error);
+    }
   },
 
   getLeads: async (userId: string, pageId: string) => {

@@ -21,6 +21,8 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ block, onChange }) => 
     case 'EMAIL': return <EmailEditor block={block} onChange={onChange} />;
     case 'DIVIDER': return <DividerEditor block={block} onChange={onChange} />;
     case 'PAYMENT': return <PaymentEditor block={block} onChange={onChange} />;
+    case 'AFFILIATE': return <AffiliateEditor block={block} onChange={onChange} />;
+    case 'CARD': return <CardEditor block={block} onChange={onChange} />;
     default: return <div className="text-gray-500 italic p-4">Editor not implemented for {block.type}</div>;
   }
 };
@@ -78,6 +80,17 @@ const HeaderEditor = ({ block, onChange }: BlockEditorProps) => (
       />
       <p className="text-[10px] text-gray-400 mt-1 text-right">{block.content.text?.length || 0}/60</p>
     </div>
+    <div>
+      <label className={LABEL_CLASSES}>Sub-heading (Optional)</label>
+      <input
+        type="text"
+        value={block.content.subTitle || ''}
+        onChange={(e) => onChange({ ...block.content, subTitle: e.target.value })}
+        placeholder="e.g. A short description"
+        maxLength={100}
+        className={INPUT_CLASSES}
+      />
+    </div>
   </div>
 );
 
@@ -131,6 +144,8 @@ const ImageEditor = ({ block, onChange }: BlockEditorProps) => {
       if (response.url) {
         onChange({ ...block.content, url: response.url });
         toast.success('Image uploaded', { id: toastId });
+      } else {
+        toast.error('Upload failed: No URL returned', { id: toastId });
       }
     } catch (error) {
       console.error(error);
@@ -370,6 +385,252 @@ const PaymentEditor = ({ block, onChange }: BlockEditorProps) => (
         placeholder="https://buymeacoffee.com/..."
         className={INPUT_CLASSES}
       />
+    </div>
+  </div>
+);
+
+const AffiliateEditor = ({ block, onChange }: BlockEditorProps) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+    const toastId = toast.loading('Uploading image...');
+    try {
+      const response = await pageService.uploadAsset(file);
+      if (response.url) {
+        onChange({ ...block.content, imageUrl: response.url });
+        toast.success('Image uploaded', { id: toastId });
+      } else {
+        toast.error('Upload failed', { id: toastId });
+      }
+    } catch {
+      toast.error('Upload failed', { id: toastId });
+    }
+  };
+
+  return (
+    <div className="space-y-4 p-1">
+      <div>
+        <label className={LABEL_CLASSES}>Product Title <span className="text-red-500">*</span></label>
+        <input
+          type="text"
+          value={block.content.title || ''}
+          onChange={(e) => onChange({ ...block.content, title: e.target.value })}
+          placeholder="e.g. My Favorite Headphones"
+          className={INPUT_CLASSES}
+        />
+      </div>
+      <div>
+        <label className={LABEL_CLASSES}>Product Image</label>
+        {block.content.imageUrl ? (
+          <div className="relative group">
+            <img src={block.content.imageUrl} alt="Preview" className="w-full h-32 object-cover rounded-md border border-gray-200" />
+            <button
+              onClick={() => onChange({ ...block.content, imageUrl: '' })}
+              className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-md text-gray-600 hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+            <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
+            <p className="text-xs text-gray-500">Upload product image</p>
+            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+          </label>
+        )}
+      </div>
+      <div>
+        <label className={LABEL_CLASSES}>Product Link <span className="text-red-500">*</span></label>
+        <input
+          type="text"
+          value={block.content.url || ''}
+          onChange={(e) => onChange({ ...block.content, url: e.target.value })}
+          placeholder="https://amazon.com/..."
+          className={INPUT_CLASSES}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={LABEL_CLASSES}>Price</label>
+          <input
+            type="text"
+            value={block.content.price || ''}
+            onChange={(e) => onChange({ ...block.content, price: e.target.value })}
+            placeholder="₹1,999"
+            className={INPUT_CLASSES}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASSES}>Button Text</label>
+          <input
+            type="text"
+            value={block.content.buttonText || 'Buy Now'}
+            onChange={(e) => onChange({ ...block.content, buttonText: e.target.value })}
+            className={INPUT_CLASSES}
+          />
+        </div>
+      </div>
+      <CardDesignSection content={block.content} onChange={onChange} block={block} />
+    </div>
+  );
+};
+
+const CardEditor = ({ block, onChange }: BlockEditorProps) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+    const toastId = toast.loading('Uploading image...');
+    try {
+      const response = await pageService.uploadAsset(file);
+      if (response.url) {
+        onChange({ ...block.content, imageUrl: response.url });
+        toast.success('Image uploaded', { id: toastId });
+      } else {
+        toast.error('Upload failed', { id: toastId });
+      }
+    } catch {
+      toast.error('Upload failed', { id: toastId });
+    }
+  };
+
+  return (
+    <div className="space-y-4 p-1">
+      <div>
+        <label className={LABEL_CLASSES}>Card Title <span className="text-red-500">*</span></label>
+        <input
+          type="text"
+          value={block.content.title || ''}
+          onChange={(e) => onChange({ ...block.content, title: e.target.value })}
+          placeholder="e.g. My Latest Course"
+          className={INPUT_CLASSES}
+        />
+      </div>
+      <div>
+        <label className={LABEL_CLASSES}>Description</label>
+        <textarea
+          value={block.content.description || ''}
+          onChange={(e) => onChange({ ...block.content, description: e.target.value })}
+          placeholder="Brief description..."
+          rows={3}
+          maxLength={200}
+          className={`${INPUT_CLASSES} resize-none`}
+        />
+      </div>
+      <div>
+        <label className={LABEL_CLASSES}>Card Image</label>
+        {block.content.imageUrl ? (
+          <div className="relative group">
+            <img src={block.content.imageUrl} alt="Preview" className="w-full h-32 object-cover rounded-md border border-gray-200" />
+            <button
+              onClick={() => onChange({ ...block.content, imageUrl: '' })}
+              className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-md text-gray-600 hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+            <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
+            <p className="text-xs text-gray-500">Upload card image</p>
+            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+          </label>
+        )}
+      </div>
+      <div>
+        <label className={LABEL_CLASSES}>Button Text</label>
+        <input
+          type="text"
+          value={block.content.buttonText || 'Learn More'}
+          onChange={(e) => onChange({ ...block.content, buttonText: e.target.value })}
+          className={INPUT_CLASSES}
+        />
+      </div>
+      <div>
+        <label className={LABEL_CLASSES}>Button Link <span className="text-red-500">*</span></label>
+        <input
+          type="text"
+          value={block.content.url || ''}
+          onChange={(e) => onChange({ ...block.content, url: e.target.value })}
+          placeholder="https://..."
+          className={INPUT_CLASSES}
+        />
+      </div>
+      <CardDesignSection content={block.content} onChange={onChange} block={block} />
+    </div>
+  );
+};
+
+// Shared design controls for Card & Affiliate blocks
+const CardDesignSection = ({ content, onChange, block }: { content: any; onChange: (c: any) => void; block: any }) => (
+  <div className="space-y-4 pt-4 border-t border-gray-200 mt-4">
+    <h5 className="text-xs font-bold uppercase text-gray-400 tracking-wider">Card Design</h5>
+
+    {/* Corner Radius */}
+    <div>
+      <label className={LABEL_CLASSES}>Corner Radius</label>
+      <div className="grid grid-cols-3 gap-2">
+        {(['sharp', 'rounded', 'pill'] as const).map((opt) => (
+          <button
+            key={opt}
+            onClick={() => onChange({ ...content, cornerRadius: opt })}
+            className={`py-2 text-xs font-medium rounded-md border transition-all capitalize ${(content.cornerRadius || 'pill') === opt
+              ? 'border-blue-500 bg-blue-50 text-blue-700'
+              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* Shadow */}
+    <div>
+      <label className={LABEL_CLASSES}>Shadow</label>
+      <div className="grid grid-cols-3 gap-2">
+        {(['none', 'subtle', 'strong'] as const).map((opt) => (
+          <button
+            key={opt}
+            onClick={() => onChange({ ...content, shadow: opt })}
+            className={`py-2 text-xs font-medium rounded-md border transition-all capitalize ${(content.shadow || 'subtle') === opt
+              ? 'border-blue-500 bg-blue-50 text-blue-700'
+              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* Stroke / Border Color */}
+    <div>
+      <label className={LABEL_CLASSES}>Stroke (Border)</label>
+      <div className="flex items-center gap-3">
+        <input
+          type="color"
+          value={content.strokeColor || '#000000'}
+          onChange={(e) => onChange({ ...content, strokeColor: e.target.value })}
+          className="w-8 h-8 rounded-md border border-gray-300 cursor-pointer"
+        />
+        <span className="text-xs text-gray-500 flex-1">{content.strokeColor || 'None'}</span>
+        {content.strokeColor && (
+          <button
+            onClick={() => onChange({ ...content, strokeColor: '' })}
+            className="text-xs text-red-500 font-medium hover:underline"
+          >
+            Remove
+          </button>
+        )}
+      </div>
     </div>
   </div>
 );

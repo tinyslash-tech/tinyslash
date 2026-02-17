@@ -494,6 +494,13 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
               onChange={(val: string) => updateTheme({ profileImageStyle: val as any })}
             />
           </div>
+          <SliderControl
+            label="Image Size"
+            value={typeof theme.profileImageSize === 'number' ? theme.profileImageSize : 96}
+            min={40} max={200} step={4}
+            onChange={(val: number) => updateTheme({ profileImageSize: val })}
+            unit="px"
+          />
         </div>
       </Section>
 
@@ -586,7 +593,7 @@ const ColorPicker = ({ label, value, onChange }: any) => (
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 p-0 m-0 border-0 cursor-pointer opacity-0"
+          className="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 p-0 m-0 border-0 cursor-pointer opacity-0 z-50"
         />
       </div>
       <div className="flex-1 flex flex-col">

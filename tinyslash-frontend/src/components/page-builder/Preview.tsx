@@ -80,11 +80,14 @@ export const Preview: React.FC<PreviewProps> = ({ page, mode }) => {
   });
 
   // Profile Image Style
-  const getProfileImageStyle = () => ({
-    borderRadius: theme.profileImageStyle === 'CIRCLE' ? '9999px' : theme.profileImageStyle === 'ROUNDED' ? '24px' : '0px',
-    width: theme.profileImageSize === 'SM' ? '80px' : theme.profileImageSize === 'LG' ? '120px' : '96px',
-    height: theme.profileImageSize === 'SM' ? '80px' : theme.profileImageSize === 'LG' ? '120px' : '96px',
-  });
+  const getProfileImageStyle = () => {
+    const size = typeof theme.profileImageSize === 'number' ? `${theme.profileImageSize}px` : theme.profileImageSize === 'SM' ? '80px' : theme.profileImageSize === 'LG' ? '120px' : '96px';
+    return {
+      borderRadius: theme.profileImageStyle === 'CIRCLE' ? '9999px' : theme.profileImageStyle === 'ROUNDED' ? '24px' : '0px',
+      width: size,
+      height: size,
+    };
+  };
 
   // Helper to handle font size standardizing
   const getBaseFontSize = () => {
@@ -219,11 +222,18 @@ const PreviewContent: React.FC<any> = ({ page, theme, getBackgroundStyle, getBut
 
                   {/* HEADER */}
                   {block.type === 'HEADER' && (
-                    <h2 className={`text-center mt-4 mb-2 opacity-90
-                            ${theme.fontWeight === 'BOLD' ? 'font-extrabold' : theme.fontWeight === 'SEMIBOLD' ? 'font-bold' : 'font-semibold'}
-                        `}
-                      style={{ fontSize: `${theme.baseFontSize * 1.5}px` }} // 1.5x scale
-                    >{block.content.text}</h2>
+                    <>
+                      <h2 className={`text-center mt-4 mb-2 opacity-90
+                              ${theme.fontWeight === 'BOLD' ? 'font-extrabold' : theme.fontWeight === 'SEMIBOLD' ? 'font-bold' : 'font-semibold'}
+                          `}
+                        style={{ fontSize: `${theme.baseFontSize * 1.5}px` }} // 1.5x scale
+                      >{block.content.text}</h2>
+                      {block.content.subTitle && (
+                        <p className="text-center opacity-75 mb-4 px-4 overflow-hidden text-ellipsis"
+                          style={{ fontSize: `${theme.baseFontSize * 0.9}px` }}
+                        >{block.content.subTitle}</p>
+                      )}
+                    </>
                   )}
 
                   {/* TEXT */}
@@ -286,6 +296,52 @@ const PreviewContent: React.FC<any> = ({ page, theme, getBackgroundStyle, getBut
                         <p className="text-xs text-gray-500">Secure Payment</p>
                       </div>
                     </a>
+                  )}
+
+                  {/* AFFILIATE */}
+                  {block.type === 'AFFILIATE' && (
+                    <div
+                      className="bg-white overflow-hidden text-gray-900"
+                      style={{
+                        borderRadius: block.content.cornerRadius === 'sharp' ? '0px' : block.content.cornerRadius === 'rounded' ? '12px' : '16px',
+                        boxShadow: block.content.shadow === 'none' ? 'none' : block.content.shadow === 'strong' ? '0 10px 25px -5px rgba(0,0,0,0.15)' : '0 4px 12px rgba(0,0,0,0.08)',
+                        border: block.content.strokeColor ? `2px solid ${block.content.strokeColor}` : 'none',
+                      }}
+                    >
+                      {block.content.imageUrl && (
+                        <img src={block.content.imageUrl} alt={block.content.title} className="w-full h-32 object-cover" />
+                      )}
+                      <div className="p-3">
+                        <h3 className="text-sm font-bold mb-0.5">{block.content.title || 'Product Title'}</h3>
+                        {block.content.price && <p className="text-base font-extrabold text-green-600 mb-2">{block.content.price}</p>}
+                        <span className="block w-full text-center py-2 bg-black text-white text-xs font-bold rounded-md">
+                          {block.content.buttonText || 'Buy Now'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CARD */}
+                  {block.type === 'CARD' && (
+                    <div
+                      className="bg-white overflow-hidden text-gray-900"
+                      style={{
+                        borderRadius: block.content.cornerRadius === 'sharp' ? '0px' : block.content.cornerRadius === 'rounded' ? '12px' : '16px',
+                        boxShadow: block.content.shadow === 'none' ? 'none' : block.content.shadow === 'strong' ? '0 10px 25px -5px rgba(0,0,0,0.15)' : '0 4px 12px rgba(0,0,0,0.08)',
+                        border: block.content.strokeColor ? `2px solid ${block.content.strokeColor}` : 'none',
+                      }}
+                    >
+                      {block.content.imageUrl && (
+                        <img src={block.content.imageUrl} alt={block.content.title} className="w-full h-32 object-cover" />
+                      )}
+                      <div className="p-3">
+                        <h3 className="text-sm font-bold mb-1">{block.content.title || 'Card Title'}</h3>
+                        {block.content.description && <p className="text-xs text-gray-500 mb-2 leading-relaxed">{block.content.description}</p>}
+                        <span className="block w-full text-center py-2 bg-black text-white text-xs font-bold rounded-md">
+                          {block.content.buttonText || 'Learn More'}
+                        </span>
+                      </div>
+                    </div>
                   )}
 
                   {/* VIDEO */}

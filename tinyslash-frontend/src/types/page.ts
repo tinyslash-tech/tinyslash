@@ -1,4 +1,4 @@
-export type BlockType = 'LINK' | 'HEADER' | 'IMAGE' | 'SOCIAL' | 'TEXT' | 'VIDEO' | 'FORM' | 'EMAIL' | 'DIVIDER' | 'PAYMENT';
+export type BlockType = 'LINK' | 'HEADER' | 'IMAGE' | 'SOCIAL' | 'TEXT' | 'VIDEO' | 'FORM' | 'EMAIL' | 'DIVIDER' | 'PAYMENT' | 'AFFILIATE' | 'CARD';
 
 export interface PageBlock {
   id: string;
@@ -48,7 +48,7 @@ export interface PageTheme {
 
   // Profile
   profileImageStyle: 'CIRCLE' | 'ROUNDED' | 'SQUARE';
-  profileImageSize: 'SM' | 'MD' | 'LG';
+  profileImageSize: 'SM' | 'MD' | 'LG' | number;
   nameSize: 'SM' | 'MD' | 'LG';
 
   // Advanced

@@ -46,6 +46,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/domains/**").permitAll()
                                                 .requestMatchers("/api/monitoring/**").permitAll()
                                                 // Lead Lock Public Endpoints
+                                                .requestMatchers("/api/v1/leads/page/**").permitAll()
                                                 .requestMatchers("/api/v1/leads/unlock/**").permitAll()
                                                 // Redirect endpoints - CRITICAL for custom domains
                                                 .requestMatchers("/{shortCode}").permitAll()

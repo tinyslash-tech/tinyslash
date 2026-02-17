@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Page, PageBlock } from '../../../types/page';
 import {
   GripVertical, Trash2, Eye, EyeOff, X, Plus,
-  Link2, Type, Image as ImageIcon, Video, Share2, Mail, Layout, CreditCard, Minus
+  Link2, Type, Image as ImageIcon, Video, Share2, Mail, Layout, CreditCard, Minus,
+  ShoppingBag, LayoutGrid
 } from 'lucide-react';
 import {
   DragDropContext, Droppable, Draggable,
@@ -44,6 +45,8 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
       case 'EMAIL': return { title: 'Join my mailing list', buttonText: 'Sign Up' };
       case 'DIVIDER': return { style: 'solid', spacing: 'medium' };
       case 'PAYMENT': return { label: 'Support Me', url: '' };
+      case 'AFFILIATE': return { title: '', imageUrl: '', url: '', price: '', buttonText: 'Buy Now' };
+      case 'CARD': return { title: '', description: '', imageUrl: '', buttonText: 'Learn More', url: '' };
       default: return {};
     }
   };
@@ -92,6 +95,8 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
       case 'EMAIL': return block.content.title || 'Email Signup';
       case 'DIVIDER': return 'Divider';
       case 'PAYMENT': return block.content.label || 'Payment Link';
+      case 'AFFILIATE': return block.content.title || 'Affiliate Product';
+      case 'CARD': return block.content.title || 'Card';
       default: return block.type;
     }
   };
@@ -108,6 +113,8 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
       case 'EMAIL': return Mail;
       case 'DIVIDER': return Minus;
       case 'PAYMENT': return CreditCard;
+      case 'AFFILIATE': return ShoppingBag;
+      case 'CARD': return LayoutGrid;
       default: return Layout;
     }
   };
@@ -250,6 +257,8 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
               <div className="grid grid-cols-2 gap-2">
                 <PickButton icon={Minus} label="Divider" onClick={() => addBlock('DIVIDER')} />
                 <PickButton icon={CreditCard} label="Payment" onClick={() => addBlock('PAYMENT')} />
+                <PickButton icon={ShoppingBag} label="Affiliate" onClick={() => addBlock('AFFILIATE')} />
+                <PickButton icon={LayoutGrid} label="Card" onClick={() => addBlock('CARD')} />
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Paperclip, Phone, Mail, HelpCircle } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useSupportContext } from '../../context/SupportContext';
+import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 interface SupportWidgetProps {
@@ -19,6 +20,13 @@ interface SupportMessage {
 
 const SupportWidget: React.FC<SupportWidgetProps> = ({ className = '' }) => {
   const { user } = useAuth();
+  const location = useLocation(); // Added useLocation hook
+
+  // Hide widget on /p/ routes
+  if (location.pathname.startsWith('/p/')) {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'contact' | 'faq'>('chat');
   const [message, setMessage] = useState('');

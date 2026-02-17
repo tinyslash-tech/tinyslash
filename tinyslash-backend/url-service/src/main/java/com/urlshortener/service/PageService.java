@@ -97,7 +97,17 @@ public class PageService {
     existing.setAvatarUrl(updates.getAvatarUrl());
     existing.setTheme(updates.getTheme());
     existing.setBlocks(updates.getBlocks());
+    existing.setBlocks(updates.getBlocks());
     existing.setPublished(updates.isPublished());
+
+    // Pro Features
+    existing.setVerified(updates.isVerified());
+    existing.setRemoveBranding(updates.isRemoveBranding());
+    existing.setCustomDomain(updates.getCustomDomain());
+
+    // SEO
+    existing.setMetaTitle(updates.getMetaTitle());
+    existing.setMetaDescription(updates.getMetaDescription());
 
     // Handle slug updates if changed
     if (updates.getSlug() != null && !updates.getSlug().equals(existing.getSlug())) {

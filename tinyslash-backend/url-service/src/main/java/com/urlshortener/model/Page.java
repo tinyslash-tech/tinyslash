@@ -38,6 +38,7 @@ public class Page {
   // Pro Features
   private String customDomain;
   private boolean removeBranding = false;
+  private boolean verified = false; // Added verified status
 
   // SEO
   private String metaTitle;
@@ -167,6 +168,14 @@ public class Page {
 
   public void setRemoveBranding(boolean removeBranding) {
     this.removeBranding = removeBranding;
+  }
+
+  public boolean isVerified() {
+    return verified;
+  }
+
+  public void setVerified(boolean verified) {
+    this.verified = verified;
   }
 
   public String getMetaTitle() {

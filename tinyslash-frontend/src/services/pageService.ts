@@ -28,10 +28,15 @@ export const pageService = {
 
   recordView: async (pageId: string) => {
     try {
-      await api.post(`/v1/pages/${pageId}/view`);
+      await api.post(`/public/pages/${pageId}/view`);
     } catch (error) {
       console.error('Failed to record view', error);
     }
+  },
+
+  getAnalytics: async (pageId: string) => {
+    const response = await api.get(`/pages/${pageId}/analytics`);
+    return response.data;
   },
 
   getLeads: async (userId: string, pageId: string) => {

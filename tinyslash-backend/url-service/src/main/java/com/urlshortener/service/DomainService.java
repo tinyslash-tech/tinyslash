@@ -27,6 +27,16 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.urlshortener.model.ReservedDomain;
+import com.urlshortener.model.DomainAuditLog;
+import com.urlshortener.repository.ReservedDomainRepository;
+import com.urlshortener.repository.DomainAuditLogRepository;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.directory.Attributes;
+import javax.naming.NamingException;
+import java.util.Hashtable;
+
 @Service
 public class DomainService {
 
@@ -37,6 +47,12 @@ public class DomainService {
 
     @Autowired
     private DomainRepository domainRepository;
+
+    @Autowired
+    private ReservedDomainRepository reservedDomainRepository;
+
+    @Autowired
+    private DomainAuditLogRepository domainAuditLogRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -69,10 +85,8 @@ public class DomainService {
         // Check if domain is blacklisted
         validateDomainSafety(request.getDomainName());
 
-        // Check for existing domain
-        if (domainRepository.existsByDomainName(request.getDomainName())) {
-            throw new IllegalArgumentException("Domain already exists or is reserved by another user");
-        }
+        // Enterprise 10/10: Check Global Lock
+        checkGlobalLock(request.getDomainName());
 
         // Generate unique verification token
         String verificationToken = generateVerificationToken();
@@ -84,7 +98,13 @@ public class DomainService {
                 request.getOwnerId(),
                 verificationToken);
 
+        // 10/10: Create Global Lock Entry
+        createGlobalReservation(request.getDomainName(), request.getOwnerId());
+
         domain = domainRepository.save(domain);
+
+        // 10/10: Audit Log
+        logAudit(domain, currentUserId, DomainAuditLog.EventType.DOMAIN_ADDED, "Domain reserved");
 
         logger.info("Domain reserved: {} for owner: {}/{}",
                 request.getDomainName(), request.getOwnerType(), request.getOwnerId());
@@ -113,22 +133,44 @@ public class DomainService {
         // Increment attempts
         domain.incrementVerificationAttempts();
 
-        // Perform DNS verification
-        boolean isVerified = performDnsVerification(domain);
+        // 10/10 Enterprise Security: Verify ownership via TXT Token
+        boolean isTxtVerified = verifyTxtToken(domain);
+        if (!isTxtVerified) {
+            domain.setStatus(Domain.DomainStatus.PENDING);
+            domain.setVerificationError("Ownership verification failed. Missing TXT record: tinyslash-verify="
+                    + domain.getVerificationToken());
+            domainRepository.save(domain);
+            return DomainResponse.forPublicApi(domain);
+        }
 
-        if (isVerified) {
+        // Perform DNS verification (CNAME/A Record)
+        boolean isDnsVerified = performDnsVerification(domain);
+
+        if (isDnsVerified) {
             // Trigger Cloudflare SSL provisioning
             boolean sslProvisioned = cloudflareSaasService.createCustomHostname(domain);
 
             if (sslProvisioned) {
                 domain.markAsVerified();
-                domain.setSslStatus("PENDING");
+                domain.setSslStatus(Domain.SslStatus.PENDING);
+
+                // 10/10 Update Global Lock
+                Optional<ReservedDomain> reservation = reservedDomainRepository
+                        .findByDomainName(domain.getDomainName());
+                reservation.ifPresent(res -> {
+                    res.setStatus("VERIFIED");
+                    reservedDomainRepository.save(res);
+                });
+
+                logAudit(domain, currentUserId, DomainAuditLog.EventType.DNS_VERIFIED,
+                        "DNS and TXT verified. SSL provisioning started.");
             } else {
                 domain.setVerificationError("Failed to provision SSL with Cloudflare");
+                logAudit(domain, currentUserId, DomainAuditLog.EventType.SSL_FAILED, "Cloudflare provisioning failed");
             }
         } else {
-            domain.setStatus("PENDING");
-            domain.setVerificationError("DNS CNAME record not found or incorrect. Please point to tinyslash.com");
+            domain.setStatus(Domain.DomainStatus.PENDING);
+            domain.setVerificationError("DNS CNAME/A record not found. Please point to proxy.tinyslash.com");
         }
 
         domain = domainRepository.save(domain);
@@ -222,6 +264,49 @@ public class DomainService {
         }
 
         return DomainResponse.forPublicApi(domain);
+    }
+
+    /**
+     * Soft delete domain with cooldown (Enterprise 10/10)
+     */
+    @Transactional
+    public void softDeleteDomain(String domainId, String currentUserId) {
+        Domain domain = domainRepository.findById(domainId)
+                .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
+        validateDomainOwnership(domain, currentUserId);
+
+        // 1. Mark as DELETING
+        domain.setStatus(Domain.DomainStatus.DELETING);
+        domain.setDeletedAt(LocalDateTime.now());
+        domainRepository.save(domain);
+
+        // 2. Update Global Lock to DELETING
+        Optional<ReservedDomain> reservation = reservedDomainRepository.findByDomainName(domain.getDomainName());
+        reservation.ifPresent(res -> {
+            res.setStatus("DELETING");
+            reservedDomainRepository.save(res);
+        });
+
+        // 3. Trigger Synchronous Cloudflare Deletion
+        try {
+            boolean cfDeleted = cloudflareSaasService.deleteCustomHostname(domain);
+            if (!cfDeleted) {
+                // Log error but keep in DELETING state for retry cron
+                logAudit(domain, currentUserId, DomainAuditLog.EventType.DELETION_FAILED,
+                        "Cloudflare API returned false");
+                logger.error("Cloudflare deletion failed for domain: {}", domain.getDomainName());
+            } else {
+                logAudit(domain, currentUserId, DomainAuditLog.EventType.DELETION_COMPLETED,
+                        "Soft-delete initiated. Cloudflare hostname removed.");
+            }
+        } catch (Exception e) {
+            logAudit(domain, currentUserId, DomainAuditLog.EventType.DELETION_FAILED, "Exception: " + e.getMessage());
+            logger.error("Exception during Cloudflare deletion for domain: {}", domain.getDomainName(), e);
+        }
+
+        // Clear cache
+        clearDomainCache(domain.getOwnerId(), domain.getOwnerType());
     }
 
     /**
@@ -406,7 +491,94 @@ public class DomainService {
     }
 
     // Admin methods
+    // Admin methods
     public List<Domain> getAllDomains() {
         return domainRepository.findAll();
+    }
+
+    // --- Enterprise 10/10 Helpers ---
+
+    private void logAudit(Domain domain, String userId, DomainAuditLog.EventType eventType, String details) {
+        try {
+            DomainAuditLog log = new DomainAuditLog(
+                    domain.getId(),
+                    domain.getDomainName(),
+                    userId,
+                    eventType,
+                    details);
+            domainAuditLogRepository.save(log);
+        } catch (Exception e) {
+            logger.error("Failed to save audit log for domain: {}", domain.getDomainName(), e);
+        }
+    }
+
+    private void checkGlobalLock(String domainName) {
+        // 1. Check ReservedDomainRepository (Global Table)
+        if (reservedDomainRepository.existsByDomainName(domainName)) {
+            // Check expiry? For now, strict lock.
+            throw new IllegalArgumentException(
+                    "Domain is unavailable (Global Lock). Please contact support if you own this domain.");
+        }
+
+        // 2. Double check DomainRepository (Legacy/Redundant safety)
+        if (domainRepository.existsByDomainName(domainName)) {
+            throw new IllegalArgumentException("Domain already exists.");
+        }
+    }
+
+    // Simple NS detection for Step 1b
+    public String detectDnsProvider(String domainName) {
+        try {
+            Hashtable<String, String> env = new Hashtable<>();
+            env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+            DirContext ictx = new InitialDirContext(env);
+            Attributes attrs = ictx.getAttributes(domainName, new String[] { "NS" });
+
+            if (attrs != null && attrs.get("NS") != null) {
+                String nsRecords = attrs.get("NS").toString().toLowerCase();
+                if (nsRecords.contains("cloudflare"))
+                    return "CLOUDFLARE";
+                if (nsRecords.contains("awsdns"))
+                    return "ROUTE53";
+                if (nsRecords.contains("domaincontrol"))
+                    return "GODADDY";
+                if (nsRecords.contains("namecheap"))
+                    return "NAMECHEAP";
+                if (nsRecords.contains("googledomains"))
+                    return "GOOGLE";
+            }
+        } catch (NamingException e) {
+            logger.warn("NS lookup failed for {}", domainName);
+        }
+        return "OTHER";
+    }
+
+    public void createGlobalReservation(String domainName, String userId) {
+        ReservedDomain reservation = new ReservedDomain(domainName, userId, "PENDING");
+        reservedDomainRepository.save(reservation);
+    }
+
+    private boolean verifyTxtToken(Domain domain) {
+        try {
+            Hashtable<String, String> env = new Hashtable<>();
+            env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+            DirContext ictx = new InitialDirContext(env);
+            Attributes attrs = ictx.getAttributes(domain.getDomainName(), new String[] { "TXT" });
+
+            if (attrs != null) {
+                javax.naming.NamingEnumeration<?> txtRecords = attrs.get("TXT").getAll();
+                while (txtRecords.hasMore()) {
+                    String txt = (String) txtRecords.next();
+                    // TXT records often come quoted, e.g. "value"
+                    txt = txt.replace("\"", "");
+                    if (txt.contains("tinyslash-verify=" + domain.getVerificationToken())) {
+                        return true;
+                    }
+                }
+            }
+        } catch (NamingException e) {
+            logger.warn("TXT lookup failed for {}", domain.getDomainName());
+        }
+        return false;
     }
 }

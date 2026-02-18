@@ -340,7 +340,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
         <div className="text-red-600 mb-4">Failed to load file links</div>
         <button
           onClick={handleRefresh}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
+          className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800"
         >
           Try Again
         </button>
@@ -354,7 +354,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
       <div className="space-y-6">
         {/* Header Skeleton */}
         {/* Header Skeleton */}
-        <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="h-8 bg-white/20 rounded w-48 mb-2 animate-pulse"></div>
@@ -384,7 +384,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="min-w-0">
             <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 sm:mb-2 flex items-center space-x-2">
@@ -521,7 +521,7 @@ const FileToUrlManager: React.FC<FileToUrlManagerProps> = ({ onCreateClick }) =>
                 <p className="text-gray-600 mb-4">Create your first file-to-link conversion to get started</p>
                 <button
                   onClick={handleCreateFileLink}
-                  className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2 mx-auto"
+                  className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2 mx-auto"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Create File Link</span>

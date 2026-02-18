@@ -3,6 +3,7 @@ package com.urlshortener.controller;
 import com.urlshortener.model.ShortenedUrl;
 import com.urlshortener.service.UrlShorteningService;
 import com.urlshortener.service.AnalyticsService;
+import com.urlshortener.service.GeoIPService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,9 @@ public class RedirectController {
 
     @Autowired(required = false)
     private AnalyticsService analyticsService;
+
+    @Autowired(required = false)
+    private GeoIPService geoIPService;
 
     @Autowired
     private com.urlshortener.service.TrustVerificationService trustService;
@@ -129,8 +133,19 @@ public class RedirectController {
                     String referer = request.getHeader("Referer");
                     String clientIp = getClientIpAddress(request);
 
+                    // Resolve geo location from IP using MaxMind
+                    String country = null;
+                    String region = null;
+                    String city = null;
+                    if (geoIPService != null && geoIPService.isAvailable()) {
+                        java.util.Map<String, String> geoData = geoIPService.resolveLocation(clientIp);
+                        country = geoData.get("country");
+                        region = geoData.get("region");
+                        city = geoData.get("city");
+                    }
+
                     analyticsService.recordClick(domain, shortCode, clientIp, userAgent, referer,
-                            null, null, null, null, null);
+                            country, region, city, null, null, null);
                 } catch (Exception e) {
                     System.err.println("Analytics error: " + e.getMessage());
                 }
@@ -152,6 +167,11 @@ public class RedirectController {
             }
 
             String targetUrl = url.getOriginalUrl();
+
+            // --- FEATURE: SMART ACTION / MULTI-ACTION QR ---
+            if (url.getSmartActionConfig() != null && url.getSmartActionConfig().isEnabled()) {
+                return serveSmartActionPage(url);
+            }
 
             // --- FEATURE: APP DEEP LINKING (Zero-Config) ---
             if (url.getDeepLinkConfig() != null && url.getDeepLinkConfig().isEnabled()) {
@@ -411,5 +431,69 @@ public class RedirectController {
             return xForwardedFor.split(",")[0].trim();
         }
         return request.getRemoteAddr();
+    }
+
+    private ResponseEntity<String> serveSmartActionPage(ShortenedUrl url) {
+        ShortenedUrl.SmartActionConfig config = url.getSmartActionConfig();
+
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html><html lang=\"en\"><head>");
+        html.append(
+                "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+        html.append("<title>").append(escapeHtml(url.getTitle() != null ? url.getTitle() : "Select an Action"))
+                .append("</title>");
+        html.append("<style>");
+        html.append(
+                "body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }");
+        html.append(
+                ".card { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center; }");
+        html.append("h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem; }");
+        html.append("p { color: #6b7280; margin-bottom: 2rem; }");
+        html.append(
+                ".btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; transition: all 0.2s; box-sizing: border-box; }");
+        html.append(".btn:hover { opacity: 0.9; transform: translateY(-1px); }");
+        html.append(".btn-wa { background-color: #25D366; color: white; }");
+        html.append(
+                ".btn-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: white; }");
+        html.append(".btn-web { background-color: #111827; color: white; }");
+        html.append("</style></head><body>");
+
+        html.append("<div class=\"card\">");
+        html.append("<h1>").append(escapeHtml(url.getTitle() != null ? url.getTitle() : "Link Actions"))
+                .append("</h1>");
+        html.append("<p>Select where you want to go</p>");
+
+        // WhatsApp
+        if (config.getWhatsapp() != null && config.getWhatsapp().isEnabled()) {
+            String waUrl = "https://wa.me/" + config.getWhatsapp().getNumber();
+            if (config.getWhatsapp().getMessage() != null && !config.getWhatsapp().getMessage().isEmpty()) {
+                try {
+                    waUrl += "?text=" + java.net.URLEncoder.encode(config.getWhatsapp().getMessage(), "UTF-8");
+                } catch (Exception e) {
+                }
+            }
+            html.append("<a href=\"").append(waUrl).append("\" class=\"btn btn-wa\">Chat on WhatsApp</a>");
+        }
+
+        // Instagram
+        if (config.getInstagram() != null && config.getInstagram().isEnabled()) {
+            html.append("<a href=\"").append(config.getInstagram().getUrl())
+                    .append("\" class=\"btn btn-ig\">Visit Instagram</a>");
+        }
+
+        // Website
+        if (config.getWebsite() != null && config.getWebsite().isEnabled()) {
+            String label = config.getWebsite().getLabel() != null && !config.getWebsite().getLabel().isEmpty()
+                    ? config.getWebsite().getLabel()
+                    : "Visit Website";
+            html.append("<a href=\"").append(config.getWebsite().getUrl()).append("\" class=\"btn btn-web\">")
+                    .append(escapeHtml(label)).append("</a>");
+        }
+
+        html.append("</div></body></html>");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "text/html; charset=utf-8");
+        return new ResponseEntity<>(html.toString(), headers, HttpStatus.OK);
     }
 }

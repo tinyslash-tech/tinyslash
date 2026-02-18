@@ -13,7 +13,7 @@ import org.springframework.http.HttpStatus;
 @Controller
 public class FrontendRedirectController {
 
-    private static final String FRONTEND_URL = "https://pebly.vercel.app";
+    private static final String FRONTEND_URL = "https://tinyslash.com";
 
     /**
      * Redirect /dashboard and all its sub-routes to frontend

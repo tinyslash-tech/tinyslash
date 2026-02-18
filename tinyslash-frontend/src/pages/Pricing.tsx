@@ -176,7 +176,7 @@ const Pricing: React.FC = () => {
                 <span className="text-3xl font-extrabold">₹0</span>
                 <span className="text-gray-500 ml-1">/ month</span>
               </div>
-              <p className="text-sm text-gray-500 mt-2">For individuals trying TinySlash</p>
+              <p className="text-sm text-gray-500 mt-2">Trial only — explore TinySlash</p>
             </div>
             <button
               onClick={() => {
@@ -184,7 +184,6 @@ const Pricing: React.FC = () => {
                   setAuthMode('signup');
                   setIsAuthModalOpen(true);
                 } else {
-                  // Already free? Maybe redirect to dashboard
                   navigate('/dashboard');
                 }
               }}
@@ -196,7 +195,7 @@ const Pricing: React.FC = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">What's included</p>
                 <ul className="space-y-2">
-                  {['50 short links', '50 QR codes', '5 file-to-link uploads', 'Basic click analytics', 'TinySlash branded links', 'Link expiration (time-based)', '7-day analytics history'].map((item, i) => (
+                  {['15 short links', '15 QR codes (static only)', '3 file uploads', '7-day analytics', 'TinySlash branding', 'No custom domain', 'No dynamic QR'].map((item, i) => (
                     <li key={i} className="flex items-start text-sm text-gray-600">
                       <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
                       {item}
@@ -207,7 +206,7 @@ const Pricing: React.FC = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
                 <ul className="space-y-2">
-                  {['1 Page', 'Up to 5 links', 'Basic theme', 'Page view count', 'TinySlash branding'].map((item, i) => (
+                  {['1 basic page', 'Up to 5 links', 'Basic theme', 'Page view count', 'TinySlash branding'].map((item, i) => (
                     <li key={i} className="flex items-start text-sm text-gray-600">
                       <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 shrink-0" />
                       {item}
@@ -220,23 +219,21 @@ const Pricing: React.FC = () => {
 
           {/* STARTER Plan */}
           <motion.div
-            className="border-2 border-black rounded-2xl p-6 flex flex-col relative shadow-xl transform scale-105 z-10 bg-white"
+            className="border border-gray-200 rounded-2xl p-6 flex flex-col hover:border-blue-300 transition-all duration-300"
+            whileHover={{ y: -5 }}
           >
-            <div className="absolute top-0 right-0 left-0 -mt-3 flex justify-center">
-              <span className="bg-black text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Most Popular</span>
-            </div>
-            <div className="mb-4 mt-2">
+            <div className="mb-4">
               <h3 className="text-lg font-bold text-blue-600">Starter</h3>
               <div className="mt-2 flex items-baseline">
-                <span className="text-3xl font-extrabold">₹{billingCycle === 'monthly' ? '99' : '83'}</span>
+                <span className="text-3xl font-extrabold">₹{billingCycle === 'monthly' ? '199' : '166'}</span>
                 <span className="text-gray-500 ml-1">/ month</span>
               </div>
-              <p className="text-xs text-blue-600 mt-1 font-medium">{billingCycle === 'monthly' ? 'Billed monthly' : '₹999 billed yearly (2 months free)'}</p>
-              <p className="text-sm text-gray-500 mt-2">For freelancers & creators</p>
+              <p className="text-xs text-blue-600 mt-1 font-medium">{billingCycle === 'monthly' ? 'Billed monthly' : '₹1,999 billed yearly (2 months free)'}</p>
+              <p className="text-sm text-gray-500 mt-2">For solo creators</p>
             </div>
             <button
-              onClick={() => handleRazorpayPayment(billingCycle === 'monthly' ? 'STARTER_MONTHLY' : 'STARTER_YEARLY', 'Starter', billingCycle === 'monthly' ? 99 : 999)}
-              className="w-full py-2.5 rounded-lg bg-black font-semibold text-white hover:bg-gray-800 transition-colors mb-6 shadow-md"
+              onClick={() => handleRazorpayPayment(billingCycle === 'monthly' ? 'STARTER_MONTHLY' : 'STARTER_YEARLY', 'Starter', billingCycle === 'monthly' ? 199 : 1999)}
+              className="w-full py-2.5 rounded-lg bg-blue-600 font-semibold text-white hover:bg-blue-700 transition-colors mb-6 shadow-md"
             >
               Upgrade to Starter
             </button>
@@ -244,7 +241,7 @@ const Pricing: React.FC = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Everything in Free, plus</p>
                 <ul className="space-y-2">
-                  {['1,000 short links', 'Unlimited QR codes', '100 file-to-link uploads', 'Password-protected links', 'Link expiration (date & click-based)', '1 custom domain', '30-day analytics history', 'Device & country analytics', 'Email support'].map((item, i) => (
+                  {['1,000 links/month', 'Unlimited static QR', '20 Dynamic QR', '50 file uploads', '30-day analytics', 'Password protection', 'Expiration rules', 'No custom domain'].map((item, i) => (
                     <li key={i} className="flex items-start text-sm text-gray-900 font-medium">
                       <Check className="w-4 h-4 text-blue-600 mr-2 mt-0.5 shrink-0" />
                       {item}
@@ -255,7 +252,7 @@ const Pricing: React.FC = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
                 <ul className="space-y-2">
-                  {['1 Creator Page', 'Unlimited links', 'Image & button blocks', 'Theme customization', 'Per-link click analytics'].map((item, i) => (
+                  {['1 Creator Page', 'Unlimited links', 'Basic customization', 'TinySlash branding'].map((item, i) => (
                     <li key={i} className="flex items-start text-sm text-gray-900 font-medium">
                       <Check className="w-4 h-4 text-blue-600 mr-2 mt-0.5 shrink-0" />
                       {item}
@@ -266,23 +263,25 @@ const Pricing: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* PRO Plan */}
+          {/* PRO Plan – Most Popular */}
           <motion.div
-            className="border border-gray-200 rounded-2xl p-6 flex flex-col hover:border-purple-300 transition-all duration-300"
-            whileHover={{ y: -5 }}
+            className="border-2 border-black rounded-2xl p-6 flex flex-col relative shadow-xl transform scale-105 z-10 bg-white"
           >
-            <div className="mb-4">
+            <div className="absolute top-0 right-0 left-0 -mt-3 flex justify-center">
+              <span className="bg-black text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">⭐ Most Popular</span>
+            </div>
+            <div className="mb-4 mt-2">
               <h3 className="text-lg font-bold text-purple-600">Pro</h3>
               <div className="mt-2 flex items-baseline">
-                <span className="text-3xl font-extrabold">₹{billingCycle === 'monthly' ? '299' : '249'}</span>
+                <span className="text-3xl font-extrabold">₹{billingCycle === 'monthly' ? '599' : '499'}</span>
                 <span className="text-gray-500 ml-1">/ month</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">{billingCycle === 'monthly' ? 'Billed monthly' : '₹2,999 billed yearly'}</p>
-              <p className="text-sm text-gray-500 mt-2">For startups & growing teams</p>
+              <p className="text-xs text-purple-600 mt-1 font-medium">{billingCycle === 'monthly' ? 'Billed monthly' : '₹5,999 billed yearly (2 months free)'}</p>
+              <p className="text-sm text-gray-500 mt-2">For influencers & small businesses</p>
             </div>
             <button
-              onClick={() => handleRazorpayPayment(billingCycle === 'monthly' ? 'PRO_MONTHLY' : 'PRO_YEARLY', 'Pro', billingCycle === 'monthly' ? 299 : 2999)}
-              className="w-full py-2.5 rounded-lg bg-white border border-purple-600 font-semibold text-purple-600 hover:bg-purple-50 transition-colors mb-6"
+              onClick={() => handleRazorpayPayment(billingCycle === 'monthly' ? 'PRO_MONTHLY' : 'PRO_YEARLY', 'Pro', billingCycle === 'monthly' ? 599 : 5999)}
+              className="w-full py-2.5 rounded-lg bg-black font-semibold text-white hover:bg-gray-800 transition-colors mb-6 shadow-md"
             >
               Go Pro
             </button>
@@ -290,8 +289,8 @@ const Pricing: React.FC = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Everything in Starter, plus</p>
                 <ul className="space-y-2">
-                  {['Unlimited short links', 'Unlimited QR codes', 'Unlimited file-to-link uploads', 'Advanced password protection', 'Advanced expiration rules', '5 custom domains', 'Team access (up to 5 users)', 'Advanced analytics', 'API access', 'Priority support'].map((item, i) => (
-                    <li key={i} className="flex items-start text-sm text-gray-600">
+                  {['Unlimited links', '500 Dynamic QR', 'Unlimited static QR', '1 Custom Domain', '200 file uploads', 'Advanced analytics', '90-day analytics', 'Remove branding', 'Team collaboration (3 members)'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-900 font-medium">
                       <Check className="w-4 h-4 text-purple-600 mr-2 mt-0.5 shrink-0" />
                       {item}
                     </li>
@@ -301,8 +300,8 @@ const Pricing: React.FC = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
                 <ul className="space-y-2">
-                  {['Up to 5 Pages', 'Custom domains for Pages', 'Advanced page analytics', 'Device, country & time insights', 'Team collaboration', 'Smart links (geo / time-based)'].map((item, i) => (
-                    <li key={i} className="flex items-start text-sm text-gray-600">
+                  {['3 Pages', 'Custom domain support', 'Advanced analytics', 'Smart links'].map((item, i) => (
+                    <li key={i} className="flex items-start text-sm text-gray-900 font-medium">
                       <Check className="w-4 h-4 text-purple-600 mr-2 mt-0.5 shrink-0" />
                       {item}
                     </li>
@@ -319,22 +318,23 @@ const Pricing: React.FC = () => {
             <div className="mb-4">
               <h3 className="text-lg font-bold text-gray-900">Business</h3>
               <div className="mt-2 flex items-baseline">
-                <span className="text-3xl font-extrabold">₹999</span>
+                <span className="text-3xl font-extrabold">₹{billingCycle === 'monthly' ? '1,499' : '1,249'}</span>
                 <span className="text-gray-500 ml-1">/ month</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Custom pricing available</p>
-              <p className="text-sm text-gray-500 mt-2">For companies & enterprises</p>
+              <p className="text-xs text-gray-500 mt-1">{billingCycle === 'monthly' ? 'Billed monthly' : '₹14,999 billed yearly'}</p>
+              <p className="text-sm text-gray-500 mt-2">For agencies & brands</p>
             </div>
             <button
+              onClick={() => handleRazorpayPayment(billingCycle === 'monthly' ? 'BUSINESS_MONTHLY' : 'BUSINESS_YEARLY', 'Business', billingCycle === 'monthly' ? 1499 : 14999)}
               className="w-full py-2.5 rounded-lg border border-gray-900 bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors mb-6"
             >
-              Contact Sales
+              Upgrade to Business
             </button>
             <div className="space-y-4 flex-1">
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Everything in Pro, plus</p>
                 <ul className="space-y-2">
-                  {['Unlimited everything', 'Unlimited team members', 'Enterprise-grade secure file sharing', 'Access-controlled & expiring links', 'White-label branding', 'SLA & uptime guarantee', 'Audit logs', 'Dedicated support'].map((item, i) => (
+                  {['5 Custom Domains', '2,000 Dynamic QR', 'Unlimited everything', 'Webhooks', 'Bulk tools', 'Smart redirects (geo/time)', 'SLA & uptime guarantee', 'Audit logs', 'Team collaboration (10 members)'].map((item, i) => (
                     <li key={i} className="flex items-start text-sm text-gray-600">
                       <Check className="w-4 h-4 text-gray-900 mr-2 mt-0.5 shrink-0" />
                       {item}
@@ -345,7 +345,7 @@ const Pricing: React.FC = () => {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">TinySlash Pages</p>
                 <ul className="space-y-2">
-                  {['Unlimited Pages', 'White-label Pages', 'Brand fonts & themes', 'Lead capture forms', 'Webhooks & data export', 'Page-level audit logs'].map((item, i) => (
+                  {['Unlimited pages', 'White-label pages', 'Lead forms', 'Team collaboration', 'Data export'].map((item, i) => (
                     <li key={i} className="flex items-start text-sm text-gray-600">
                       <Check className="w-4 h-4 text-gray-900 mr-2 mt-0.5 shrink-0" />
                       {item}
@@ -380,16 +380,21 @@ const Pricing: React.FC = () => {
                   <td colSpan={5} className="px-6 py-3 font-bold text-gray-700 uppercase text-xs tracking-wider">General Features</td>
                 </tr>
                 {[
-                  { f: "Short links", free: "50", starter: "1,000", pro: "Unlimited", bus: "Unlimited" },
-                  { f: "QR codes", free: "50", starter: "Unlimited", pro: "Unlimited", bus: "Unlimited" },
-                  { f: "File-to-link uploads", free: "5", starter: "100", pro: "Unlimited", bus: "Unlimited" },
-                  { f: "Password protection", free: "❌", starter: "✅", pro: "✅ (Advanced)", bus: "✅" },
-                  { f: "Link expiration", free: "Basic", starter: "Advanced", pro: "Advanced", bus: "Advanced" },
-                  { f: "Custom domains", free: "❌", starter: "1", pro: "5", bus: "Unlimited" },
-                  { f: "Analytics history", free: "7 days", starter: "30 days", pro: "Unlimited", bus: "Unlimited" },
-                  { f: "Team members", free: "❌", starter: "❌", pro: "5", bus: "Unlimited" },
-                  { f: "API access", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
-                  { f: "Support", free: "❌", starter: "Email", pro: "Priority", bus: "Dedicated" },
+                  { f: "Short links", free: "15", starter: "1,000", pro: "Unlimited", bus: "Unlimited" },
+                  { f: "Static QR", free: "15", starter: "Unlimited", pro: "Unlimited", bus: "Unlimited" },
+                  { f: "Dynamic QR", free: "❌", starter: "20", pro: "500", bus: "2,000" },
+                  { f: "File uploads", free: "3", starter: "50", pro: "200", bus: "Unlimited" },
+                  { f: "Password protection", free: "❌", starter: "✅", pro: "✅", bus: "✅" },
+                  { f: "Expiration rules", free: "❌", starter: "✅", pro: "✅", bus: "✅" },
+                  { f: "Custom domains", free: "❌", starter: "❌", pro: "1", bus: "5" },
+                  { f: "Analytics history", free: "7 days", starter: "30 days", pro: "90 days", bus: "Unlimited" },
+                  { f: "Remove branding", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
+                  { f: "Team members", free: "❌", starter: "❌", pro: "3", bus: "10" },
+                  { f: "Webhooks", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "Bulk tools", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "Smart redirects (geo/time)", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "SLA", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "Audit logs", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
                 ].map((row, i) => (
                   <tr key={`gen-${i}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">{row.f}</td>
@@ -405,15 +410,17 @@ const Pricing: React.FC = () => {
                   <td colSpan={5} className="px-6 py-3 font-bold text-gray-700 uppercase text-xs tracking-wider border-t border-gray-200">TinySlash Pages</td>
                 </tr>
                 {[
-                  { f: "Pages", free: "1", starter: "1", pro: "5", bus: "Unlimited" },
+                  { f: "Pages", free: "1", starter: "1", pro: "3", bus: "Unlimited" },
                   { f: "Links per Page", free: "5", starter: "Unlimited", pro: "Unlimited", bus: "Unlimited" },
-                  { f: "Image Blocks", free: "❌", starter: "✅", pro: "✅", bus: "✅" },
-                  { f: "Theme Customization", free: "❌", starter: "✅", pro: "✅", bus: "✅" },
-                  { f: "Custom Domain", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
+                  { f: "Basic theme", free: "✅", starter: "✅", pro: "✅", bus: "✅" },
+                  { f: "Page view count", free: "✅", starter: "✅", pro: "✅", bus: "✅" },
+                  { f: "Custom domain support", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
                   { f: "Advanced Analytics", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
-                  { f: "Branding Removal", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
-                  { f: "Lead Capture", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
-                  { f: "White-label Pages", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "Smart links", free: "❌", starter: "❌", pro: "✅", bus: "✅" },
+                  { f: "White-label pages", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "Lead forms", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
+                  { f: "Team collaboration", free: "❌", starter: "❌", pro: "3 members", bus: "10 members" },
+                  { f: "Data export", free: "❌", starter: "❌", pro: "❌", bus: "✅" },
                 ].map((row, i) => (
                   <tr key={`pages-${i}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">{row.f}</td>

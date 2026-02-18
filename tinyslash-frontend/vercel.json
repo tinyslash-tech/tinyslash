@@ -23,6 +23,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/dashboard/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/pricing",
       "destination": "/index.html"
     },
@@ -47,7 +51,15 @@
       "destination": "/index.html"
     },
     {
+      "source": "/app/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/qr-generator",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/qr-generator/(.*)",
       "destination": "/index.html"
     },
     {
@@ -55,7 +67,15 @@
       "destination": "/index.html"
     },
     {
+      "source": "/domains/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/account-settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/account-settings/(.*)",
       "destination": "/index.html"
     },
     {
@@ -63,7 +83,15 @@
       "destination": "/index.html"
     },
     {
+      "source": "/short-links/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/qr-codes",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/qr-codes/(.*)",
       "destination": "/index.html"
     },
     {
@@ -71,7 +99,15 @@
       "destination": "/index.html"
     },
     {
+      "source": "/file-to-link/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/pages",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pages/(.*)",
       "destination": "/index.html"
     },
     {
@@ -80,6 +116,10 @@
     },
     {
       "source": "/blog",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog/(.*)",
       "destination": "/index.html"
     },
     {
@@ -99,7 +139,15 @@
       "destination": "/index.html"
     },
     {
+      "source": "/analytics/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/solutions",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/solutions/(.*)",
       "destination": "/index.html"
     },
     {
@@ -107,7 +155,15 @@
       "destination": "/index.html"
     },
     {
+      "source": "/auth/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/invite",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/invite/(.*)",
       "destination": "/index.html"
     },
     {
@@ -115,7 +171,15 @@
       "destination": "/index.html"
     },
     {
+      "source": "/file/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/unlock",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/unlock/(.*)",
       "destination": "/index.html"
     },
     {
@@ -123,11 +187,23 @@
       "destination": "/index.html"
     },
     {
+      "source": "/verified/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/redirect",
       "destination": "/index.html"
     },
     {
+      "source": "/redirect/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/p",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/p/(.*)",
       "destination": "/index.html"
     },
     {

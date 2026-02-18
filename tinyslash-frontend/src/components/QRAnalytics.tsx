@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Globe, 
-  Smartphone, 
+import {
+  BarChart3,
+  TrendingUp,
+  Globe,
+  Smartphone,
   Calendar,
   Download,
   Share2,
   Eye,
   Clock,
   MapPin,
-  Users
+  Users,
+  AlertCircle
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import toast from 'react-hot-toast';
 
 interface QRAnalyticsProps {
   qrCodeId: string;
@@ -28,6 +30,7 @@ interface AnalyticsData {
   browserData: Array<{ browser: string; count: number }>;
   hourlyData: Array<{ hour: number; scans: number }>;
   referrerData: Array<{ source: string; count: number }>;
+  uniqueScans: number;
 }
 
 const QRAnalytics: React.FC<QRAnalyticsProps> = ({
@@ -38,74 +41,111 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
 }) => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
 
-  // Mock data - in real app, this would come from API
   useEffect(() => {
-    const generateMockData = (): AnalyticsData => {
-      const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
-      
-      const scansOverTime = Array.from({ length: days }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (days - 1 - i));
-        return {
-          date: date.toISOString().split('T')[0],
-          scans: Math.floor(Math.random() * 50) + 5,
-          uniqueScans: Math.floor(Math.random() * 30) + 3
-        };
-      });
+    loadRealAnalytics();
+  }, [qrCodeId, timeRange]);
 
-      const deviceBreakdown = [
-        { device: 'Mobile', count: Math.floor(totalScans * 0.65), percentage: 65 },
-        { device: 'Desktop', count: Math.floor(totalScans * 0.25), percentage: 25 },
-        { device: 'Tablet', count: Math.floor(totalScans * 0.10), percentage: 10 }
-      ];
+  const loadRealAnalytics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+      const response = await fetch(`${apiUrl}/v1/qr/${qrCodeId}`);
+      const result = await response.json();
 
-      const locationData = [
-        { country: 'India', city: 'Mumbai', count: Math.floor(totalScans * 0.35) },
-        { country: 'India', city: 'Delhi', count: Math.floor(totalScans * 0.25) },
-        { country: 'India', city: 'Bangalore', count: Math.floor(totalScans * 0.20) },
-        { country: 'USA', city: 'New York', count: Math.floor(totalScans * 0.10) },
-        { country: 'UK', city: 'London', count: Math.floor(totalScans * 0.05) },
-        { country: 'Others', city: 'Various', count: Math.floor(totalScans * 0.05) }
-      ];
+      if (result.success && result.data) {
+        const qrData = result.data;
+        const realTotalScans = qrData.totalScans || totalScans || 0;
+        const realUniqueScans = qrData.uniqueScans || 0;
 
-      const browserData = [
-        { browser: 'Chrome', count: Math.floor(totalScans * 0.60) },
-        { browser: 'Safari', count: Math.floor(totalScans * 0.20) },
-        { browser: 'Firefox', count: Math.floor(totalScans * 0.10) },
-        { browser: 'Edge', count: Math.floor(totalScans * 0.07) },
-        { browser: 'Others', count: Math.floor(totalScans * 0.03) }
-      ];
+        // Build scans over time from scansByDay
+        let scansOverTime: any[] = [];
+        const scansByDay = qrData.scansByDay;
+        if (scansByDay && typeof scansByDay === 'object' && Object.keys(scansByDay).length > 0) {
+          const sortedDays = Object.entries(scansByDay).sort(([a], [b]) => a.localeCompare(b));
+          scansOverTime = sortedDays.map(([dateStr, scans]) => ({
+            date: new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            scans: Number(scans),
+            uniqueScans: Math.floor(Number(scans) * (realUniqueScans > 0 ? realUniqueScans / Math.max(realTotalScans, 1) : 0.75))
+          }));
+        }
 
-      const hourlyData = Array.from({ length: 24 }, (_, hour) => ({
-        hour,
-        scans: Math.floor(Math.random() * 20) + (hour >= 9 && hour <= 21 ? 10 : 2)
-      }));
+        // Build device breakdown from scansByDevice
+        let deviceBreakdown: any[] = [];
+        const scansByDevice = qrData.scansByDevice;
+        if (scansByDevice && typeof scansByDevice === 'object' && Object.keys(scansByDevice).length > 0) {
+          const total = Object.values(scansByDevice).reduce((sum: number, v: any) => sum + Number(v), 0);
+          deviceBreakdown = Object.entries(scansByDevice)
+            .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+            .map(([device, count]) => ({
+              device: device || 'Unknown',
+              count: Number(count),
+              percentage: total > 0 ? Math.round((Number(count) / total) * 100) : 0
+            }));
+        }
 
-      const referrerData = [
-        { source: 'Direct Scan', count: Math.floor(totalScans * 0.70) },
-        { source: 'WhatsApp', count: Math.floor(totalScans * 0.15) },
-        { source: 'Instagram', count: Math.floor(totalScans * 0.08) },
-        { source: 'Facebook', count: Math.floor(totalScans * 0.04) },
-        { source: 'Others', count: Math.floor(totalScans * 0.03) }
-      ];
+        // Build location data from scansByCity or scansByCountry
+        let locationData: any[] = [];
+        const scansByCity = qrData.scansByCity;
+        const scansByCountry = qrData.scansByCountry;
+        if (scansByCity && typeof scansByCity === 'object' && Object.keys(scansByCity).length > 0) {
+          locationData = Object.entries(scansByCity)
+            .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+            .slice(0, 10)
+            .map(([city, count]) => ({ country: '', city: city || 'Unknown', count: Number(count) }));
+        } else if (scansByCountry && typeof scansByCountry === 'object' && Object.keys(scansByCountry).length > 0) {
+          locationData = Object.entries(scansByCountry)
+            .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+            .slice(0, 10)
+            .map(([country, count]) => ({ country: country || 'Unknown', city: '', count: Number(count) }));
+        }
 
-      return {
-        scansOverTime,
-        deviceBreakdown,
-        locationData,
-        browserData,
-        hourlyData,
-        referrerData
-      };
-    };
+        // Build browser data from scansByBrowser
+        let browserData: any[] = [];
+        const scansByBrowser = qrData.scansByBrowser;
+        if (scansByBrowser && typeof scansByBrowser === 'object' && Object.keys(scansByBrowser).length > 0) {
+          browserData = Object.entries(scansByBrowser)
+            .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+            .map(([browser, count]) => ({ browser: browser || 'Unknown', count: Number(count) }));
+        }
 
-    setTimeout(() => {
-      setAnalyticsData(generateMockData());
+        // Build hourly data from scansByHour
+        let hourlyData: any[] = [];
+        const scansByHour = qrData.scansByHour;
+        if (scansByHour && typeof scansByHour === 'object' && Object.keys(scansByHour).length > 0) {
+          hourlyData = Array.from({ length: 24 }, (_, hour) => ({
+            hour,
+            scans: Number(scansByHour[String(hour)] || 0)
+          }));
+        }
+
+        // Build referrer data (QR scans usually don't have referrers, but check)
+        let referrerData: any[] = [];
+        // No specific referrer field for QR, so we skip mock data
+
+        setAnalyticsData({
+          scansOverTime,
+          deviceBreakdown,
+          locationData,
+          browserData,
+          hourlyData,
+          referrerData,
+          uniqueScans: realUniqueScans
+        });
+      } else {
+        setError('Could not load QR analytics data');
+      }
+    } catch (err) {
+      console.error('Failed to load QR analytics:', err);
+      setError('Failed to load analytics data');
+      toast.error('Failed to load QR analytics');
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, [qrCodeId, timeRange, totalScans]);
+    }
+  };
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -116,7 +156,27 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Analytics</h3>
-            <p className="text-gray-600">Analyzing QR code performance...</p>
+            <p className="text-gray-600">Fetching real-time QR code performance...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics Error</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="flex space-x-3 justify-center">
+            <button onClick={loadRealAnalytics} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              Try Again
+            </button>
+            <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -124,6 +184,9 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
   }
 
   if (!analyticsData) return null;
+
+  const realUniqueScans = analyticsData.uniqueScans || 0;
+  const hasNoData = totalScans === 0 && analyticsData.deviceBreakdown.length === 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -133,19 +196,9 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{qrTitle} - Analytics</h2>
-              <p className="text-gray-600">Detailed performance insights for your QR code</p>
+              <p className="text-gray-600">Real-time performance insights for your QR code</p>
             </div>
             <div className="flex items-center space-x-3">
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="90d">Last 90 days</option>
-                <option value="1y">Last year</option>
-              </select>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600 p-2"
@@ -175,7 +228,7 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm">Unique Visitors</p>
-                  <p className="text-3xl font-bold">{Math.floor(totalScans * 0.75).toLocaleString()}</p>
+                  <p className="text-3xl font-bold">{realUniqueScans.toLocaleString()}</p>
                 </div>
                 <Users className="w-8 h-8 text-green-200" />
               </div>
@@ -185,7 +238,11 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm">Avg. Daily Scans</p>
-                  <p className="text-3xl font-bold">{Math.floor(totalScans / 30)}</p>
+                  <p className="text-3xl font-bold">
+                    {analyticsData.scansOverTime.length > 0
+                      ? Math.floor(totalScans / Math.max(analyticsData.scansOverTime.length, 1))
+                      : Math.floor(totalScans / 30)}
+                  </p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-purple-200" />
               </div>
@@ -196,9 +253,11 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
                 <div>
                   <p className="text-orange-100 text-sm">Peak Hour</p>
                   <p className="text-3xl font-bold">
-                    {analyticsData.hourlyData.reduce((max, curr) => 
-                      curr.scans > max.scans ? curr : max
-                    ).hour}:00
+                    {analyticsData.hourlyData.length > 0
+                      ? `${analyticsData.hourlyData.reduce((max, curr) =>
+                        curr.scans > max.scans ? curr : max
+                      ).hour}:00`
+                      : 'N/A'}
                   </p>
                 </div>
                 <Clock className="w-8 h-8 text-orange-200" />
@@ -206,185 +265,188 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
             </div>
           </div>
 
+          {hasNoData && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+              <BarChart3 className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No scan data yet</h3>
+              <p className="text-gray-600">Analytics will appear here once your QR code gets scanned.</p>
+            </div>
+          )}
+
           {/* Scans Over Time */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Scans Over Time</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={analyticsData.scansOverTime}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area 
-                  type="monotone" 
-                  dataKey="scans" 
-                  stackId="1" 
-                  stroke="#3b82f6" 
-                  fill="#3b82f6" 
-                  fillOpacity={0.6}
-                  name="Total Scans"
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="uniqueScans" 
-                  stackId="2" 
-                  stroke="#10b981" 
-                  fill="#10b981" 
-                  fillOpacity={0.6}
-                  name="Unique Scans"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {analyticsData.scansOverTime.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Scans Over Time</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={analyticsData.scansOverTime}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="scans"
+                    stackId="1"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.6}
+                    name="Total Scans"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="uniqueScans"
+                    stackId="2"
+                    stroke="#10b981"
+                    fill="#10b981"
+                    fillOpacity={0.6}
+                    name="Unique Scans"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Device Breakdown */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Smartphone className="w-5 h-5 mr-2" />
-                Device Breakdown
-              </h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={analyticsData.deviceBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ device, percentage }) => `${device} ${percentage}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {analyticsData.deviceBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            {analyticsData.deviceBreakdown.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Smartphone className="w-5 h-5 mr-2" />
+                  Device Breakdown
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={analyticsData.deviceBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ device, percentage }) => `${device} ${percentage}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {analyticsData.deviceBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {/* Browser Data */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Browser Usage</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={analyticsData.browserData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="browser" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#3b82f6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {analyticsData.browserData.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Browser Usage</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={analyticsData.browserData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="browser" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* Hourly Activity */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Clock className="w-5 h-5 mr-2" />
-              Hourly Activity Pattern
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={analyticsData.hourlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="hour" 
-                  tickFormatter={(hour) => `${hour}:00`}
-                />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(hour) => `${hour}:00`}
-                  formatter={(value) => [value, 'Scans']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="scans" 
-                  stroke="#3b82f6" 
-                  strokeWidth={3}
-                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {analyticsData.hourlyData.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Clock className="w-5 h-5 mr-2" />
+                Hourly Activity Pattern
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={analyticsData.hourlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="hour"
+                    tickFormatter={(hour) => `${hour}:00`}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(hour) => `${hour}:00`}
+                    formatter={(value) => [value, 'Scans']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="scans"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           {/* Geographic Data */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MapPin className="w-5 h-5 mr-2" />
-                Top Locations
-              </h3>
-              <div className="space-y-3">
-                {analyticsData.locationData.map((location, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
-                        {index + 1}
+            {analyticsData.locationData.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <MapPin className="w-5 h-5 mr-2" />
+                  Top Locations
+                </h3>
+                <div className="space-y-3">
+                  {analyticsData.locationData.map((location, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{location.city || location.country}</p>
+                          {location.city && location.country && (
+                            <p className="text-sm text-gray-600">{location.country}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{location.city}</p>
-                        <p className="text-sm text-gray-600">{location.country}</p>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">{location.count}</p>
+                        <p className="text-sm text-gray-600">
+                          {totalScans > 0 ? ((location.count / totalScans) * 100).toFixed(1) : 0}%
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">{location.count}</p>
-                      <p className="text-sm text-gray-600">
-                        {((location.count / totalScans) * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Referrer Sources */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Share2 className="w-5 h-5 mr-2" />
-                Traffic Sources
-              </h3>
-              <div className="space-y-3">
-                {analyticsData.referrerData.map((referrer, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      />
-                      <span className="font-medium text-gray-900">{referrer.source}</span>
+            {analyticsData.referrerData.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Share2 className="w-5 h-5 mr-2" />
+                  Traffic Sources
+                </h3>
+                <div className="space-y-3">
+                  {analyticsData.referrerData.map((referrer, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="font-medium text-gray-900">{referrer.source}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">{referrer.count}</p>
+                        <p className="text-sm text-gray-600">
+                          {totalScans > 0 ? ((referrer.count / totalScans) * 100).toFixed(1) : 0}%
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">{referrer.count}</p>
-                      <p className="text-sm text-gray-600">
-                        {((referrer.count / totalScans) * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Export Options */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Analytics</h3>
-            <div className="flex flex-wrap gap-3">
-              <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                <Download className="w-4 h-4" />
-                <span>Export as PDF</span>
-              </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                <Download className="w-4 h-4" />
-                <span>Export as CSV</span>
-              </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                <Share2 className="w-4 h-4" />
-                <span>Share Report</span>
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

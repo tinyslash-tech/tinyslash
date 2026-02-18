@@ -31,6 +31,9 @@ interface LinkAnalytics {
   locationData: any[];
   referrerData: any[];
   hourlyData: any[];
+  utmSourceData?: any[];
+  utmMediumData?: any[];
+  utmCampaignData?: any[];
 }
 
 const Analytics: React.FC = () => {
@@ -124,57 +127,141 @@ const Analytics: React.FC = () => {
 
       // Transform backend data to frontend format
       const totalClicks = analyticsData.totalClicks || 0;
+      const uniqueClicks = analyticsData.uniqueClicks || 0;
       const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
 
-      // Generate time series data from backend data or create mock data
-      const clicksOverTime = analyticsData.last7DaysClicks || Array.from({ length: days }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (days - 1 - i));
+      // Build clicks over time from real clicksByDay data
+      let clicksOverTime: any[] = [];
+      const clicksByDay = analyticsData.clicksByDay || analyticsData.last7DaysClicks;
+      if (clicksByDay && typeof clicksByDay === 'object' && Object.keys(clicksByDay).length > 0) {
+        // Backend returns { "2026-02-15": 12, "2026-02-16": 8, ... }
+        const sortedDays = Object.entries(clicksByDay).sort(([a], [b]) => a.localeCompare(b));
+        clicksOverTime = sortedDays.map(([dateStr, clicks]) => ({
+          date: new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          clicks: Number(clicks),
+          visitors: Math.floor(Number(clicks) * (uniqueClicks > 0 ? uniqueClicks / Math.max(totalClicks, 1) : 0.75))
+        }));
+      }
+      // If no real data, generate empty chart for the selected range
+      if (clicksOverTime.length === 0) {
+        clicksOverTime = Array.from({ length: Math.min(days, 7) }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (Math.min(days, 7) - 1 - i));
+          return {
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            clicks: 0,
+            visitors: 0
+          };
+        });
+      }
 
-        // Simulate realistic click distribution
-        const isRecentDay = i >= days - 7;
-        const baseClicks = Math.floor(totalClicks / days);
-        const multiplier = isRecentDay ? 1.5 : 0.8;
+      // Build device data from real clicksByDevice
+      let deviceData: any[] = [];
+      const clicksByDevice = analyticsData.clicksByDevice;
+      if (clicksByDevice && typeof clicksByDevice === 'object' && Object.keys(clicksByDevice).length > 0) {
+        const total = Object.values(clicksByDevice).reduce((sum: number, v: any) => sum + Number(v), 0);
+        deviceData = Object.entries(clicksByDevice)
+          .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+          .map(([device, count]) => ({
+            device: device || 'Unknown',
+            count: Number(count),
+            percentage: total > 0 ? Math.round((Number(count) / total) * 100) : 0
+          }));
+      }
 
-        return {
-          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          clicks: Math.floor(baseClicks * multiplier * (0.5 + Math.random())),
-          visitors: Math.floor(baseClicks * multiplier * 0.75 * (0.5 + Math.random()))
-        };
-      });
+      // Build location data from real clicksByCountry + clicksByRegion + clicksByCity
+      let locationData: any[] = [];
+      const clicksByCity = analyticsData.clicksByCity;
+      const clicksByRegion = analyticsData.clicksByRegion;
+      const clicksByCountry = analyticsData.clicksByCountry;
+
+      // Priority: city > region > country (show most granular available)
+      if (clicksByCity && typeof clicksByCity === 'object' && Object.keys(clicksByCity).length > 0) {
+        locationData = Object.entries(clicksByCity)
+          .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+          .slice(0, 10)
+          .map(([city, count]) => ({
+            country: '',
+            region: '',
+            city: city || 'Unknown',
+            count: Number(count),
+            type: 'city'
+          }));
+      } else if (clicksByRegion && typeof clicksByRegion === 'object' && Object.keys(clicksByRegion).length > 0) {
+        locationData = Object.entries(clicksByRegion)
+          .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+          .slice(0, 10)
+          .map(([region, count]) => ({
+            country: '',
+            region: region || 'Unknown',
+            city: '',
+            count: Number(count),
+            type: 'state'
+          }));
+      } else if (clicksByCountry && typeof clicksByCountry === 'object' && Object.keys(clicksByCountry).length > 0) {
+        locationData = Object.entries(clicksByCountry)
+          .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+          .slice(0, 10)
+          .map(([country, count]) => ({
+            country: country || 'Unknown',
+            region: '',
+            city: '',
+            count: Number(count),
+            type: 'country'
+          }));
+      }
+
+      // Build referrer data from real clicksByReferrer
+      let referrerData: any[] = [];
+      const clicksByReferrer = analyticsData.clicksByReferrer;
+      if (clicksByReferrer && typeof clicksByReferrer === 'object' && Object.keys(clicksByReferrer).length > 0) {
+        referrerData = Object.entries(clicksByReferrer)
+          .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+          .slice(0, 10)
+          .map(([source, count]) => ({
+            source: source || 'Direct',
+            count: Number(count)
+          }));
+      }
+
+      // Build UTM Data
+      const formatUtmData = (data: any) => {
+        if (!data || typeof data !== 'object') return [];
+        return Object.entries(data)
+          .sort(([, a]: any, [, b]: any) => Number(b) - Number(a))
+          .slice(0, 5)
+          .map(([name, count]) => ({ name: name || '(none)', count: Number(count) }));
+      };
+
+      const utmSourceData = formatUtmData(analyticsData.clicksByUtmSource);
+      const utmMediumData = formatUtmData(analyticsData.clicksByUtmMedium);
+      const utmCampaignData = formatUtmData(analyticsData.clicksByUtmCampaign);
+
+      // Build hourly data from real clicksByHour
+      let hourlyData: any[] = [];
+      const clicksByHour = analyticsData.clicksByHour;
+      if (clicksByHour && typeof clicksByHour === 'object' && Object.keys(clicksByHour).length > 0) {
+        hourlyData = Array.from({ length: 24 }, (_, hour) => ({
+          hour,
+          clicks: Number(clicksByHour[String(hour)] || 0)
+        }));
+      }
 
       const analyticsObject = {
         shortCode: shortCode!,
-        originalUrl: analyticsData.originalUrl || `https://example.com/${shortCode}`,
+        originalUrl: analyticsData.originalUrl || `https://tinyslash.com/${shortCode}`,
         shortUrl: analyticsData.shortUrl || `https://tinyslash.com/${shortCode}`,
         totalClicks,
-        uniqueVisitors: analyticsData.uniqueClicks || Math.floor(totalClicks * 0.75),
+        uniqueVisitors: uniqueClicks,
         createdAt: analyticsData.createdAt || new Date().toISOString(),
         clicksOverTime,
-        deviceData: analyticsData.deviceBreakdown || [
-          { device: 'Mobile', count: Math.floor(totalClicks * 0.65), percentage: 65 },
-          { device: 'Desktop', count: Math.floor(totalClicks * 0.25), percentage: 25 },
-          { device: 'Tablet', count: Math.floor(totalClicks * 0.10), percentage: 10 }
-        ],
-        locationData: analyticsData.countryBreakdown || [
-          { country: 'India', city: 'Mumbai', count: Math.floor(totalClicks * 0.35) },
-          { country: 'India', city: 'Delhi', count: Math.floor(totalClicks * 0.25) },
-          { country: 'India', city: 'Bangalore', count: Math.floor(totalClicks * 0.20) },
-          { country: 'USA', city: 'New York', count: Math.floor(totalClicks * 0.10) },
-          { country: 'UK', city: 'London', count: Math.floor(totalClicks * 0.05) },
-          { country: 'Others', city: 'Various', count: Math.floor(totalClicks * 0.05) }
-        ],
-        referrerData: analyticsData.referrerBreakdown || [
-          { source: 'Direct', count: Math.floor(totalClicks * 0.45) },
-          { source: 'Google', count: Math.floor(totalClicks * 0.25) },
-          { source: 'Social Media', count: Math.floor(totalClicks * 0.20) },
-          { source: 'Email', count: Math.floor(totalClicks * 0.06) },
-          { source: 'Others', count: Math.floor(totalClicks * 0.04) }
-        ],
-        hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-          hour,
-          clicks: Math.floor((totalClicks / 24) * (hour >= 9 && hour <= 21 ? 1.5 : 0.5))
-        }))
+        deviceData,
+        locationData,
+        referrerData,
+        hourlyData,
+        utmSourceData,
+        utmMediumData,
+        utmCampaignData
       };
 
       console.log('📈 Setting analytics object:', analyticsObject);
@@ -489,6 +576,63 @@ const Analytics: React.FC = () => {
             </div>
           </div>
 
+          {/* UTM Analytics */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaign Performance (UTM)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* UTM Source */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-3">Top Sources</h4>
+                {analytics.utmSourceData && analytics.utmSourceData.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.utmSourceData.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-900">{item.name}</span>
+                        <span className="font-semibold text-gray-700">{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No source data</p>
+                )}
+              </div>
+
+              {/* UTM Medium */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-3">Top Mediums</h4>
+                {analytics.utmMediumData && analytics.utmMediumData.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.utmMediumData.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-900">{item.name}</span>
+                        <span className="font-semibold text-gray-700">{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No medium data</p>
+                )}
+              </div>
+
+              {/* UTM Campaign */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-3">Top Campaigns</h4>
+                {analytics.utmCampaignData && analytics.utmCampaignData.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.utmCampaignData.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-900">{item.name}</span>
+                        <span className="font-semibold text-gray-700">{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No campaign data</p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Location and Referrer Data */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Top Locations */}
@@ -500,8 +644,18 @@ const Analytics: React.FC = () => {
                     <div className="flex items-center space-x-3">
                       <MapPin className="w-4 h-4 text-gray-400" />
                       <div>
-                        <p className="font-medium text-gray-900">{location.city}</p>
-                        <p className="text-sm text-gray-600">{location.country}</p>
+                        <p className="font-medium text-gray-900">
+                          {location.city || location.region || location.country || 'Unknown'}
+                        </p>
+                        {location.type === 'city' && location.country && (
+                          <p className="text-sm text-gray-600">{location.country}</p>
+                        )}
+                        {location.type === 'state' && (
+                          <p className="text-sm text-gray-600">State / Region</p>
+                        )}
+                        {location.type === 'country' && (
+                          <p className="text-sm text-gray-600">Country</p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">

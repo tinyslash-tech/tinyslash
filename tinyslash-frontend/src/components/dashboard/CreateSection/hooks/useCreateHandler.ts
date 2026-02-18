@@ -11,6 +11,8 @@ interface UseCreateHandlerProps {
   urlInput: string;
   qrText: string;
   campaignName?: string; // Optional new prop
+  utmSource?: string;
+  utmMedium?: string;
   selectedFile: File | null;
   customAlias: string;
   password: string;
@@ -47,6 +49,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     urlInput,
     qrText,
     campaignName,
+    utmSource,
+    utmMedium,
     selectedFile,
     customAlias,
     password,
@@ -298,9 +302,12 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
           customDomain: selectedDomain !== DEFAULT_DOMAIN ? selectedDomain : undefined,
           shortCode: shortCode, // Explicitly send generated code so backend matches
 
-          // New Advanced Features (These will be ignored by backend if not implemented yet, or stored in generic metadata)
-          // Ideally, the backend expects these specific fields if updated. 
-          // Assuming we send them as part of the body.
+          // UTM Campaign Tracking
+          utmSource: utmSource || undefined,
+          utmMedium: utmMedium || undefined,
+          utmCampaign: campaignName ? campaignName.trim().toLowerCase().replace(/\s+/g, '_') : undefined,
+
+          // New Advanced Features
           smartLinkPreview: newLink.smartLinkPreview,
           geoConfig: newLink.geoConfig,
           deepLinkConfig: newLink.deepLinkConfig,

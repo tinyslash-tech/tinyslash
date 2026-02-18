@@ -47,7 +47,9 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
   // Local State
   const [urlInput, setUrlInput] = useState('');
   const [qrText, setQrText] = useState('');
-  const [campaignName, setCampaignName] = useState(''); // New State
+  const [campaignName, setCampaignName] = useState('');
+  const [utmSource, setUtmSource] = useState('');
+  const [utmMedium, setUtmMedium] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customAlias, setCustomAlias] = useState('');
   const [password, setPassword] = useState('');
@@ -136,6 +138,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
     urlInput,
     qrText,
     campaignName, // Pass to hook
+    utmSource,
+    utmMedium,
     selectedFile,
     customAlias,
     password,
@@ -212,6 +216,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
       setUrlInput('');
       setQrText('');
       setCampaignName('');
+      setUtmSource('');
+      setUtmMedium('');
       setSelectedFile(null);
       setCustomAlias('');
       setPassword('');
@@ -309,6 +315,10 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
                 setUrlInput={setUrlInput}
                 campaignName={campaignName}
                 setCampaignName={setCampaignName}
+                utmSource={utmSource}
+                setUtmSource={setUtmSource}
+                utmMedium={utmMedium}
+                setUtmMedium={setUtmMedium}
                 errorMessage={errorMessage}
                 setErrorMessage={setErrorMessage}
               />

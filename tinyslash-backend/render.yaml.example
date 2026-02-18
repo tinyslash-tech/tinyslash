@@ -14,9 +14,9 @@ services:
       - key: MONGODB_DATABASE
         value: pebly-database
       - key: FRONTEND_URL
-        value: https://pebly.vercel.app
+        value: https://tinyslash.com
       - key: SHORT_URL_DOMAIN
-        value: https://pebly.vercel.app
+        value: https://tinyslash.com
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET

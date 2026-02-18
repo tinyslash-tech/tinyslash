@@ -5,7 +5,7 @@ export interface CustomDomain {
   domainName: string;
   ownerType: string;
   ownerId: string;
-  status: 'RESERVED' | 'PENDING' | 'VERIFIED' | 'ERROR' | 'SUSPENDED';
+  status: 'RESERVED' | 'PENDING' | 'VERIFIED' | 'ERROR' | 'SUSPENDED' | 'DELETING' | 'SOFT_BLOCKED';
   sslStatus: 'PENDING' | 'ACTIVE' | 'ERROR' | 'EXPIRED';
   cnameTarget: string;
   verificationToken: string;
@@ -62,15 +62,13 @@ export const addDomain = async (domainName: string, ownerType: string, ownerId?:
   return response.data;
 };
 
-export const verifyDomain = async (domainId: string, payload?: any): Promise<{ success: boolean; domain: CustomDomain; verified: boolean; message: string }> => {
-  // Payload for verify is optional in the new controller, but we support passing extras if needed
-  // The controller expects query param domainId
+
+export const verifyDomain = async (domainId: string, payload?: any): Promise<{ success: boolean; domain: CustomDomain; verified: boolean; message: string; verificationError?: string; troubleshooting?: any }> => {
   const response = await apiClient.post(`/v1/domains/verify?domainId=${domainId}`, payload || {});
   return response.data;
 };
 
 export const deleteDomain = async (domainId: string, userId?: string): Promise<{ success: boolean; message: string }> => {
-  // Updated to use ID-based deletion
   const response = await apiClient.delete(`/v1/domains/${domainId}`);
   return response.data;
 };
@@ -78,4 +76,10 @@ export const deleteDomain = async (domainId: string, userId?: string): Promise<{
 export const getDomainStatus = async (domainName: string): Promise<{ success: boolean; domain: string; status: string }> => {
   const response = await apiClient.get(`/v1/domains/status/${domainName}`);
   return response.data;
-}
+};
+
+export const detectProvider = async (domain: string): Promise<{ success: boolean; provider: string; instructions: Record<string, string> }> => {
+  const response = await apiClient.get(`/v1/domains/detect-provider?domain=${domain}`);
+  return response.data;
+};
+

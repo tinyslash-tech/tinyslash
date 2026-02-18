@@ -5,6 +5,66 @@ import { Loader2, Lock, AlertCircle } from 'lucide-react';
 import { SmartLinkPreview } from '../components/dashboard/CreateSection/types';
 import { SEO } from '../components/SEO';
 
+// Deep Link Utility
+const getDeepLink = (url: string): string => {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace('www.', '').replace('m.', '');
+
+    // Instagram
+    if (host === 'instagram.com') {
+      const path = u.pathname.replace(/^\//, '').replace(/\/$/, '');
+      if (path) return `instagram://user?username=${path}`;
+    }
+    // WhatsApp
+    if (host === 'whatsapp.com' || host === 'chat.whatsapp.com' || host === 'wa.me') {
+      return `whatsapp://send?text=&phone=` + u.pathname.replace('/', '') || url;
+    }
+    // YouTube
+    if (host === 'youtube.com' || host === 'youtu.be') {
+      const videoId = u.searchParams.get('v') || u.pathname.replace('/', '');
+      if (videoId) return `vnd.youtube://${videoId}`;
+    }
+    // Twitter / X
+    if (host === 'twitter.com' || host === 'x.com') {
+      return `twitter://user?screen_name=${u.pathname.replace('/', '')}`;
+    }
+    // LinkedIn
+    if (host === 'linkedin.com') {
+      return `linkedin://in/${u.pathname.split('/in/')[1] || ''}`;
+    }
+    // Facebook
+    if (host === 'facebook.com' || host === 'fb.com') {
+      return `fb://profile/${u.pathname.replace('/', '')}`;
+    }
+    // Telegram
+    if (host === 't.me' || host === 'telegram.me') {
+      return `tg://resolve?domain=${u.pathname.replace('/', '')}`;
+    }
+    // Amazon
+    if (host.includes('amazon.')) {
+      return `com.amazon.mobile.shopping://www.amazon.com${u.pathname}`;
+    }
+    // Flipkart
+    if (host.includes('flipkart.com')) {
+      return `flipkart://fk${u.pathname}`;
+    }
+  } catch {
+    // Invalid URL
+  }
+  return url;
+};
+
+interface LeadLockConfig {
+  enabled: boolean;
+  leadType: 'WHATSAPP' | 'EMAIL' | 'BOTH';
+  message?: string;
+  otpEnabled?: boolean;
+  askOnce?: boolean;
+  redirectUrl?: string;
+}
+
 const RedirectPage: React.FC = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
   const [loading, setLoading] = useState(true);
@@ -13,6 +73,15 @@ const RedirectPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [smartPreviewData, setSmartPreviewData] = useState<SmartLinkPreview | null>(null);
   const [targetUrl, setTargetUrl] = useState('');
+
+  // Lead Lock State
+  const [showLeadLock, setShowLeadLock] = useState(false);
+  const [leadLockConfig, setLeadLockConfig] = useState<LeadLockConfig | null>(null);
+  const [leadEmail, setLeadEmail] = useState('');
+  const [leadPhone, setLeadPhone] = useState('');
+  const [leadOtp, setLeadOtp] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
 
   useEffect(() => {
     if (shortCode) {
@@ -89,7 +158,47 @@ const RedirectPage: React.FC = () => {
             return;
           }
 
-          // Check for Smart Link Preview Data
+          // Check for Geo Redirection
+          const geoConfig = data.data.geoConfig;
+          if (geoConfig && geoConfig.enabled && geoConfig.rules && geoConfig.rules.length > 0) {
+            try {
+              const userLang = navigator.language || (navigator.languages && navigator.languages[0]);
+              if (userLang) {
+                const countryCode = userLang.split('-')[1]; // e.g. "US" from "en-US"
+                if (countryCode) {
+                  const matchedRule = geoConfig.rules.find((r: any) => r.country === countryCode.toUpperCase());
+                  if (matchedRule) {
+                    console.log('🌍 Geo Redirect matched:', countryCode, '->', matchedRule.url);
+                    finalUrl = matchedRule.url;
+                    // Make sure it has protocol
+                    if (!/^https?:\/\//i.test(finalUrl)) {
+                      finalUrl = 'https://' + finalUrl;
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('Geo logic error', e);
+            }
+          }
+
+          // Check for Lead Lock
+          const leadLockConfig = data.data.leadLockConfig;
+          if (leadLockConfig && leadLockConfig.enabled) {
+            // Check if already captured (localStorage)
+            const capturedKey = `tinyslash_lead_${shortCode}`;
+            const isCaptured = localStorage.getItem(capturedKey);
+
+            if (!isCaptured) {
+              console.log('🔒 Lead Lock enabled');
+              setLeadLockConfig(leadLockConfig);
+              setShowLeadLock(true);
+              setLoading(false);
+              return;
+            }
+          }
+
+          // Check for smart link preview
           const smartPreview = data.data.smartLinkPreview;
           if (smartPreview && smartPreview.enabled) {
             setSmartPreviewData(smartPreview);
@@ -100,6 +209,34 @@ const RedirectPage: React.FC = () => {
               window.location.href = finalUrl;
             }, 3000);
             return;
+          }
+
+          // Check for Trust Badge / Verified Page
+          const trustBadge = data.data.trustBadge;
+          if (trustBadge && trustBadge.enabled) {
+            console.log('🛡️ Trust Badge enabled, redirecting to verified page');
+            window.location.replace(`/verified/${shortCode}`);
+            return;
+          }
+
+          // Check for Deep Linking
+          const deepLinkConfig = data.data.deepLinkConfig;
+          if (deepLinkConfig && deepLinkConfig.enabled) {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+              const deepLink = getDeepLink(finalUrl);
+              if (deepLink !== finalUrl) {
+                console.log('📱 Deep Link detected:', deepLink);
+                // Try to open the app
+                window.location.href = deepLink;
+
+                // Fallback to web URL if app doesn't open (after 2.5s)
+                setTimeout(() => {
+                  window.location.href = finalUrl;
+                }, 2500);
+                return;
+              }
+            }
           }
 
           setTimeout(() => {
@@ -138,12 +275,129 @@ const RedirectPage: React.FC = () => {
     }
   };
 
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadEmail && !leadPhone) {
+      setError('Please provide your email or phone number');
+      return;
+    }
+
+    setIsSubmittingLead(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://api.tinyslash.com/api'}/v1/leads/unlock/${shortCode}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: leadEmail,
+          whatsapp: leadPhone,
+          otp: leadOtp
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success
+        localStorage.setItem(`tinyslash_lead_${shortCode}`, 'true');
+        window.location.href = data.redirectUrl || targetUrl;
+      } else {
+        setError(data.error || 'Failed to verify. Please try again.');
+      }
+    } catch (err) {
+      setError('An error occurred. Please check your connection.');
+    } finally {
+      setIsSubmittingLead(false);
+    }
+  };
+
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password.trim()) {
       handleRedirect(password);
     }
   };
+
+  if (showLeadLock && leadLockConfig) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
+        <SEO title={leadLockConfig.message || "Content Locked"} />
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {leadLockConfig.message || "Unlock this Link"}
+            </h2>
+            <p className="text-gray-500 mb-8">
+              Please enter your details to continue to the destination.
+            </p>
+
+            <form onSubmit={handleLeadSubmit} className="space-y-4 text-left">
+              {(leadLockConfig.leadType === 'EMAIL' || leadLockConfig.leadType === 'BOTH') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={leadEmail}
+                    onChange={(e) => setLeadEmail(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="you@example.com"
+                  />
+                </div>
+              )}
+
+              {(leadLockConfig.leadType === 'WHATSAPP' || leadLockConfig.leadType === 'BOTH') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+                  <input
+                    type="tel"
+                    required={leadLockConfig.leadType === 'WHATSAPP'}
+                    value={leadPhone}
+                    onChange={(e) => setLeadPhone(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="+1 234 567 8900"
+                  />
+                </div>
+              )}
+
+              {error && (
+                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmittingLead}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSubmittingLead ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Unlocking...
+                  </>
+                ) : (
+                  'Unlock Link'
+                )}
+              </button>
+            </form>
+
+            <p className="mt-6 text-xs text-gray-400">
+              Powered by TinySlash
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -46,7 +46,7 @@ public class QrCodeService {
     private final SecurityService securityService;
     private final StorageService storageService;
 
-    @Value("${app.shorturl.domain:https://pebly.vercel.app}")
+    @Value("${app.shorturl.domain:https://tinyslash.com}")
     private String shortUrlDomain;
 
     @Autowired

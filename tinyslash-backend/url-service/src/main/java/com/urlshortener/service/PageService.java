@@ -1,18 +1,21 @@
 package com.urlshortener.service;
 
 import com.urlshortener.model.Page;
-import com.urlshortener.model.PageBlock;
 import com.urlshortener.model.PageTheme;
+import com.urlshortener.model.PageView;
 import com.urlshortener.model.User;
 import com.urlshortener.repository.PageRepository;
+import com.urlshortener.repository.PageViewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PageService {
@@ -22,6 +25,9 @@ public class PageService {
 
   @Autowired
   private SlugService slugService;
+
+  @Autowired
+  private PageViewRepository pageViewRepository;
 
   @Autowired
   public PageService(PageRepository pageRepository, StorageService storageService, SlugService slugService) {
@@ -160,5 +166,88 @@ public class PageService {
     return page;
   }
 
-  // Add public view increment logic here later
+  public void recordView(String pageId, String ip, String userAgent, String referer) {
+    // Create visitor fingerprint from IP + User-Agent
+    String visitorId = String.valueOf((ip + ":" + userAgent).hashCode());
+
+    PageView view = new PageView(pageId, visitorId, ip, userAgent, referer);
+    pageViewRepository.save(view);
+
+    // Increment the denormalized views counter on the page
+    pageRepository.findById(pageId).ifPresent(page -> {
+      page.setViews(page.getViews() + 1);
+      pageRepository.save(page);
+    });
+  }
+
+  public Map<String, Object> getAnalytics(String pageId) {
+    Map<String, Object> analytics = new LinkedHashMap<>();
+
+    // Total views
+    long totalViews = pageViewRepository.countByPageId(pageId);
+    analytics.put("totalViews", totalViews);
+
+    // Unique visitors (distinct visitorId)
+    List<PageView> allViews = pageViewRepository.findByPageId(pageId);
+    long uniqueVisitors = allViews.stream()
+        .map(PageView::getVisitorId)
+        .distinct()
+        .count();
+    analytics.put("uniqueVisitors", uniqueVisitors);
+
+    // Daily views for last 30 days
+    LocalDateTime thirtyDaysAgo = LocalDateTime.of(LocalDate.now().minusDays(29), LocalTime.MIN);
+    List<PageView> recentViews = pageViewRepository.findByPageIdAndViewedAtBetween(
+        pageId, thirtyDaysAgo, LocalDateTime.now());
+
+    // Group by date
+    Map<String, Long> dailyViews = new LinkedHashMap<>();
+    for (int i = 29; i >= 0; i--) {
+      LocalDate date = LocalDate.now().minusDays(i);
+      dailyViews.put(date.toString(), 0L);
+    }
+    recentViews.forEach(v -> {
+      if (v.getViewedAt() != null) {
+        String dateKey = v.getViewedAt().toLocalDate().toString();
+        dailyViews.computeIfPresent(dateKey, (k, count) -> count + 1);
+      }
+    });
+    analytics.put("dailyViews", dailyViews);
+
+    // This week vs last week
+    LocalDateTime thisWeekStart = LocalDateTime.of(LocalDate.now().minusDays(6), LocalTime.MIN);
+    LocalDateTime lastWeekStart = LocalDateTime.of(LocalDate.now().minusDays(13), LocalTime.MIN);
+    long thisWeekViews = recentViews.stream()
+        .filter(v -> v.getViewedAt() != null && v.getViewedAt().isAfter(thisWeekStart))
+        .count();
+    long lastWeekViews = recentViews.stream()
+        .filter(v -> v.getViewedAt() != null && v.getViewedAt().isAfter(lastWeekStart)
+            && v.getViewedAt().isBefore(thisWeekStart))
+        .count();
+    analytics.put("thisWeekViews", thisWeekViews);
+    analytics.put("lastWeekViews", lastWeekViews);
+
+    // Top referrers
+    Map<String, Long> referrers = allViews.stream()
+        .filter(v -> v.getReferer() != null && !v.getReferer().isEmpty())
+        .collect(Collectors.groupingBy(
+            v -> {
+              try {
+                java.net.URI uri = new java.net.URI(v.getReferer());
+                return uri.getHost() != null ? uri.getHost() : v.getReferer();
+              } catch (Exception e) {
+                return v.getReferer();
+              }
+            },
+            Collectors.counting()));
+
+    // Sort by count descending, take top 5
+    Map<String, Long> topReferrers = referrers.entrySet().stream()
+        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+        .limit(5)
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
+    analytics.put("topReferrers", topReferrers);
+
+    return analytics;
+  }
 }

@@ -95,4 +95,14 @@ public class PageController {
           .body(java.util.Map.of("error", "Failed to upload asset: " + e.getMessage()));
     }
   }
+
+  @GetMapping("/{id}/analytics")
+  public ResponseEntity<java.util.Map<String, Object>> getPageAnalytics(
+      @PathVariable String id, Authentication authentication) {
+
+    User user = getAuthenticatedUser(authentication);
+    // Verify ownership
+    pageService.getPageById(id, user.getId());
+    return ResponseEntity.ok(pageService.getAnalytics(id));
+  }
 }

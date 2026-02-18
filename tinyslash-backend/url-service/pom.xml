@@ -141,6 +141,13 @@
             <version>1.21</version>
         </dependency>
         
+        <!-- MaxMind GeoIP2 for IP geolocation (country, state, city) -->
+        <dependency>
+            <groupId>com.maxmind.geoip2</groupId>
+            <artifactId>geoip2</artifactId>
+            <version>4.2.0</version>
+        </dependency>
+        
         <!-- QR Code generation -->
         <dependency>
             <groupId>com.google.zxing</groupId>

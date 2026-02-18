@@ -141,7 +141,7 @@ public class DatabaseSetupController {
             sampleDomain.setOwnerType("USER");
             sampleDomain.setOwnerId("sample-user-id");
             sampleDomain.setVerificationToken("sample-token-123");
-            sampleDomain.setCnameTarget("pebly.vercel.app");
+            sampleDomain.setCnameTarget("tinyslash.com");
             sampleDomain.setStatus("VERIFIED");
             sampleDomain.setSslStatus("ACTIVE");
             sampleDomain.setSslProvider("CLOUDFLARE");

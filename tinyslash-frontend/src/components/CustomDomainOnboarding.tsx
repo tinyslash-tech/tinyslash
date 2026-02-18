@@ -24,6 +24,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [addedDomain, setAddedDomain] = useState<any>(null);
   const [dnsInstructions, setDnsInstructions] = useState<any>(null);
+  const [detectedProvider, setDetectedProvider] = useState<string | null>(null);
 
   // Universal proxy domain configuration
   const proxyDomain = 'tinyslash.com';
@@ -48,6 +49,17 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
 
     try {
       setIsAdding(true);
+
+      // 10/10 Enterprise: Detect Provider first (async but don't block fully if it fails)
+      import('../services/domainService').then(mod => {
+        mod.detectProvider(fullDomain)
+          .then(res => {
+            if (res.success && res.provider !== 'UNKNOWN') {
+              setDetectedProvider(res.provider);
+            }
+          })
+          .catch(err => console.error('Provider detection failed:', err));
+      });
 
       const response = await addDomain(fullDomain, 'USER');
 
@@ -274,6 +286,7 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
             </div>
           )}
 
+
           {/* Step 2: Configure DNS */}
           {step === 2 && addedDomain && dnsInstructions && (
             <div className="space-y-6">
@@ -281,8 +294,16 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
                   🔧 Step 2: Configure DNS Provider
                 </h3>
+                {detectedProvider && (
+                  <div className="inline-flex items-center bg-blue-50 px-3 py-1 rounded-full text-blue-700 text-sm font-medium mb-2">
+                    <Zap className="w-4 h-4 mr-1" />
+                    Detected Provider: {detectedProvider}
+                  </div>
+                )}
                 <p className="text-gray-600">
-                  Add these records to your domain's DNS settings to connect securely
+                  {detectedProvider === 'CLOUDFLARE'
+                    ? 'Since you use Cloudflare, please ensure the Proxy Status is set to "DNS Only" (Grey Cloud) initially.'
+                    : 'Add these records to your domain\'s DNS settings to connect securely'}
                 </p>
               </div>
 
@@ -368,22 +389,11 @@ const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
                         <Shield className="w-5 h-5 mr-2 text-orange-500" />
                         2. Verify Ownership (SSL)
                       </h4>
-                      <span className="text-xs font-mono bg-orange-100 text-orange-800 px-2 py-1 rounded">Pending</span>
+                      <span className="text-xs font-mono bg-orange-100 text-orange-800 px-2 py-1 rounded">Check Dashboard Needed</span>
                     </div>
                     <p className="text-sm text-orange-800 mb-4">
-                      SSL verification details are not yet available. This happens if the system is busy or the domain was just added.
+                      SSL verification details are not yet available. Continue for now.
                     </p>
-                    <button
-                      onClick={async () => {
-                        // We need a function to retry - using window.location.reload() as fallback or implementing a retry fetch
-                        // For now, let's close and tell them to check the dashboard, OR trigger a re-fetch if we had the context
-                        toast('Please check the main dashboard to retry SSL verification', { icon: 'ℹ️' });
-                        onClose();
-                      }}
-                      className="bg-white border border-orange-300 text-orange-700 px-4 py-2 rounded text-sm font-semibold hover:bg-orange-50 transition-colors"
-                    >
-                      Wait & Manage in Dashboard
-                    </button>
                   </div>
                 )}
 

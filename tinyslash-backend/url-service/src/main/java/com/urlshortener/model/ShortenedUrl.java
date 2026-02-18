@@ -11,7 +11,8 @@ import java.util.HashMap;
 @org.springframework.data.mongodb.core.index.CompoundIndexes({
         @org.springframework.data.mongodb.core.index.CompoundIndex(name = "domain_shortcode_idx", def = "{'domain': 1, 'shortCode': 1}", unique = true),
         @org.springframework.data.mongodb.core.index.CompoundIndex(name = "domain_created_idx", def = "{'domain': 1, 'createdAt': -1}"),
-        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "domain_clicks_idx", def = "{'domain': 1, 'totalClicks': -1}")
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "domain_clicks_idx", def = "{'domain': 1, 'totalClicks': -1}"),
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "user_campaign_idx", def = "{'userId': 1, 'utmCampaign': 1}")
 })
 public class ShortenedUrl {
 
@@ -67,6 +68,7 @@ public class ShortenedUrl {
 
     // Geographic data
     private Map<String, Integer> clicksByCountry = new HashMap<>();
+    private Map<String, Integer> clicksByRegion = new HashMap<>();
     private Map<String, Integer> clicksByCity = new HashMap<>();
 
     // Device and browser data
@@ -96,11 +98,22 @@ public class ShortenedUrl {
     private String category;
     private String notes;
 
+    // UTM Analytics Counters
+    private Map<String, Integer> clicksByUtmSource = new HashMap<>();
+    private Map<String, Integer> clicksByUtmMedium = new HashMap<>();
+    private Map<String, Integer> clicksByUtmCampaign = new HashMap<>();
+
+    // UTM tracking (set at link creation, copied to ClickAnalytics on redirect)
+    private String utmSource;
+    private String utmMedium;
+    private String utmCampaign;
+
     // Advanced Features
     private DeepLinkConfig deepLinkConfig;
     private LeadLockConfig leadLockConfig;
     private SmartLinkPreview smartLinkPreview;
     private GeoConfig geoConfig;
+    private TrustBadgeConfig trustBadgeConfig;
 
     // Inner Classes for Configuration
     public static class DeepLinkConfig {
@@ -287,6 +300,27 @@ public class ShortenedUrl {
             public void setUrl(String url) {
                 this.url = url;
             }
+        }
+    }
+
+    public static class TrustBadgeConfig {
+        private boolean requested;
+        private String status; // pending, approved, rejected
+
+        public boolean isRequested() {
+            return requested;
+        }
+
+        public void setRequested(boolean requested) {
+            this.requested = requested;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
     }
 
@@ -522,6 +556,14 @@ public class ShortenedUrl {
         this.clicksByCountry = clicksByCountry;
     }
 
+    public Map<String, Integer> getClicksByRegion() {
+        return clicksByRegion;
+    }
+
+    public void setClicksByRegion(Map<String, Integer> clicksByRegion) {
+        this.clicksByRegion = clicksByRegion;
+    }
+
     public Map<String, Integer> getClicksByCity() {
         return clicksByCity;
     }
@@ -696,5 +738,193 @@ public class ShortenedUrl {
 
     public void setGeoConfig(GeoConfig geoConfig) {
         this.geoConfig = geoConfig;
+    }
+
+    public TrustBadgeConfig getTrustBadgeConfig() {
+        return trustBadgeConfig;
+    }
+
+    public void setTrustBadgeConfig(TrustBadgeConfig trustBadgeConfig) {
+        this.trustBadgeConfig = trustBadgeConfig;
+    }
+
+    // Smart Action Config (Multi-Action QR)
+    private SmartActionConfig smartActionConfig;
+
+    public SmartActionConfig getSmartActionConfig() {
+        return smartActionConfig;
+    }
+
+    public void setSmartActionConfig(SmartActionConfig smartActionConfig) {
+        this.smartActionConfig = smartActionConfig;
+    }
+
+    public static class SmartActionConfig {
+        private boolean enabled;
+        private WhatsAppConfig whatsapp;
+        private InstagramConfig instagram;
+        private WebsiteConfig website;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public WhatsAppConfig getWhatsapp() {
+            return whatsapp;
+        }
+
+        public void setWhatsapp(WhatsAppConfig whatsapp) {
+            this.whatsapp = whatsapp;
+        }
+
+        public InstagramConfig getInstagram() {
+            return instagram;
+        }
+
+        public void setInstagram(InstagramConfig instagram) {
+            this.instagram = instagram;
+        }
+
+        public WebsiteConfig getWebsite() {
+            return website;
+        }
+
+        public void setWebsite(WebsiteConfig website) {
+            this.website = website;
+        }
+
+        public static class WhatsAppConfig {
+            private boolean enabled;
+            private String number;
+            private String message;
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getNumber() {
+                return number;
+            }
+
+            public void setNumber(String number) {
+                this.number = number;
+            }
+
+            public String getMessage() {
+                return message;
+            }
+
+            public void setMessage(String message) {
+                this.message = message;
+            }
+        }
+
+        public static class InstagramConfig {
+            private boolean enabled;
+            private String url;
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getUrl() {
+                return url;
+            }
+
+            public void setUrl(String url) {
+                this.url = url;
+            }
+        }
+
+        public static class WebsiteConfig {
+            private boolean enabled;
+            private String url;
+            private String label;
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getUrl() {
+                return url;
+            }
+
+            public void setUrl(String url) {
+                this.url = url;
+            }
+
+            public String getLabel() {
+                return label;
+            }
+
+            public void setLabel(String label) {
+                this.label = label;
+            }
+        }
+    }
+
+    // UTM getters and setters
+    public String getUtmSource() {
+        return utmSource;
+    }
+
+    public void setUtmSource(String utmSource) {
+        this.utmSource = utmSource;
+    }
+
+    public String getUtmMedium() {
+        return utmMedium;
+    }
+
+    public void setUtmMedium(String utmMedium) {
+        this.utmMedium = utmMedium;
+    }
+
+    public String getUtmCampaign() {
+        return utmCampaign;
+    }
+
+    public void setUtmCampaign(String utmCampaign) {
+        this.utmCampaign = utmCampaign;
+    }
+
+    public Map<String, Integer> getClicksByUtmSource() {
+        return clicksByUtmSource;
+    }
+
+    public void setClicksByUtmSource(Map<String, Integer> clicksByUtmSource) {
+        this.clicksByUtmSource = clicksByUtmSource;
+    }
+
+    public Map<String, Integer> getClicksByUtmMedium() {
+        return clicksByUtmMedium;
+    }
+
+    public void setClicksByUtmMedium(Map<String, Integer> clicksByUtmMedium) {
+        this.clicksByUtmMedium = clicksByUtmMedium;
+    }
+
+    public Map<String, Integer> getClicksByUtmCampaign() {
+        return clicksByUtmCampaign;
+    }
+
+    public void setClicksByUtmCampaign(Map<String, Integer> clicksByUtmCampaign) {
+        this.clicksByUtmCampaign = clicksByUtmCampaign;
     }
 }

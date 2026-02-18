@@ -37,7 +37,7 @@ public class AnalyticsService {
     @CacheEvict(value = { "urlAnalytics", "userAnalytics", "clickCounts",
             "realtimeAnalytics" }, key = "#shortCode", beforeInvocation = false)
     public ClickAnalytics recordClick(String domain, String shortCode, String ipAddress, String userAgent,
-            String referrer, String country, String city,
+            String referrer, String country, String region, String city,
             String deviceType, String browser, String os) {
 
         // Check if repositories are available
@@ -59,6 +59,7 @@ public class AnalyticsService {
 
         // Set geographic data
         analytics.setCountry(country);
+        analytics.setRegion(region);
         analytics.setCity(city);
 
         // Set device data
@@ -79,6 +80,17 @@ public class AnalyticsService {
             }
         } else {
             analytics.setReferrerType("DIRECT");
+        }
+
+        // Copy UTM fields from parent ShortenedUrl to click record
+        if (shortenedUrl.getUtmSource() != null) {
+            analytics.setUtmSource(shortenedUrl.getUtmSource());
+        }
+        if (shortenedUrl.getUtmMedium() != null) {
+            analytics.setUtmMedium(shortenedUrl.getUtmMedium());
+        }
+        if (shortenedUrl.getUtmCampaign() != null) {
+            analytics.setUtmCampaign(shortenedUrl.getUtmCampaign());
         }
 
         // Check if this is a unique click (same IP in last 24 hours)
@@ -119,6 +131,11 @@ public class AnalyticsService {
 
         Map<String, Object> analytics = new HashMap<>();
 
+        // URL info
+        analytics.put("originalUrl", url.getOriginalUrl());
+        analytics.put("shortUrl", url.getShortUrl());
+        analytics.put("createdAt", url.getCreatedAt());
+
         // Basic statistics
         analytics.put("totalClicks", url.getTotalClicks());
         analytics.put("uniqueClicks", url.getUniqueClicks());
@@ -128,6 +145,7 @@ public class AnalyticsService {
 
         // Geographic data
         analytics.put("clicksByCountry", url.getClicksByCountry());
+        analytics.put("clicksByRegion", url.getClicksByRegion());
         analytics.put("clicksByCity", url.getClicksByCity());
 
         // Device data
@@ -137,6 +155,11 @@ public class AnalyticsService {
 
         // Referrer data
         analytics.put("clicksByReferrer", url.getClicksByReferrer());
+
+        // UTM data
+        analytics.put("clicksByUtmSource", url.getClicksByUtmSource());
+        analytics.put("clicksByUtmMedium", url.getClicksByUtmMedium());
+        analytics.put("clicksByUtmCampaign", url.getClicksByUtmCampaign());
 
         // Time-based data
         analytics.put("clicksByHour", url.getClicksByHour());
@@ -194,18 +217,52 @@ public class AnalyticsService {
 
         // Aggregate geographic data
         Map<String, Integer> allCountries = new HashMap<>();
+        Map<String, Integer> allRegions = new HashMap<>();
+        Map<String, Integer> allCities = new HashMap<>();
         Map<String, Integer> allDevices = new HashMap<>();
         Map<String, Integer> allBrowsers = new HashMap<>();
 
         for (ShortenedUrl url : userUrls) {
             url.getClicksByCountry().forEach((country, count) -> allCountries.merge(country, count, Integer::sum));
+            url.getClicksByRegion().forEach((region, count) -> allRegions.merge(region, count, Integer::sum));
+            url.getClicksByCity().forEach((city, count) -> allCities.merge(city, count, Integer::sum));
             url.getClicksByDevice().forEach((device, count) -> allDevices.merge(device, count, Integer::sum));
             url.getClicksByBrowser().forEach((browser, count) -> allBrowsers.merge(browser, count, Integer::sum));
         }
 
         analytics.put("clicksByCountry", allCountries);
+        analytics.put("clicksByRegion", allRegions);
+        analytics.put("clicksByCity", allCities);
         analytics.put("clicksByDevice", allDevices);
         analytics.put("clicksByBrowser", allBrowsers);
+
+        // Campaign tracking: aggregate clicks by utmCampaign
+        Map<String, Integer> clicksByCampaign = new HashMap<>();
+        for (ShortenedUrl url : userUrls) {
+            if (url.getUtmCampaign() != null && !url.getUtmCampaign().isEmpty()) {
+                clicksByCampaign.merge(url.getUtmCampaign(), url.getTotalClicks(), Integer::sum);
+            }
+        }
+        analytics.put("clicksByCampaign", clicksByCampaign);
+
+        // Campaign details: list of campaigns with source/medium info
+        List<Map<String, Object>> campaignDetails = userUrls.stream()
+                .filter(url -> url.getUtmCampaign() != null && !url.getUtmCampaign().isEmpty())
+                .collect(Collectors.groupingBy(ShortenedUrl::getUtmCampaign))
+                .entrySet().stream()
+                .map(entry -> {
+                    Map<String, Object> campaign = new HashMap<>();
+                    campaign.put("campaign", entry.getKey());
+                    campaign.put("totalClicks", entry.getValue().stream().mapToInt(ShortenedUrl::getTotalClicks).sum());
+                    campaign.put("totalLinks", entry.getValue().size());
+                    // Get source from first link in group
+                    campaign.put("source", entry.getValue().get(0).getUtmSource());
+                    campaign.put("medium", entry.getValue().get(0).getUtmMedium());
+                    return campaign;
+                })
+                .sorted((a, b) -> Integer.compare((int) b.get("totalClicks"), (int) a.get("totalClicks")))
+                .collect(Collectors.toList());
+        analytics.put("campaignDetails", campaignDetails);
 
         // Recent activity (last 30 days)
         LocalDateTime last30Days = LocalDateTime.now().minus(30, ChronoUnit.DAYS);
@@ -382,6 +439,9 @@ public class AnalyticsService {
         if (analytics.getCountry() != null) {
             url.getClicksByCountry().merge(analytics.getCountry(), 1, Integer::sum);
         }
+        if (analytics.getRegion() != null) {
+            url.getClicksByRegion().merge(analytics.getRegion(), 1, Integer::sum);
+        }
         if (analytics.getCity() != null) {
             url.getClicksByCity().merge(analytics.getCity(), 1, Integer::sum);
         }
@@ -400,6 +460,17 @@ public class AnalyticsService {
         // Update referrer data
         if (analytics.getReferrerDomain() != null) {
             url.getClicksByReferrer().merge(analytics.getReferrerDomain(), 1, Integer::sum);
+        }
+
+        // Update UTM data
+        if (analytics.getUtmSource() != null) {
+            url.getClicksByUtmSource().merge(analytics.getUtmSource(), 1, Integer::sum);
+        }
+        if (analytics.getUtmMedium() != null) {
+            url.getClicksByUtmMedium().merge(analytics.getUtmMedium(), 1, Integer::sum);
+        }
+        if (analytics.getUtmCampaign() != null) {
+            url.getClicksByUtmCampaign().merge(analytics.getUtmCampaign(), 1, Integer::sum);
         }
 
         // Update time-based data

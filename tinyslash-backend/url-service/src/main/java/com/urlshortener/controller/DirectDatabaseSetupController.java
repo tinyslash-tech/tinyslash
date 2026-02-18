@@ -129,7 +129,7 @@ public class DirectDatabaseSetupController {
             domain.setOwnerType(ownerType);
             domain.setOwnerId(ownerId);
             domain.setVerificationToken(generateVerificationToken());
-            domain.setCnameTarget("pebly.vercel.app");
+            domain.setCnameTarget("tinyslash.com");
             domain.setStatus("RESERVED");
             domain.setSslStatus("PENDING");
             domain.setVerificationAttempts(0);
@@ -290,7 +290,7 @@ public class DirectDatabaseSetupController {
         domain.setOwnerType("USER");
         domain.setOwnerId("test-user-" + System.currentTimeMillis());
         domain.setVerificationToken(generateVerificationToken());
-        domain.setCnameTarget("pebly.vercel.app");
+        domain.setCnameTarget("tinyslash.com");
         domain.setStatus("VERIFIED");
         domain.setSslStatus("ACTIVE");
         domain.setSslProvider("CLOUDFLARE");

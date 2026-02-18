@@ -209,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
         className={`
           fixed lg:relative inset-y-0 left-0 z-50
           bg-white border-r border-gray-200 text-gray-900
-          flex flex-col h-screen shadow-xl lg:shadow-none
+          flex flex-col h-full shadow-xl lg:shadow-none
         `}
       >
         {/* Toggle Button - Hanging on the right edge */}
@@ -256,7 +256,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
         </div>
 
         {/* Scrollable Navigation */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar py-2">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar py-2">
           {navigationGroups.map((group, groupIndex) => (
             <div key={group.title} className="mb-6 px-4">
               {!collapsed && (
@@ -311,27 +311,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           ))}
         </div>
 
-        {/* Footer / User / Collapse Section */}
-        <div className="border-t border-gray-100 p-4 bg-gray-50/50">
+        {/* Footer / Upgrade / Copyright */}
+        <div className="flex-shrink-0 border-t border-gray-100 p-3 mt-auto">
           {!isPro && !collapsed && (
-            <div className="mb-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-4 text-white shadow-lg">
-              <div className="flex items-start justify-between mb-2">
-                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <Crown className="w-4 h-4 text-white" />
+            <div className="mb-2 bg-gradient-to-br from-gray-900 to-black rounded-xl p-3 text-white shadow-lg">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="p-1 bg-white/15 rounded-lg">
+                  <Crown className="w-4 h-4 text-yellow-400" />
                 </div>
-                <button onClick={() => navigate('/pricing')} className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors">
+                <button onClick={() => navigate('/pricing')} className="text-xs bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors font-medium">
                   Upgrade
                 </button>
               </div>
-              <h4 className="font-bold text-sm mb-1">Upgrade to Pro</h4>
-              <p className="text-xs text-purple-100 leading-relaxed opacity-90">
-                Get analytics, custom domains & more limits.
+              <h4 className="font-bold text-sm">Upgrade to Pro</h4>
+              <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+                Analytics, custom domains & more.
               </p>
             </div>
           )}
 
-          {/* Footer content removed/simplified since toggle moved to top */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center py-1">
             <span className="text-xs text-gray-400">© 2025 TinySlash</span>
           </div>
         </div>

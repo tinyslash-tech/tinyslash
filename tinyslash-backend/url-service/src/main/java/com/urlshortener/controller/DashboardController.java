@@ -32,7 +32,7 @@ public class DashboardController {
     @Autowired
     private CacheService cacheService;
 
-    @Value("${app.shorturl.domain:https://pebly.vercel.app}")
+    @Value("${app.shorturl.domain:https://tinyslash.com}")
     private String shortUrlDomain;
 
     @Value("${app.frontend.url:http://localhost:3000}")

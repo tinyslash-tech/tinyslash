@@ -15,10 +15,21 @@ interface DashboardStats {
   topPerformingLink: any;
   recentActivity: any[];
   clicksOverTime: any[];
+  // Real aggregated analytics from backend
+  clicksByDevice: Record<string, number>;
+  clicksByCountry: Record<string, number>;
+  clicksByRegion: Record<string, number>;
+  clicksByCity: Record<string, number>;
+  clicksByBrowser: Record<string, number>;
+  totalUniqueClicks: number;
+  last30DaysActivity: Record<string, number>;
+  // Campaign tracking
+  clicksByCampaign: Record<string, number>;
+  campaignDetails: Array<{ campaign: string; totalClicks: number; totalLinks: number; source: string; medium: string }>;
 }
 
 // API functions
-import { getUserUrls, getUserQrCodes, getUserFiles } from '../services/api';
+import { getUserUrls, getUserQrCodes, getUserFiles, getUserAnalytics } from '../services/api';
 
 const fetchUserUrlsFn = async (userId: string) => {
   try {
@@ -50,8 +61,18 @@ const fetchUserFilesFn = async (userId: string) => {
   }
 };
 
+const fetchUserAnalyticsFn = async (userId: string) => {
+  try {
+    const data = await getUserAnalytics(userId);
+    return data.success ? data.data : {};
+  } catch (error) {
+    console.error('Error fetching user analytics:', error);
+    return {};
+  }
+};
+
 // Process raw data into dashboard stats
-const processDashboardData = (links: any[], qrCodes: any[], files: any[]): DashboardStats => {
+const processDashboardData = (links: any[], qrCodes: any[], files: any[], userAnalytics: any = {}): DashboardStats => {
   const shortLinks = links.filter((link: any) => !link.isFileLink);
   const totalClicks = links.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0);
   const totalQRScans = qrCodes.reduce((sum: number, qr: any) => sum + (qr.scans || 0), 0);
@@ -69,24 +90,34 @@ const processDashboardData = (links: any[], qrCodes: any[], files: any[]): Dashb
     .filter((link: any) => new Date(link.createdAt) >= weekAgo)
     .reduce((sum: number, link: any) => sum + (link.clicks || 0), 0);
 
-  // Generate time series data
-  const clicksOverTime = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
-    const dateStr = date.toDateString();
-
-    const dayLinks = links.filter((link: any) =>
-      new Date(link.createdAt).toDateString() === dateStr
-    );
-
-    const dayClicks = dayLinks.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0);
-
-    return {
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      clicks: dayClicks || 0,
-      links: dayLinks.length
-    };
-  });
+  // Generate time series data from real backend daily activity
+  let clicksOverTime: any[] = [];
+  const last30Days = userAnalytics.last30DaysActivity;
+  if (last30Days && typeof last30Days === 'object' && Object.keys(last30Days).length > 0) {
+    const sortedDays = Object.entries(last30Days).sort(([a], [b]) => a.localeCompare(b));
+    clicksOverTime = sortedDays.map(([dateStr, clicks]) => ({
+      date: new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      clicks: Number(clicks),
+      links: 0
+    }));
+  }
+  // Fallback: if no daily activity from backend, count by link creation dates
+  if (clicksOverTime.length === 0) {
+    clicksOverTime = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      const dateStr = date.toDateString();
+      const dayLinks = links.filter((link: any) =>
+        new Date(link.createdAt).toDateString() === dateStr
+      );
+      const dayClicks = dayLinks.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0);
+      return {
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        clicks: dayClicks || 0,
+        links: dayLinks.length
+      };
+    });
+  }
 
   // Create recent activity
   const allActivity = [
@@ -130,7 +161,18 @@ const processDashboardData = (links: any[], qrCodes: any[], files: any[]): Dashb
     clicksThisWeek,
     topPerformingLink,
     recentActivity: allActivity,
-    clicksOverTime
+    clicksOverTime,
+    // Real aggregated analytics from backend
+    clicksByDevice: userAnalytics.clicksByDevice || {},
+    clicksByCountry: userAnalytics.clicksByCountry || {},
+    clicksByRegion: userAnalytics.clicksByRegion || {},
+    clicksByCity: userAnalytics.clicksByCity || {},
+    clicksByBrowser: userAnalytics.clicksByBrowser || {},
+    totalUniqueClicks: userAnalytics.totalUniqueClicks || 0,
+    last30DaysActivity: userAnalytics.last30DaysActivity || {},
+    // Campaign tracking
+    clicksByCampaign: userAnalytics.clicksByCampaign || {},
+    campaignDetails: userAnalytics.campaignDetails || []
   };
 };
 
@@ -167,11 +209,19 @@ export const useDashboardData = () => {
         staleTime: 5 * 60 * 1000,
         retry: 2,
         retryDelay: 1000,
+      },
+      {
+        queryKey: ['user-analytics', user?.id],
+        queryFn: () => fetchUserAnalyticsFn(user!.id),
+        enabled: isAuthenticated,
+        staleTime: 3 * 60 * 1000,
+        retry: 2,
+        retryDelay: 1000,
       }
     ]
   });
 
-  const [urlsQuery, qrCodesQuery, filesQuery] = queries;
+  const [urlsQuery, qrCodesQuery, filesQuery, analyticsQuery] = queries;
 
   // Check if any query is loading for the first time (no cached data)
   const isInitialLoading = queries.some(query => query.isLoading && !query.data);
@@ -187,7 +237,8 @@ export const useDashboardData = () => {
     ? processDashboardData(
       urlsQuery.data || [],
       qrCodesQuery.data || [],
-      filesQuery.data || []
+      filesQuery.data || [],
+      analyticsQuery.data || {}
     )
     : null;
 

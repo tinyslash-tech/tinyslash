@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import com.urlshortener.dto.SecurityDecision;
 import com.urlshortener.service.SecurityService;
 import com.urlshortener.service.SequenceGeneratorService;
@@ -55,7 +57,7 @@ public class UrlShorteningService {
         this.securityService = securityService;
     }
 
-    @Value("${app.shorturl.domain:https://pebly.vercel.app}")
+    @Value("${app.shorturl.domain:https://tinyslash.com}")
     private String shortUrlDomain;
 
     // Removed Random CHARACTERS constant as we use Base62Encoder now
@@ -76,6 +78,56 @@ public class UrlShorteningService {
     public ShortenedUrl createShortUrl(String originalUrl, String userId, String customAlias,
             String password, Integer expirationDays, Integer maxClicks, String title, String description,
             String scopeType, String scopeId, String customDomain) {
+        return createShortUrl(originalUrl, userId, customAlias, password, expirationDays, maxClicks, title, description,
+                scopeType, scopeId, customDomain, null, null, null);
+    }
+
+    public ShortenedUrl createShortUrl(String originalUrl, String userId, String customAlias,
+            String password, Integer expirationDays, Integer maxClicks, String title, String description,
+            String scopeType, String scopeId, String customDomain,
+            String utmSource, String utmMedium, String utmCampaign) {
+
+        ShortenedUrl template = new ShortenedUrl();
+        template.setOriginalUrl(originalUrl);
+        template.setUserId(userId);
+        template.setCustomAlias(customAlias);
+        template.setPassword(password);
+        if (expirationDays != null)
+            template.setExpiresAt(LocalDateTime.now().plusDays(expirationDays));
+        template.setMaxClicks(maxClicks);
+        template.setTitle(title);
+        template.setDescription(description);
+        template.setScopeType(scopeType);
+        template.setScopeId(scopeId);
+        template.setDomain(customDomain);
+        template.setUtmSource(utmSource);
+        template.setUtmMedium(utmMedium);
+        template.setUtmCampaign(utmCampaign);
+
+        return createShortUrl(template);
+    }
+
+    public ShortenedUrl createShortUrl(ShortenedUrl template) {
+        String originalUrl = template.getOriginalUrl();
+        String userId = template.getUserId();
+        String customAlias = template.getCustomAlias();
+        String password = template.getPassword();
+        Integer maxClicks = template.getMaxClicks();
+        String title = template.getTitle();
+        String description = template.getDescription();
+        String scopeType = template.getScopeType() != null ? template.getScopeType() : "USER";
+        String scopeId = template.getScopeId() != null ? template.getScopeId() : userId;
+        String customDomain = template.getDomain();
+        String utmSource = template.getUtmSource();
+        String utmMedium = template.getUtmMedium();
+        String utmCampaign = template.getUtmCampaign();
+
+        // Calculate expirationDays for validation logic if needed (approximate)
+        Integer expirationDays = null;
+        if (template.getExpiresAt() != null) {
+            long days = java.time.temporal.ChronoUnit.DAYS.between(LocalDateTime.now(), template.getExpiresAt());
+            expirationDays = (int) Math.max(0, days);
+        }
 
         // Validate URL
         if (!isValidUrl(originalUrl)) {
@@ -177,8 +229,20 @@ public class UrlShorteningService {
             numericId = id;
         }
 
-        // Create shortened URL
-        ShortenedUrl shortenedUrl = new ShortenedUrl(originalUrl, shortCode, userId, scopeType, scopeId);
+        // Create shortened URL (Reuse template to keep advanced configs)
+        ShortenedUrl shortenedUrl = template;
+        shortenedUrl.setShortCode(shortCode);
+        // Ensure timestamp is set if not already
+        if (shortenedUrl.getCreatedAt() == null)
+            shortenedUrl.setCreatedAt(LocalDateTime.now());
+        if (shortenedUrl.getUpdatedAt() == null)
+            shortenedUrl.setUpdatedAt(LocalDateTime.now());
+
+        // Ensure scope is set
+        if (shortenedUrl.getScopeType() == null)
+            shortenedUrl.setScopeType(scopeType);
+        if (shortenedUrl.getScopeId() == null)
+            shortenedUrl.setScopeId(scopeId);
         if (numericId != null) {
             shortenedUrl.setNumericId(numericId);
         }
@@ -217,6 +281,71 @@ public class UrlShorteningService {
         shortenedUrl.setCustomAlias(customAlias);
         shortenedUrl.setTitle(title);
         shortenedUrl.setDescription(description);
+
+        // UTM Tracking: store on model + auto-append to destination URL
+        if (utmSource != null && !utmSource.trim().isEmpty()) {
+            shortenedUrl.setUtmSource(utmSource.trim().toLowerCase());
+        }
+        if (utmMedium != null && !utmMedium.trim().isEmpty()) {
+            shortenedUrl.setUtmMedium(utmMedium.trim().toLowerCase());
+        }
+        if (utmCampaign != null && !utmCampaign.trim().isEmpty()) {
+            shortenedUrl.setUtmCampaign(utmCampaign.trim().toLowerCase().replace(" ", "_"));
+        }
+
+        // Auto-append UTM params to the original/destination URL
+        if (shortenedUrl.getUtmSource() != null || shortenedUrl.getUtmMedium() != null
+                || shortenedUrl.getUtmCampaign() != null) {
+            StringBuilder utmParams = new StringBuilder();
+            if (shortenedUrl.getUtmSource() != null) {
+                utmParams.append("utm_source=")
+                        .append(URLEncoder.encode(shortenedUrl.getUtmSource(), StandardCharsets.UTF_8));
+            }
+            if (shortenedUrl.getUtmMedium() != null) {
+                if (utmParams.length() > 0)
+                    utmParams.append("&");
+                utmParams.append("utm_medium=")
+                        .append(URLEncoder.encode(shortenedUrl.getUtmMedium(), StandardCharsets.UTF_8));
+            }
+            if (shortenedUrl.getUtmCampaign() != null) {
+                if (utmParams.length() > 0)
+                    utmParams.append("&");
+                utmParams.append("utm_campaign=")
+                        .append(URLEncoder.encode(shortenedUrl.getUtmCampaign(), StandardCharsets.UTF_8));
+            }
+
+            String currentUrl = shortenedUrl.getOriginalUrl();
+
+            // Handle URL fragments (#section) — UTM must go before fragment
+            String fragment = "";
+            int hashIndex = currentUrl.indexOf('#');
+            if (hashIndex != -1) {
+                fragment = currentUrl.substring(hashIndex); // includes #
+                currentUrl = currentUrl.substring(0, hashIndex);
+            }
+
+            // Strip any existing utm_ params to prevent duplicates
+            if (currentUrl.contains("?")) {
+                String[] parts = currentUrl.split("\\?", 2);
+                String urlBase = parts[0];
+                String queryString = parts[1];
+                // Remove existing utm_ params
+                String cleanedQuery = java.util.Arrays.stream(queryString.split("&"))
+                        .filter(param -> !param.startsWith("utm_"))
+                        .collect(java.util.stream.Collectors.joining("&"));
+                currentUrl = cleanedQuery.isEmpty() ? urlBase : urlBase + "?" + cleanedQuery;
+            }
+
+            // Append UTM with correct separator
+            String separator = currentUrl.contains("?") ? "&" : "?";
+            // Handle edge case: URL ends with ? or &
+            if (currentUrl.endsWith("?") || currentUrl.endsWith("&")) {
+                separator = "";
+            }
+
+            shortenedUrl.setOriginalUrl(currentUrl + separator + utmParams.toString() + fragment);
+            logger.info("UTM auto-appended to URL: {} -> {}", originalUrl, shortenedUrl.getOriginalUrl());
+        }
 
         // Set expiration
         if (expirationDays != null && expirationDays > 0) {
@@ -360,7 +489,94 @@ public class UrlShorteningService {
             throw new RuntimeException("Unauthorized to update this URL");
         }
 
-        // Update fields
+        boolean rebuildUrl = false;
+
+        // Update Original URL
+        if (updates.getOriginalUrl() != null && !updates.getOriginalUrl().equals(existing.getOriginalUrl())) {
+            // Validate URL if changed
+            if (!isValidUrl(updates.getOriginalUrl())) {
+                throw new RuntimeException("Invalid URL format");
+            }
+            // Temporarily set the base original URL (without UTMs if they are being updated
+            // separately,
+            // but usually we get the raw destination here)
+            // We'll recalculate the full URL with UTMs below
+            existing.setOriginalUrl(updates.getOriginalUrl());
+            rebuildUrl = true;
+        }
+
+        // Update UTMs
+        if (updates.getUtmSource() != null) {
+            existing.setUtmSource(updates.getUtmSource().trim().toLowerCase());
+            rebuildUrl = true;
+        }
+        if (updates.getUtmMedium() != null) {
+            existing.setUtmMedium(updates.getUtmMedium().trim().toLowerCase());
+            rebuildUrl = true;
+        }
+        if (updates.getUtmCampaign() != null) {
+            existing.setUtmCampaign(updates.getUtmCampaign().trim().toLowerCase().replace(" ", "_"));
+            rebuildUrl = true;
+        }
+
+        // Rebuild the Final Original URL if needed
+        if (rebuildUrl) {
+            // 1. Get the base destination URL (stripping existing UTMs to avoid
+            // duplication/mess)
+            String currentUrl = existing.getOriginalUrl();
+
+            // Strip any existing utm_ params from the base URL to start fresh
+            if (currentUrl.contains("?")) {
+                String[] parts = currentUrl.split("\\?", 2);
+                String urlBase = parts[0];
+                String queryString = parts[1];
+                String cleanedQuery = java.util.Arrays.stream(queryString.split("&"))
+                        .filter(param -> !param.startsWith("utm_"))
+                        .collect(java.util.stream.Collectors.joining("&"));
+                currentUrl = cleanedQuery.isEmpty() ? urlBase : urlBase + "?" + cleanedQuery;
+            }
+
+            // 2. Build new UTM string
+            StringBuilder utmParams = new StringBuilder();
+            if (existing.getUtmSource() != null && !existing.getUtmSource().isEmpty()) {
+                utmParams.append("utm_source=")
+                        .append(URLEncoder.encode(existing.getUtmSource(), StandardCharsets.UTF_8));
+            }
+            if (existing.getUtmMedium() != null && !existing.getUtmMedium().isEmpty()) {
+                if (utmParams.length() > 0)
+                    utmParams.append("&");
+                utmParams.append("utm_medium=")
+                        .append(URLEncoder.encode(existing.getUtmMedium(), StandardCharsets.UTF_8));
+            }
+            if (existing.getUtmCampaign() != null && !existing.getUtmCampaign().isEmpty()) {
+                if (utmParams.length() > 0)
+                    utmParams.append("&");
+                utmParams.append("utm_campaign=")
+                        .append(URLEncoder.encode(existing.getUtmCampaign(), StandardCharsets.UTF_8));
+            }
+
+            // 3. Append if we have params
+            if (utmParams.length() > 0) {
+                String fragment = "";
+                int hashIndex = currentUrl.indexOf('#');
+                if (hashIndex != -1) {
+                    fragment = currentUrl.substring(hashIndex);
+                    currentUrl = currentUrl.substring(0, hashIndex);
+                }
+
+                String separator = currentUrl.contains("?") ? "&" : "?";
+                if (currentUrl.endsWith("?") || currentUrl.endsWith("&")) {
+                    separator = "";
+                }
+
+                existing.setOriginalUrl(currentUrl + separator + utmParams.toString() + fragment);
+            } else {
+                // No UTM params, just use the cleaned base URL
+                existing.setOriginalUrl(currentUrl);
+            }
+        }
+
+        // Update other fields
         if (updates.getTitle() != null)
             existing.setTitle(updates.getTitle());
         if (updates.getDescription() != null)
@@ -369,14 +585,41 @@ public class UrlShorteningService {
             existing.setPassword(updates.getPassword());
             existing.setPasswordProtected(!updates.getPassword().trim().isEmpty());
         }
-        if (updates.getExpiresAt() != null)
+        // Handle expiration updates
+        if (updates.getExpiresAt() != null) {
             existing.setExpiresAt(updates.getExpiresAt());
+        }
+        // Using a customized check or assuming null in 'updates' means "no change" vs
+        // "clear" is tricky.
+        // For now, let's assume if it is NOT null in 'updates', we set it.
+        // If the user wants to clear it, we might need a specific flag or send a
+        // far-future date.
+        // Or, we can check if the field was explicitly present in the request map in
+        // the controller.
+        // Simplified: The controller constructs 'updates', if we need to clear, we
+        // might need a specific helper.
+        // Let's rely on the controller passing null if no change, or a specific value
+        // if changed.
+        // If we want to allow clearing, we might need to handle a specific "CLEAR"
+        // value logic in controller.
+
+        if (updates.getMaxClicks() != null)
+
+        {
+            existing.setMaxClicks(updates.getMaxClicks());
+        }
+
         if (updates.getTags() != null)
             existing.setTags(updates.getTags());
         if (updates.getCategory() != null)
             existing.setCategory(updates.getCategory());
         if (updates.getNotes() != null)
             existing.setNotes(updates.getNotes());
+
+        // Active status
+        if (updates.isActive() != existing.isActive()) {
+            existing.setActive(updates.isActive());
+        }
 
         existing.setUpdatedAt(LocalDateTime.now());
 

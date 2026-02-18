@@ -19,11 +19,11 @@ public class Domain {
     }
 
     public enum DomainStatus {
-        RESERVED, PENDING, VERIFIED, ERROR, SUSPENDED
+        RESERVED, PENDING, VERIFIED, ERROR, SUSPENDED, DELETING, SOFT_BLOCKED
     }
 
     public enum SslStatus {
-        PENDING, ACTIVE, ERROR, EXPIRED
+        PENDING, ACTIVE, ERROR, EXPIRED, PENDING_SSL, SSL_ISSUED, SSL_FAILED
     }
 
     @Id
@@ -81,6 +81,7 @@ public class Domain {
     // Timestamps
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime deletedAt; // For soft-deletes
 
     // Constructors
     public Domain() {
@@ -397,6 +398,14 @@ public class Domain {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     // Enum-based helper methods for type safety

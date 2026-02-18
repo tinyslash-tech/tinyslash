@@ -179,7 +179,7 @@ public class SslProvisioningService {
             Map<String, Object> dnsRecord = Map.of(
                 "type", "CNAME",
                 "name", domain.getDomainName(),
-                "content", "pebly.vercel.app", // Your main domain
+                "content", "tinyslash.com", // Your main domain
                 "ttl", 1 // Auto TTL
             );
             

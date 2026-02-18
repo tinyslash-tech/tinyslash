@@ -15,8 +15,8 @@ interface CustomDomain {
   domainName: string;
   ownerType: string;
   ownerId: string;
-  status: 'RESERVED' | 'PENDING' | 'VERIFIED' | 'ERROR' | 'SUSPENDED';
-  sslStatus: 'PENDING' | 'ACTIVE' | 'ERROR' | 'EXPIRED';
+  status: 'RESERVED' | 'PENDING' | 'VERIFIED' | 'ERROR' | 'SUSPENDED' | 'DELETING' | 'SOFT_BLOCKED';
+  sslStatus: 'PENDING' | 'ACTIVE' | 'ERROR' | 'EXPIRED' | 'PENDING_SSL' | 'SSL_ISSUED' | 'SSL_FAILED' | 'SSL_EXPIRED';
   cnameTarget: string;
   verificationToken: string;
   reservedUntil?: string;
@@ -31,11 +31,6 @@ interface CustomDomain {
   blacklistReason?: string;
   totalRedirects: number;
   lastUsed?: string;
-  sslValidationMethod?: string;
-  sslTxtName?: string;
-  sslTxtValue?: string;
-  sslCnameTarget?: string;
-  cloudflareStatus?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -564,7 +559,10 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
       case 'PENDING':
         return <Clock className="w-5 h-5 text-yellow-500" />;
       case 'SUSPENDED':
+      case 'SOFT_BLOCKED':
         return <AlertCircle className="w-5 h-5 text-red-600" />;
+      case 'DELETING':
+        return <Trash2 className="w-5 h-5 text-gray-400" />;
       default:
         return <Clock className="w-5 h-5 text-gray-400" />;
     }
@@ -577,13 +575,17 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
 
     switch (domain.status) {
       case 'VERIFIED':
-        return domain.sslStatus === 'ACTIVE' ? 'Active & Secured' : 'Verified';
+        return domain.sslStatus === 'ACTIVE' ? 'Active & Secured' : 'Verified (SSL Pending)';
       case 'ERROR':
         return 'Verification Failed';
       case 'PENDING':
         return 'Pending Verification';
       case 'SUSPENDED':
-        return 'Suspended';
+        return 'Suspended (Contact Support)';
+      case 'SOFT_BLOCKED':
+        return 'Action Required (Payment/Abuse)';
+      case 'DELETING':
+        return 'Scheduled for Deletion';
       case 'RESERVED':
         return 'Reserved';
       default:
@@ -600,7 +602,10 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
       case 'PENDING':
         return 'text-yellow-600';
       case 'SUSPENDED':
+      case 'SOFT_BLOCKED':
         return 'text-red-700';
+      case 'DELETING':
+        return 'text-gray-500';
       default:
         return 'text-gray-600';
     }
@@ -911,7 +916,7 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                     This domain is successfully verified and secured with SSL. No further action is required.
                   </p>
                 </div>
-              ) : showVerificationModal.sslTxtName && showVerificationModal.sslTxtValue ? (
+              ) : showVerificationModal.verificationToken ? (
                 <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-bold text-gray-800 flex items-center">
@@ -929,10 +934,8 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
                       <div className="flex items-center mt-1">
-                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={showVerificationModal.sslTxtName}>
-                          {showVerificationModal.sslTxtName.substring(0, 20)}...
-                        </code>
-                        <button onClick={() => copyToClipboard(showVerificationModal.sslTxtName!)} className="ml-2 text-gray-400 hover:text-blue-600">
+                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title="@">@</code>
+                        <button onClick={() => copyToClipboard('@')} className="ml-2 text-gray-400 hover:text-blue-600">
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>
@@ -940,10 +943,10 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase">Value</label>
                       <div className="flex items-center mt-1">
-                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={showVerificationModal.sslTxtValue}>
-                          {showVerificationModal.sslTxtValue.substring(0, 20)}...
+                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={`tinyslash-verify=${showVerificationModal.verificationToken}`}>
+                          tinyslash-verify={showVerificationModal.verificationToken.substring(0, 10)}...
                         </code>
-                        <button onClick={() => copyToClipboard(showVerificationModal.sslTxtValue!)} className="ml-2 text-gray-400 hover:text-blue-600">
+                        <button onClick={() => copyToClipboard(`tinyslash-verify=${showVerificationModal.verificationToken}`)} className="ml-2 text-gray-400 hover:text-blue-600">
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>

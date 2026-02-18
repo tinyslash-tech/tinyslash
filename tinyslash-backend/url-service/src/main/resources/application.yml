@@ -1,6 +1,14 @@
 server:
   port: ${PORT:8080}
 
+# MaxMind GeoIP2 Configuration (for state/city level analytics)
+# Sign up free: https://www.maxmind.com/en/geolite2/signup
+maxmind:
+  account-id: ${MAXMIND_ACCOUNT_ID:}
+  license-key: ${MAXMIND_LICENSE_KEY:}
+  database-path: ${MAXMIND_DB_PATH:./data/GeoLite2-City.mmdb}
+  enabled: ${MAXMIND_ENABLED:true}
+
 spring:
   servlet:
     multipart:

@@ -26,7 +26,7 @@ public class EmailService {
     @Autowired
     private SendGrid sendGrid;
     
-    @Value("${app.frontend.url:https://pebly.vercel.app}")
+    @Value("${app.frontend.url:https://tinyslash.com}")
     private String frontendUrl;
     
     @Value("${app.support.email:support@pebly.com}")
@@ -549,7 +549,7 @@ public class EmailService {
             
             Type: CNAME
             Name: %s
-            Value: pebly.vercel.app
+            Value: tinyslash.com
             
             Once you've updated your DNS settings, you can retry verification in your dashboard.
             

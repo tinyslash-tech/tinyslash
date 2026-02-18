@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { ChartSkeleton, StatCardSkeleton } from '../ui/Skeleton';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Globe, 
-  Smartphone, 
+import {
+  BarChart3,
+  TrendingUp,
+  Globe,
+  Smartphone,
   Calendar,
   Download,
   Share2,
@@ -14,7 +14,9 @@ import {
   Clock,
   MapPin,
   Users,
-  RefreshCw
+  RefreshCw,
+  Megaphone,
+  Target
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import LocationAnalytics from './LocationAnalytics';
@@ -23,43 +25,58 @@ const AnalyticsSection: React.FC = () => {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [activeTab, setActiveTab] = useState<'overview' | 'location' | 'performance'>('overview');
-  
+
   // Use React Query for fast loading with caching
   const { stats, isLoading, isRefreshing, hasData, error, refetch } = useDashboardData();
 
   // Process analytics data from React Query stats
-  const analyticsData = stats ? {
-    totalLinks: stats.totalLinks,
-    totalClicks: stats.totalClicks,
-    totalQRCodes: stats.totalQRCodes,
-    totalScans: stats.totalClicks, // Using totalClicks as it includes scans
-    totalFileLinks: stats.totalFiles,
-    uniqueVisitors: Math.floor(stats.totalClicks * 0.75),
-    avgClicksPerDay: Math.floor(stats.totalClicks / 30), // Assuming 30 days
-    conversionRate: stats.totalClicks > 0 ? ((stats.totalClicks * 0.12) / stats.totalClicks * 100).toFixed(1) : 0,
-    clicksOverTime: stats.clicksOverTime,
-    deviceData: [
-      { device: 'Mobile', count: Math.floor(stats.totalClicks * 0.65), percentage: 65 },
-      { device: 'Desktop', count: Math.floor(stats.totalClicks * 0.25), percentage: 25 },
-      { device: 'Tablet', count: Math.floor(stats.totalClicks * 0.10), percentage: 10 }
-    ],
-    locationData: [
-      { country: 'India', city: 'Mumbai', count: Math.floor(stats.totalClicks * 0.35) },
-      { country: 'India', city: 'Delhi', count: Math.floor(stats.totalClicks * 0.25) },
-      { country: 'India', city: 'Bangalore', count: Math.floor(stats.totalClicks * 0.20) },
-      { country: 'USA', city: 'New York', count: Math.floor(stats.totalClicks * 0.10) },
-      { country: 'UK', city: 'London', count: Math.floor(stats.totalClicks * 0.05) },
-      { country: 'Others', city: 'Various', count: Math.floor(stats.totalClicks * 0.05) }
-    ],
-    browserData: [
-      { browser: 'Chrome', count: Math.floor(stats.totalClicks * 0.60) },
-      { browser: 'Safari', count: Math.floor(stats.totalClicks * 0.20) },
-      { browser: 'Firefox', count: Math.floor(stats.totalClicks * 0.10) },
-      { browser: 'Edge', count: Math.floor(stats.totalClicks * 0.07) },
-      { browser: 'Others', count: Math.floor(stats.totalClicks * 0.03) }
-    ],
-    topLinks: stats.topPerformingLink ? [stats.topPerformingLink] : []
-  } : null;
+  const analyticsData = stats ? (() => {
+    // Transform real device data from backend { "MOBILE": 45, "DESKTOP": 20 } → chart format
+    const deviceData = Object.keys(stats.clicksByDevice).length > 0
+      ? (() => {
+        const total = Object.values(stats.clicksByDevice).reduce((sum, v) => sum + v, 0);
+        return Object.entries(stats.clicksByDevice)
+          .sort(([, a], [, b]) => b - a)
+          .map(([device, count]) => ({
+            device: device || 'Unknown',
+            count,
+            percentage: total > 0 ? Math.round((count / total) * 100) : 0
+          }));
+      })()
+      : [];
+
+    // Transform real location data from backend { "India": 40, "USA": 10 } → chart format
+    const locationData = Object.keys(stats.clicksByCountry).length > 0
+      ? Object.entries(stats.clicksByCountry)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([country, count]) => ({ country: country || 'Unknown', city: '', count }))
+      : [];
+
+    // Transform real browser data from backend { "Chrome": 30, "Safari": 15 } → chart format
+    const browserData = Object.keys(stats.clicksByBrowser).length > 0
+      ? Object.entries(stats.clicksByBrowser)
+        .sort(([, a], [, b]) => b - a)
+        .map(([browser, count]) => ({ browser: browser || 'Unknown', count }))
+      : [];
+
+    return {
+      totalLinks: stats.totalLinks,
+      totalClicks: stats.totalClicks,
+      totalQRCodes: stats.totalQRCodes,
+      totalScans: stats.totalClicks,
+      totalFileLinks: stats.totalFiles,
+      uniqueVisitors: stats.totalUniqueClicks || 0,
+      avgClicksPerDay: stats.clicksOverTime.length > 0
+        ? Math.floor(stats.totalClicks / Math.max(stats.clicksOverTime.length, 1))
+        : 0,
+      clicksOverTime: stats.clicksOverTime,
+      deviceData,
+      locationData,
+      browserData,
+      topLinks: stats.topPerformingLink ? [stats.topPerformingLink] : []
+    };
+  })() : null;
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -72,7 +89,7 @@ const AnalyticsSection: React.FC = () => {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
         <div className="text-red-600 mb-4">Failed to load analytics data</div>
-        <button 
+        <button
           onClick={handleRefresh}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
@@ -158,33 +175,30 @@ const AnalyticsSection: React.FC = () => {
         <div className="flex space-x-1">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'overview' 
-                ? 'bg-blue-600 text-white shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'overview'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
           >
             <BarChart3 className="w-4 h-4" />
             <span>Overview</span>
           </button>
           <button
             onClick={() => setActiveTab('location')}
-            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'location' 
-                ? 'bg-blue-600 text-white shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'location'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
           >
             <Globe className="w-4 h-4" />
             <span>Location Analytics</span>
           </button>
           <button
             onClick={() => setActiveTab('performance')}
-            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'performance' 
-                ? 'bg-blue-600 text-white shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'performance'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
           >
             <TrendingUp className="w-4 h-4" />
             <span>Performance</span>
@@ -254,21 +268,21 @@ const AnalyticsSection: React.FC = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Area 
-                    type="monotone" 
-                    dataKey="clicks" 
-                    stackId="1" 
-                    stroke="#3b82f6" 
-                    fill="#3b82f6" 
+                  <Area
+                    type="monotone"
+                    dataKey="clicks"
+                    stackId="1"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
                     fillOpacity={0.6}
                     name="Clicks"
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="visitors" 
-                    stackId="2" 
-                    stroke="#10b981" 
-                    fill="#10b981" 
+                  <Area
+                    type="monotone"
+                    dataKey="visitors"
+                    stackId="2"
+                    stroke="#10b981"
+                    fill="#10b981"
                     fillOpacity={0.6}
                     name="Visitors"
                   />
@@ -314,12 +328,122 @@ const AnalyticsSection: React.FC = () => {
       )}
 
       {activeTab === 'performance' && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
-          <div className="text-center py-12">
-            <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">Advanced Performance Analytics</h4>
-            <p className="text-gray-600 mb-4">Detailed performance metrics</p>
+        <div className="space-y-6">
+          {/* Browser Usage */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Browser Usage</h3>
+            {(analyticsData?.browserData || []).length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analyticsData?.browserData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="browser" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p>No browser data yet. Analytics appear after links get clicked.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Campaign Performance */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Campaign Performance</h3>
+              </div>
+            </div>
+            <div className="p-6">
+              {(stats?.campaignDetails || []).length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="text-left py-3 px-2 text-gray-500 font-medium">Campaign</th>
+                        <th className="text-right py-3 px-2 text-gray-500 font-medium">Clicks</th>
+                        <th className="text-right py-3 px-2 text-gray-500 font-medium">Links</th>
+                        <th className="text-left py-3 px-2 text-gray-500 font-medium">Platform</th>
+                        <th className="text-left py-3 px-2 text-gray-500 font-medium">Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats?.campaignDetails.map((campaign: any, index: number) => (
+                        <tr key={index} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                          <td className="py-3 px-2">
+                            <div className="flex items-center gap-2">
+                              <Target className="w-3.5 h-3.5 text-indigo-400" />
+                              <span className="font-medium text-gray-900">{campaign.campaign}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-2 text-right">
+                            <span className="font-semibold text-gray-900">{campaign.totalClicks.toLocaleString()}</span>
+                          </td>
+                          <td className="py-3 px-2 text-right text-gray-600">{campaign.totalLinks}</td>
+                          <td className="py-3 px-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                              {campaign.source || '—'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                              {campaign.medium || '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <Megaphone className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="font-medium text-gray-600 mb-1">No campaigns yet</p>
+                    <p className="text-sm text-gray-400">Add Campaign Tracking when creating a link to see performance here.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Top Locations */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Countries</h3>
+            {(analyticsData?.locationData || []).length > 0 ? (
+              <div className="space-y-3">
+                {(analyticsData?.locationData || []).map((location: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <p className="font-medium text-gray-900">{location.country}</p>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <p className="font-semibold text-gray-900">{location.count}</p>
+                      <div className="w-24 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${analyticsData?.totalClicks ? Math.min((location.count / analyticsData.totalClicks) * 100, 100) : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p>No location data yet. Analytics appear after links get clicked.</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

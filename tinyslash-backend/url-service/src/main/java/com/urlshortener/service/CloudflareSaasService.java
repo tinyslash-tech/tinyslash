@@ -205,7 +205,7 @@ public class CloudflareSaasService {
 
                 // Legacy/Fallback Fields
                 domain.setSslProvider("CLOUDFLARE_SAAS");
-                domain.setSslStatus("PENDING");
+                domain.setSslStatus(Domain.SslStatus.PENDING_SSL);
                 domain.setVerificationToken(customHostnameId); // Keeping for backward compat
 
                 domainRepository.save(domain);
@@ -420,19 +420,19 @@ public class CloudflareSaasService {
 
                         // Update domain with SSL status
                         if ("active".equals(status)) {
-                            domain.setSslStatus("ACTIVE");
-                            domain.setStatus("VERIFIED");
+                            domain.setSslStatus(Domain.SslStatus.SSL_ISSUED);
+                            domain.setStatus(Domain.DomainStatus.VERIFIED);
                             domain.setSslIssuedAt(LocalDateTime.now());
                             // Expiry managed by Cloudflare
                             domain.setSslError(null);
                             domainRepository.save(domain);
                             logger.info("✅ SSL certificate is ACTIVE for: {}", domain.getDomainName());
                         } else if ("pending_validation".equals(status)) {
-                            domain.setSslStatus("PENDING");
+                            domain.setSslStatus(Domain.SslStatus.PENDING_SSL);
                             domainRepository.save(domain);
                             logger.info("⏳ SSL certificate is pending validation");
                         } else if ("pending_issuance".equals(status)) {
-                            domain.setSslStatus("PENDING");
+                            domain.setSslStatus(Domain.SslStatus.PENDING_SSL);
                             domainRepository.save(domain);
                             logger.info("⏳ SSL certificate is being issued");
                         }

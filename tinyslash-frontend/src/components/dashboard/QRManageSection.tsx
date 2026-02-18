@@ -612,7 +612,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
     return (
       <div className="space-y-6">
         {/* Header Skeleton */}
-        <div className="bg-black text-white rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="h-8 bg-white/20 rounded w-48 mb-2"></div>
@@ -645,7 +645,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">QR Code Manager</h2>
@@ -823,7 +823,7 @@ const QRManageSection: React.FC<QRManageSectionProps> = ({ onCreateClick }) => {
                 <p className="text-gray-600 mb-4">Create your first QR code to get started</p>
                 <button
                   onClick={onCreateClick}
-                  className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 mx-auto"
+                  className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition-colors flex items-center space-x-2 mx-auto"
                 >
                   <Plus className="w-5 h-5" />
                   <span>Create QR Code</span>

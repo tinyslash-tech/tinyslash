@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useUserUrls } from '../../hooks/useDashboardData';
 import { TableSkeleton } from '../ui/Skeleton';
 import LinkActions from '../LinkActions';
+import EditLinkModal from '../EditLinkModal';
 
 interface ShortenedLink {
   id: string;
@@ -28,7 +29,7 @@ interface ShortenedLink {
   clicks: number;
   createdAt: string;
   customDomain?: string;
-  type: 'url' | 'qr' | 'file';
+  type: 'url';
   tags?: string[];
   title?: string;
 }
@@ -45,9 +46,10 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'clicks' | 'url'>('date');
-  const [filterBy, setFilterBy] = useState<'all' | 'url' | 'qr' | 'file'>('all');
+  const [filterBy, setFilterBy] = useState<'all' | 'url'>('all');
   const [selectedLinks, setSelectedLinks] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingLink, setEditingLink] = useState<ShortenedLink | null>(null);
 
   // Format the raw data from API
   const links: ShortenedLink[] = rawLinks ? rawLinks.map((link: any) => ({
@@ -205,14 +207,9 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
   };
 
   const editLink = (linkId: string) => {
-    // Navigate to create page with edit mode
     const linkToEdit = links.find(link => link.id === linkId);
     if (linkToEdit) {
-      // For now, show a simple prompt to edit the title
-      const newTitle = window.prompt('Enter new title for this link:', linkToEdit.title || '');
-      if (newTitle !== null) {
-        updateLinkTitle(linkId, newTitle);
-      }
+      setEditingLink(linkToEdit);
     }
   };
 
@@ -313,7 +310,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
     return (
       <div className="space-y-6">
         {/* Header Skeleton */}
-        <div className="bg-black text-white rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="h-8 bg-white/20 rounded w-48 mb-2"></div>
@@ -334,7 +331,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-black text-white rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">Links Manager</h2>
@@ -379,7 +376,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-black text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">Links Manager</h2>
@@ -435,16 +432,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
               <option value="url">Sort by URL</option>
             </select>
 
-            <select
-              value={filterBy}
-              onChange={(e) => setFilterBy(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            >
-              <option value="all">All Types</option>
-              <option value="url">URL Links</option>
-              <option value="qr">QR Codes</option>
-              <option value="file">File Links</option>
-            </select>
+
           </div>
         </div>
 
@@ -474,7 +462,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
         )}
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-6 grid grid-cols-2 gap-4">
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="text-2xl font-bold text-gray-900">{links.length}</div>
             <div className="text-sm text-gray-600">Total Links</div>
@@ -484,18 +472,6 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
               {links.reduce((sum, link) => sum + link.clicks, 0)}
             </div>
             <div className="text-sm text-gray-600">Total Clicks</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-purple-600">
-              {links.filter(link => link.type === 'qr').length}
-            </div>
-            <div className="text-sm text-gray-600">QR Codes</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {links.filter(link => link.type === 'file').length}
-            </div>
-            <div className="text-sm text-gray-600">File Links</div>
           </div>
         </div>
       </div>
@@ -541,11 +517,9 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
                     {/* Header Row - Type and Domain */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${link.type === 'url' ? 'bg-blue-500' :
-                          link.type === 'qr' ? 'bg-purple-500' : 'bg-green-500'
-                          }`} />
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
                         <span className="text-xs font-medium text-gray-500 uppercase">
-                          {link.type === 'url' ? 'Short Link' : link.type === 'qr' ? 'QR Code' : 'File Link'}
+                          Short Link
                         </span>
                         {link.customDomain && (
                           <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
@@ -646,6 +620,15 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
           </div>
         )}
       </div>
+
+      {editingLink && (
+        <EditLinkModal
+          isOpen={!!editingLink}
+          onClose={() => setEditingLink(null)}
+          link={editingLink}
+          onUpdate={refetch}
+        />
+      )}
     </div>
   );
 };

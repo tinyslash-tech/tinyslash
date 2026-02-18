@@ -45,6 +45,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/database/**").permitAll()
                                                 .requestMatchers("/api/domains/**").permitAll()
                                                 .requestMatchers("/api/monitoring/**").permitAll()
+                                                .requestMatchers("/api/public/pages/**").permitAll()
                                                 // Lead Lock Public Endpoints
                                                 .requestMatchers("/api/v1/leads/page/**").permitAll()
                                                 .requestMatchers("/api/v1/leads/unlock/**").permitAll()

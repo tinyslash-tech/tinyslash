@@ -282,7 +282,7 @@ public class BillingService {
                                         <table width="100%%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
                                             <tr>
                                                 <td align="center">
-                                                    <a href="https://pebly.vercel.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                                                    <a href="https://tinyslash.com/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                                                         Go to Dashboard →
                                                     </a>
                                                 </td>
@@ -394,7 +394,7 @@ public class BillingService {
                                         <table width="100%%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
                                             <tr>
                                                 <td align="center">
-                                                    <a href="https://pebly.vercel.app/pricing" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 10px 10px 0;">
+                                                    <a href="https://tinyslash.com/pricing" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 10px 10px 0;">
                                                         Try Again →
                                                     </a>
                                                     <a href="mailto:support@pebly.com" style="display: inline-block; background-color: #6c757d; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 0 10px 0;">
@@ -521,7 +521,7 @@ public class BillingService {
                                         <table width="100%%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
                                             <tr>
                                                 <td align="center">
-                                                    <a href="https://pebly.vercel.app/pricing" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-decoration: none; padding: 18px 50px; border-radius: 8px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                                                    <a href="https://tinyslash.com/pricing" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-decoration: none; padding: 18px 50px; border-radius: 8px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
                                                         Upgrade Now →
                                                     </a>
                                                 </td>

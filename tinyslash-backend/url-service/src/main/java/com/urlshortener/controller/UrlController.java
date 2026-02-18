@@ -31,6 +31,9 @@ public class UrlController {
     @Autowired
     private DashboardService dashboardService;
 
+    @Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
     @PostMapping("/fix-urls")
     public ResponseEntity<Map<String, Object>> fixExistingUrls() {
         Map<String, Object> response = new HashMap<>();
@@ -115,6 +118,22 @@ public class UrlController {
             urlData.put("shortCode", url.getShortCode());
             urlData.put("title", url.getTitle());
 
+            // Check for Trust Badge / Verified Page
+            if (url.getTrustBadgeConfig() != null && url.getTrustBadgeConfig().isRequested()) {
+                // Return verified status if the user is verified
+                // ideally check against TrustVerificationService, but for now we trust the
+                // config status if it was set
+                // or we just pass the config to frontend and let frontend decide (frontend
+                // checks /trust/public anyway)
+                Map<String, Object> trustData = new HashMap<>();
+                trustData.put("enabled", true);
+
+                // If status is not in config, we might want to default to pending/unchecked
+                // But typically this means we should show the Verified Page which will verify
+                // the trust
+                urlData.put("trustBadge", trustData);
+            }
+
             response.put("success", true);
             response.put("data", urlData);
             return ResponseEntity.ok(response);
@@ -177,6 +196,11 @@ public class UrlController {
             String scopeId = (String) request.getOrDefault("scopeId", userId);
             String customDomain = (String) request.get("customDomain"); // New: custom domain support
 
+            // UTM tracking fields
+            String utmSource = (String) request.get("utmSource");
+            String utmMedium = (String) request.get("utmMedium");
+            String utmCampaign = (String) request.get("utmCampaign");
+
             System.out.println("🔍 Creating URL with params:");
             System.out.println("  - originalUrl: " + originalUrl);
             System.out.println("  - userId: " + userId);
@@ -196,9 +220,57 @@ public class UrlController {
             // Additional premium features like customAlias, password, expiration, maxClicks
             // are validated in the service layer based on user's plan
 
-            ShortenedUrl shortenedUrl = urlShorteningService.createShortUrl(
-                    originalUrl, userId, customAlias, password, expirationDays, maxClicks, title, description,
-                    scopeType, scopeId, customDomain);
+            // ----------------------------------------------------
+            // NEW: Parse Advanced Features from Request
+            // ----------------------------------------------------
+            ShortenedUrl template = new ShortenedUrl();
+            template.setOriginalUrl(originalUrl);
+            template.setUserId(userId);
+            template.setCustomAlias(customAlias);
+            template.setPassword(password);
+            if (expirationDays != null)
+                template.setExpiresAt(LocalDateTime.now().plusDays(expirationDays));
+            template.setMaxClicks(maxClicks);
+            template.setTitle(title);
+            template.setDescription(description);
+            template.setScopeType(scopeType);
+            template.setScopeId(scopeId);
+            template.setDomain(customDomain);
+            template.setUtmSource(utmSource);
+            template.setUtmMedium(utmMedium);
+            template.setUtmCampaign(utmCampaign);
+
+            // Parse Objects from Map
+            try {
+                if (request.containsKey("smartActionConfig")) {
+                    template.setSmartActionConfig(objectMapper.convertValue(request.get("smartActionConfig"),
+                            ShortenedUrl.SmartActionConfig.class));
+                }
+                if (request.containsKey("smartLinkPreview")) {
+                    template.setSmartLinkPreview(objectMapper.convertValue(request.get("smartLinkPreview"),
+                            ShortenedUrl.SmartLinkPreview.class));
+                }
+                if (request.containsKey("geoConfig")) {
+                    template.setGeoConfig(
+                            objectMapper.convertValue(request.get("geoConfig"), ShortenedUrl.GeoConfig.class));
+                }
+                if (request.containsKey("deepLinkConfig")) {
+                    template.setDeepLinkConfig(objectMapper.convertValue(request.get("deepLinkConfig"),
+                            ShortenedUrl.DeepLinkConfig.class));
+                }
+                if (request.containsKey("leadLockConfig")) {
+                    template.setLeadLockConfig(objectMapper.convertValue(request.get("leadLockConfig"),
+                            ShortenedUrl.LeadLockConfig.class));
+                }
+                if (request.containsKey("trustBadgeConfig")) {
+                    template.setTrustBadgeConfig(objectMapper.convertValue(request.get("trustBadgeConfig"),
+                            ShortenedUrl.TrustBadgeConfig.class));
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to parse advanced config: " + e.getMessage());
+            }
+
+            ShortenedUrl shortenedUrl = urlShorteningService.createShortUrl(template);
 
             Map<String, Object> urlData = new HashMap<>();
             urlData.put("id", shortenedUrl.getId());
@@ -211,6 +283,9 @@ public class UrlController {
             urlData.put("expiresAt", shortenedUrl.getExpiresAt());
             urlData.put("maxClicks", shortenedUrl.getMaxClicks());
             urlData.put("isPasswordProtected", shortenedUrl.isPasswordProtected());
+            urlData.put("utmSource", shortenedUrl.getUtmSource());
+            urlData.put("utmMedium", shortenedUrl.getUtmMedium());
+            urlData.put("utmCampaign", shortenedUrl.getUtmCampaign());
 
             response.put("success", true);
             response.put("message", "URL shortened successfully");
@@ -325,12 +400,84 @@ public class UrlController {
             }
 
             ShortenedUrl updates = new ShortenedUrl();
+
+            // Basic fields
             if (request.containsKey("title"))
                 updates.setTitle((String) request.get("title"));
             if (request.containsKey("description"))
                 updates.setDescription((String) request.get("description"));
             if (request.containsKey("password"))
                 updates.setPassword((String) request.get("password"));
+
+            // New Editable Fields
+            if (request.containsKey("originalUrl"))
+                updates.setOriginalUrl((String) request.get("originalUrl"));
+
+            // UTM Fields
+            if (request.containsKey("utmSource"))
+                updates.setUtmSource((String) request.get("utmSource"));
+            if (request.containsKey("utmMedium"))
+                updates.setUtmMedium((String) request.get("utmMedium"));
+            if (request.containsKey("utmCampaign"))
+                updates.setUtmCampaign((String) request.get("utmCampaign"));
+
+            // Expiration (Handle days or direct ISO string if we wanted, but UI likely
+            // sends days)
+            // If user sends 'expirationDays', calculate date
+            if (request.containsKey("expirationDays")) {
+                try {
+                    Object expObj = request.get("expirationDays");
+                    if (expObj != null) {
+                        int days = 0;
+                        if (expObj instanceof Integer)
+                            days = (Integer) expObj;
+                        else if (expObj instanceof String && !((String) expObj).isEmpty())
+                            days = Integer.parseInt((String) expObj);
+                        else if (expObj instanceof Number)
+                            days = ((Number) expObj).intValue();
+
+                        if (days > 0) {
+                            updates.setExpiresAt(LocalDateTime.now().plusDays(days));
+                        }
+                        // If 0 or negative, we might arguably want to clear it, but let's stick to
+                        // setting if > 0
+                    }
+                } catch (Exception e) {
+                    // Ignore parse error
+                }
+            }
+
+            // Max Clicks
+            if (request.containsKey("maxClicks")) {
+                try {
+                    Object maxObj = request.get("maxClicks");
+                    if (maxObj != null) {
+                        if (maxObj instanceof Integer)
+                            updates.setMaxClicks((Integer) maxObj);
+                        else if (maxObj instanceof String && !((String) maxObj).isEmpty())
+                            updates.setMaxClicks(Integer.parseInt((String) maxObj));
+                        else if (maxObj instanceof Number)
+                            updates.setMaxClicks(((Number) maxObj).intValue());
+                    }
+                } catch (Exception e) {
+                    // Ignore
+                }
+            }
+
+            // Tags
+            if (request.containsKey("tags")) {
+                Object tagsObj = request.get("tags");
+                if (tagsObj instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<String> tagsList = (List<String>) tagsObj;
+                    updates.setTags(tagsList.toArray(new String[0]));
+                }
+            }
+
+            // Active Status
+            if (request.containsKey("isActive")) {
+                updates.setActive(Boolean.parseBoolean(request.get("isActive").toString()));
+            }
 
             ShortenedUrl updated = urlShorteningService.updateUrl(shortCode, userId, updates);
 
@@ -339,7 +486,8 @@ public class UrlController {
             response.put("data", Map.of(
                     "shortCode", updated.getShortCode(),
                     "title", updated.getTitle(),
-                    "description", updated.getDescription(),
+                    "originalUrl", updated.getOriginalUrl(),
+                    "description", updated.getDescription() != null ? updated.getDescription() : "",
                     "updatedAt", updated.getUpdatedAt()));
 
             return ResponseEntity.ok(response);
@@ -433,6 +581,7 @@ public class UrlController {
             String userAgent = request.get("userAgent");
             String referrer = request.get("referrer");
             String country = request.get("country");
+            String region = request.get("region");
             String city = request.get("city");
             String deviceType = request.get("deviceType");
             String browser = request.get("browser");
@@ -448,7 +597,7 @@ public class UrlController {
             ShortenedUrl url = urlOpt.get();
 
             analyticsService.recordClick(url.getDomain(), shortCode, ipAddress, userAgent, referrer,
-                    country, city, deviceType, browser, os);
+                    country, region, city, deviceType, browser, os);
 
             response.put("success", true);
             response.put("message", "Click recorded successfully");

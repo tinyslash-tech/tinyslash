@@ -50,7 +50,7 @@ public class PixelFiringService {
   @Autowired
   private EncryptionService encryptionService;
 
-  @Autowired
+  @Autowired(required = false)
   private StringRedisTemplate redisTemplate;
 
   @Autowired

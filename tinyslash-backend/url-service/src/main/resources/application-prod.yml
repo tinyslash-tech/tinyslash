@@ -9,12 +9,10 @@ spring:
       database: pebly-database
       auto-index-creation: false
 
-    # Upstash Redis — set REDIS_URL in Render env vars
-    # Format: rediss://:<password>@<host>:<port>
-    redis:
-      url: ${REDIS_URL}
-      ssl:
-        enabled: true
+    # Upstash Redis connection is provided via Render env vars:
+    # SPRING_DATA_REDIS_HOST, SPRING_DATA_REDIS_PORT,
+    # SPRING_DATA_REDIS_PASSWORD, SPRING_DATA_REDIS_SSL_ENABLED
+    # Spring Boot reads these automatically via relaxed binding — no yaml needed.
 
   cache:
     type: redis

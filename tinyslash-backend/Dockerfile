@@ -1,5 +1,5 @@
 # Multi-stage build for production optimization
-FROM maven:3.9.4-eclipse-temurin-17 AS build
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Set working directory
 WORKDIR /app
@@ -13,7 +13,7 @@ COPY url-service/src ./src
 RUN mvn clean package -DskipTests
 
 # Production stage
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*

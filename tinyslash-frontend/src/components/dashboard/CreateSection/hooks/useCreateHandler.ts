@@ -39,6 +39,7 @@ interface UseCreateHandlerProps {
   leadLockConfig: LeadLockConfig;
   trustBadgeConfig: TrustBadgeConfig;
   smartActionConfig: SmartActionConfig;
+  pixelIds?: string[];
 }
 
 export const useCreateHandler = (props: UseCreateHandlerProps) => {
@@ -74,7 +75,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
     deepLinkConfig,
     leadLockConfig,
     trustBadgeConfig,
-    smartActionConfig
+    smartActionConfig,
+    pixelIds
   } = props;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -313,7 +315,8 @@ export const useCreateHandler = (props: UseCreateHandlerProps) => {
           deepLinkConfig: newLink.deepLinkConfig,
           leadLockConfig: newLink.leadLockConfig,
           trustBadgeConfig: newLink.trustBadgeConfig,
-          smartActionConfig: newLink.smartActionConfig
+          smartActionConfig: newLink.smartActionConfig,
+          pixelIds: pixelIds
         };
 
         if (mode === 'url' || mode === 'file') {

@@ -20,28 +20,34 @@ public enum PlanPolicy {
             false, false, false, false, false, false,
             false, false, false, false,
             false, false, false, false, false,
-            1, 5, false, false, false, false, false),
+            1, 5, false, false, false, false, false,
+            0, 0, false),
 
     // STARTER: 2 Pages, Unlimited Links, Basic Customization + Premium Templates
     STARTER("Starter", 0, 0, 1000, Integer.MAX_VALUE, 100, 0,
             false, false, false, false, false, false,
             true, true, true, true,
             true, true, false, false, false,
-            2, Integer.MAX_VALUE, false, false, false, false, false),
+            2, Integer.MAX_VALUE, false, false, false, false, false,
+            0, 0, false),
 
     // PRO: 5 Pages, Custom Domain, Advanced Analytics, Smart Links, Lead Forms
+    // Pixel: 5 Saved, 2 Per Link, Basic Analytics
     PRO("Pro", 1, 3, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0,
             true, true, true, false, true, true,
             true, true, true, true,
             true, true, true, true, true,
-            5, Integer.MAX_VALUE, false, true, true, true, true),
+            5, Integer.MAX_VALUE, false, true, true, true, true,
+            5, 2, false),
 
     // BUSINESS: Unlimited Pages, White-label, Lead Forms, Team
+    // Pixel: Unlimited Saved, 5 Per Link, Advanced Analytics
     BUSINESS("Business", 3, 10, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0,
             true, true, true, true, true, true,
             true, true, true, true,
             true, true, true, true, true,
-            Integer.MAX_VALUE, Integer.MAX_VALUE, true, true, true, true, true),
+            Integer.MAX_VALUE, Integer.MAX_VALUE, true, true, true, true, true,
+            Integer.MAX_VALUE, 5, true),
 
     // BUSINESS TRIAL
     BUSINESS_TRIAL("Business Trial", 3, 10, Integer.MAX_VALUE, Integer.MAX_VALUE,
@@ -49,7 +55,8 @@ public enum PlanPolicy {
             true, true, true, true, true, true,
             true, true, true, true,
             true, true, true, true, true,
-            Integer.MAX_VALUE, Integer.MAX_VALUE, true, true, true, true, true);
+            Integer.MAX_VALUE, Integer.MAX_VALUE, true, true, true, true, true,
+            Integer.MAX_VALUE, 5, true);
 
     private final String displayName;
     private final int domains;
@@ -92,6 +99,11 @@ public enum PlanPolicy {
     private final boolean leadForms;
     private final boolean premiumTemplates; // New Feature
 
+    // Pixel Features (NEW)
+    private final int maxPixels;
+    private final int maxPixelsPerLink;
+    private final boolean advancedPixelAnalytics;
+
     PlanPolicy(String displayName, int domains, int teamMembers, int urlsPerMonth,
             int qrCodesPerMonth, int filesPerMonth, int trialDays,
             boolean customDomain, boolean analytics, boolean teamCollaboration,
@@ -100,7 +112,8 @@ public enum PlanPolicy {
             boolean clickLimits, boolean customQRColors, boolean qrLogo,
             boolean qrBranding, boolean advancedQRSettings, boolean advancedFileSettings,
             int pagesPerUser, int linksPerPage, boolean removePageBranding,
-            boolean pageCustomDomain, boolean pageAdvancedAnalytics, boolean smartLinks, boolean leadForms) {
+            boolean pageCustomDomain, boolean pageAdvancedAnalytics, boolean smartLinks, boolean leadForms,
+            int maxPixels, int maxPixelsPerLink, boolean advancedPixelAnalytics) {
         this.displayName = displayName;
         this.domains = domains;
         this.teamMembers = teamMembers;
@@ -130,6 +143,9 @@ public enum PlanPolicy {
         this.pageAdvancedAnalytics = pageAdvancedAnalytics;
         this.smartLinks = smartLinks;
         this.leadForms = leadForms;
+        this.maxPixels = maxPixels;
+        this.maxPixelsPerLink = maxPixelsPerLink;
+        this.advancedPixelAnalytics = advancedPixelAnalytics;
         // Logic: Premium templates available for Paid plans (Starter+)
         this.premiumTemplates = this.urlsPerMonth > 75; // Hacky but works based on existing consts, or just pass it?
         // Let's rely on isPaid() derivation for now to avoid changing constructor
@@ -262,6 +278,19 @@ public enum PlanPolicy {
         return isPaid(); // Available on Starter, Pro, Business
     }
 
+    // Pixel Limits
+    public int getMaxPixels() {
+        return maxPixels;
+    }
+
+    public int getMaxPixelsPerLink() {
+        return maxPixelsPerLink;
+    }
+
+    public boolean hasAdvancedPixelAnalytics() {
+        return advancedPixelAnalytics;
+    }
+
     public static PlanPolicy fromString(String planName) {
         if (planName == null || planName.trim().isEmpty()) {
             return FREE;
@@ -309,6 +338,14 @@ public enum PlanPolicy {
 
     public boolean canAddLinkToPage(int currentLinkCount) {
         return currentLinkCount < this.linksPerPage;
+    }
+
+    public boolean canCreatePixel(int currentPixelCount) {
+        return currentPixelCount < this.maxPixels;
+    }
+
+    public boolean canAddPixelToLink(int currentLinkPixelCount) {
+        return currentLinkPixelCount < this.maxPixelsPerLink;
     }
 
     /**
@@ -395,6 +432,10 @@ public enum PlanPolicy {
                 return hasLeadForms();
             case "premiumtemplates":
                 return hasPremiumTemplates();
+            case "pixels":
+                return maxPixels > 0;
+            case "advancedpixelanalytics":
+                return hasAdvancedPixelAnalytics();
             default:
                 return false;
         }

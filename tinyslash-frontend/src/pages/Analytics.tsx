@@ -14,10 +14,12 @@ import {
   MapPin,
   Clock,
   Users,
-  MousePointer
+  MousePointer,
+  Zap
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
+import PixelFireStats from '../components/dashboard/CreateSection/ui/PixelFireStats';
 
 interface LinkAnalytics {
   shortCode: string;
@@ -714,6 +716,19 @@ const Analytics: React.FC = () => {
                 No hourly data available
               </div>
             )}
+          </div>
+
+          {/* Pixel Analytics (SaaS-grade) */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Retargeting Pixel Performance</h3>
+              <span className="ml-auto text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full font-medium">SaaS Analytics</span>
+            </div>
+            <PixelFireStats
+              linkId={analytics.shortCode}
+              userId={searchParams.get('userId') || user?.id || ''}
+            />
           </div>
         </div>
       </div>

@@ -85,7 +85,7 @@ public class UrlShorteningService {
     public ShortenedUrl createShortUrl(String originalUrl, String userId, String customAlias,
             String password, Integer expirationDays, Integer maxClicks, String title, String description,
             String scopeType, String scopeId, String customDomain,
-            String utmSource, String utmMedium, String utmCampaign) {
+            String utmSource, String utmMedium, String utmCampaign, List<String> pixelIds) {
 
         ShortenedUrl template = new ShortenedUrl();
         template.setOriginalUrl(originalUrl);
@@ -103,8 +103,18 @@ public class UrlShorteningService {
         template.setUtmSource(utmSource);
         template.setUtmMedium(utmMedium);
         template.setUtmCampaign(utmCampaign);
+        template.setPixelIds(pixelIds);
 
         return createShortUrl(template);
+    }
+
+    // Legacy overload for backward compatibility
+    public ShortenedUrl createShortUrl(String originalUrl, String userId, String customAlias,
+            String password, Integer expirationDays, Integer maxClicks, String title, String description,
+            String scopeType, String scopeId, String customDomain,
+            String utmSource, String utmMedium, String utmCampaign) {
+        return createShortUrl(originalUrl, userId, customAlias, password, expirationDays, maxClicks, title, description,
+                scopeType, scopeId, customDomain, utmSource, utmMedium, utmCampaign, null);
     }
 
     public ShortenedUrl createShortUrl(ShortenedUrl template) {
@@ -134,6 +144,7 @@ public class UrlShorteningService {
         String description = template.getDescription();
         String scopeType = template.getScopeType() != null ? template.getScopeType() : "USER";
         String scopeId = template.getScopeId() != null ? template.getScopeId() : userId;
+        List<String> pixelIds = template.getPixelIds(); // Extract pixels
 
         // 2. Default Domain Handling (Never Null)
         String customDomain = template.getDomain();
@@ -280,6 +291,8 @@ public class UrlShorteningService {
             shortenedUrl.setCustomAlias(customAlias); // Persist normalized alias
             shortenedUrl.setTitle(title);
             shortenedUrl.setDescription(description);
+            if (pixelIds != null)
+                shortenedUrl.setPixelIds(new java.util.ArrayList<>(pixelIds));
 
             // UTM Logic (same as before)
             if (utmSource != null && !utmSource.trim().isEmpty())
@@ -580,6 +593,11 @@ public class UrlShorteningService {
             existing.setCategory(updates.getCategory());
         if (updates.getNotes() != null)
             existing.setNotes(updates.getNotes());
+
+        // Update Pixel IDs
+        if (updates.getPixelIds() != null) {
+            existing.setPixelIds(updates.getPixelIds());
+        }
 
         // Active status
         if (updates.isActive() != existing.isActive()) {

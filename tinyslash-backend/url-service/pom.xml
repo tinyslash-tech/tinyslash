@@ -237,6 +237,13 @@
             <artifactId>mongodb</artifactId>
             <scope>test</scope>
         </dependency>
+        
+        <!-- Resilience4j for Circuit Breaker -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>2.1.0</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>

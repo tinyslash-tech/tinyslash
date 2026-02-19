@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   LogOut,
   HelpCircle,
-  Shield // Added Shield icon
+  Shield,
+  Target // Added Target icon for Pixels
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -33,7 +34,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
-type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'pages' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
+type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'pages' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings' | 'pixels';
 type CreateMode = 'url' | 'qr' | 'file';
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
@@ -62,6 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
     else if (path.includes('/dashboard/trust-badge')) setActiveSection('trust-badge');
     else if (path.includes('/dashboard/qr-codes')) setActiveSection('qr-codes');
     else if (path.includes('/dashboard/file-links')) setActiveSection('file-to-url');
+    else if (path.includes('/dashboard/pixels')) setActiveSection('pixels');
     else if (path.includes('/dashboard/analytics')) setActiveSection('analytics');
     else if (path.includes('/dashboard/domains')) setActiveSection('domains');
   }, [location.pathname, location.state]);
@@ -106,6 +108,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           id: 'file-to-url' as SidebarSection,
           label: 'Files',
           icon: Upload,
+        },
+        {
+          id: 'pixels' as SidebarSection,
+          label: 'Pixels',
+          icon: Target,
         },
         {
           id: 'pages' as SidebarSection,
@@ -173,6 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
       case 'pages': navigate('/dashboard/pages'); break;
       case 'qr-codes': navigate('/dashboard/qr-codes'); break;
       case 'file-to-url': navigate('/dashboard/file-links'); break;
+      case 'pixels': navigate('/dashboard/pixels'); break;
       case 'leads': navigate('/dashboard/leads'); break;
       case 'trust-badge': navigate('/dashboard/trust-badge'); break;
       case 'analytics': navigate('/dashboard/analytics'); break;

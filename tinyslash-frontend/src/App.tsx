@@ -67,6 +67,7 @@ const VerifiedPage = lazy(() => import('./pages/VerifiedPage'));
 const RedirectPage = lazy(() => import('./pages/RedirectPage'));
 const PublicPage = lazy(() => import('./pages/public/PublicPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const PixelManager = lazy(() => import('./components/pixels/PixelManager'));
 
 import './App.css';
 
@@ -195,6 +196,14 @@ const AppContent: React.FC = () => {
                 <AuthRedirect requireAuth={true}>
                   <DashboardLayout>
                     <UnifiedDashboard />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
+              <Route path="/dashboard/pixels" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <PixelManager />
                   </DashboardLayout>
                 </AuthRedirect>
               } />

@@ -37,6 +37,9 @@ public class UrlController {
     @Autowired
     private com.urlshortener.service.SecurityService securityService;
 
+    @Autowired
+    private com.urlshortener.service.PixelFiringService pixelFiringService;
+
     @PostMapping("/precheck")
     public ResponseEntity<Map<String, Object>> preCheckUrl(@RequestBody Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();
@@ -175,6 +178,44 @@ public class UrlController {
             if (url.isTrackClicks() && request != null) {
                 // You can add analytics recording here
                 urlShorteningService.incrementClicks(shortCode, url.getDomain());
+
+                // --- ASYNC PIXEL FIRING ---
+                try {
+                    // Extract context from request
+                    String ipAddress = (String) request.get("ipAddress");
+                    String userAgent = (String) request.get("userAgent");
+                    String referrer = (String) request.get("referrer");
+
+                    com.urlshortener.dto.PixelRequestContext.PixelRequestContextBuilder contextBuilder = com.urlshortener.dto.PixelRequestContext
+                            .builder()
+                            .linkId(url.getId())
+                            .shortCode(url.getShortCode())
+                            .originalUrl(url.getOriginalUrl())
+                            .userId(url.getUserId())
+                            .ipAddress(ipAddress != null ? ipAddress : "unknown")
+                            .userAgent(userAgent != null ? userAgent : "unknown")
+                            .referrer(referrer)
+                            .clickTime(java.time.Instant.now())
+                            .eventId(java.util.UUID.randomUUID().toString());
+
+                    // Retrieve Cookie Data (fbc, fbp) if sent in request body for better matching
+                    // Note: Frontend should send these if available in document.cookie
+                    if (request.containsKey("fbp"))
+                        contextBuilder.fbp((String) request.get("fbp"));
+                    if (request.containsKey("fbc"))
+                        contextBuilder.fbc((String) request.get("fbc"));
+
+                    com.urlshortener.dto.PixelRequestContext context = contextBuilder.build();
+
+                    // Fire Async - Non-blocking
+                    if (url.getPixelIds() != null && !url.getPixelIds().isEmpty()) {
+                        pixelFiringService.fireAsync(url.getId(), url.getShortCode(), url.getPixelIds(), context);
+                    }
+                } catch (Exception e) {
+                    // Log but do not block redirect
+                    System.err.println("Pixel firing init failed: " + e.getMessage());
+                }
+                // ---------------------------
             }
 
             // Return the original URL
@@ -323,6 +364,10 @@ public class UrlController {
                     template.setDeepLinkConfig(objectMapper.convertValue(request.get("deepLinkConfig"),
                             ShortenedUrl.DeepLinkConfig.class));
                 }
+                if (request.containsKey("pixelIds")) {
+                    List<String> pixelIds = (List<String>) request.get("pixelIds");
+                    template.setPixelIds(pixelIds);
+                }
                 if (request.containsKey("leadLockConfig")) {
                     template.setLeadLockConfig(objectMapper.convertValue(request.get("leadLockConfig"),
                             ShortenedUrl.LeadLockConfig.class));
@@ -351,6 +396,7 @@ public class UrlController {
             urlData.put("utmSource", shortenedUrl.getUtmSource());
             urlData.put("utmMedium", shortenedUrl.getUtmMedium());
             urlData.put("utmCampaign", shortenedUrl.getUtmCampaign());
+            urlData.put("pixelIds", shortenedUrl.getPixelIds());
 
             response.put("success", true);
             response.put("message", "URL shortened successfully");
@@ -399,6 +445,7 @@ public class UrlController {
             urlData.put("totalClicks", url.getTotalClicks());
             urlData.put("createdAt", url.getCreatedAt());
             urlData.put("isPasswordProtected", url.isPasswordProtected());
+            urlData.put("pixelIds", url.getPixelIds());
 
             response.put("success", true);
             response.put("data", urlData);
@@ -434,6 +481,7 @@ public class UrlController {
                 urlData.put("lastClickedAt", url.getLastClickedAt());
                 urlData.put("isPasswordProtected", url.isPasswordProtected());
                 urlData.put("hasQrCode", url.isHasQrCode());
+                urlData.put("pixelIds", url.getPixelIds());
                 return urlData;
             }).toList();
 
@@ -539,6 +587,13 @@ public class UrlController {
                 }
             }
 
+            // Pixel IDs
+            if (request.containsKey("pixelIds")) {
+                @SuppressWarnings("unchecked")
+                List<String> pixelIds = (List<String>) request.get("pixelIds");
+                updates.setPixelIds(pixelIds);
+            }
+
             // Active Status
             if (request.containsKey("isActive")) {
                 updates.setActive(Boolean.parseBoolean(request.get("isActive").toString()));
@@ -553,7 +608,8 @@ public class UrlController {
                     "title", updated.getTitle(),
                     "originalUrl", updated.getOriginalUrl(),
                     "description", updated.getDescription() != null ? updated.getDescription() : "",
-                    "updatedAt", updated.getUpdatedAt()));
+                    "updatedAt", updated.getUpdatedAt(),
+                    "pixelIds", updated.getPixelIds()));
 
             return ResponseEntity.ok(response);
 
@@ -726,6 +782,7 @@ public class UrlController {
                 urlData.put("userId", url.getUserId());
                 urlData.put("domain", url.getDomain());
                 urlData.put("tags", url.getTags());
+                urlData.put("pixelIds", url.getPixelIds());
                 return urlData;
             }).toList();
 

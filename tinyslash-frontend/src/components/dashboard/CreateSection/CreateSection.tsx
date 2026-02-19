@@ -61,6 +61,7 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
   const [qrType, setQrType] = useState<"static" | "dynamic">("dynamic");
   const [isOneTime, setIsOneTime] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedPixelIds, setSelectedPixelIds] = useState<string[]>([]);
 
   // New Features State
   const [smartLinkPreview, setSmartLinkPreview] = useState<SmartLinkPreview>({ enabled: false, title: '', description: '' });
@@ -163,7 +164,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
     deepLinkConfig,
     leadLockConfig,
     trustBadgeConfig,
-    smartActionConfig
+    smartActionConfig,
+    pixelIds: selectedPixelIds
   });
 
   // Lifecycle
@@ -207,6 +209,12 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
         trustBadge: editData.trustBadge
       });
 
+      if (editData.pixels) {
+        setSelectedPixelIds(editData.pixels.map((p: any) => p.id));
+      } else {
+        setSelectedPixelIds([]);
+      }
+
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -223,7 +231,9 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
       setPassword('');
       setExpirationDays('');
       setMaxClicks('');
+      setMaxClicks('');
       setIsOneTime(false);
+      setSelectedPixelIds([]);
     } else {
       setIsEditMode(false);
       setEditQRId(null);
@@ -389,6 +399,8 @@ const CreateSection: React.FC<CreateSectionProps> = ({ mode, onModeChange, onNav
             setSmartActionConfig={setSmartActionConfig}
             featureAccess={featureAccess}
             upgradeModal={upgradeModal}
+            selectedPixelIds={selectedPixelIds}
+            setSelectedPixelIds={setSelectedPixelIds}
           />
 
           {/* Create Button */}

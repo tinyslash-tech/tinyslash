@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Link,
   ExternalLink,
   Edit,
   Trash2,
   Eye,
+  Zap,
   Search,
   Filter,
   Calendar,
@@ -20,6 +21,7 @@ import { useUserUrls } from '../../hooks/useDashboardData';
 import { TableSkeleton } from '../ui/Skeleton';
 import LinkActions from '../LinkActions';
 import EditLinkModal from '../EditLinkModal';
+import { PixelService } from '../../services/PixelService';
 
 interface ShortenedLink {
   id: string;
@@ -32,6 +34,8 @@ interface ShortenedLink {
   type: 'url';
   tags?: string[];
   title?: string;
+  /** Pixel IDs attached to this link — used to show ⚡ fire rate badge */
+  pixelIds?: string[];
 }
 
 interface LinksManagerProps {
@@ -41,7 +45,6 @@ interface LinksManagerProps {
 const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
   const { user } = useAuth();
 
-  // Use React Query for fast loading with caching
   const { data: rawLinks, isLoading, isFetching, error, refetch } = useUserUrls();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,6 +53,8 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
   const [selectedLinks, setSelectedLinks] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingLink, setEditingLink] = useState<ShortenedLink | null>(null);
+  /** Product: ⚡ Fire rate badge per link — lazy loaded for links with pixels */
+  const [fireRates, setFireRates] = useState<Record<string, number | null>>({});
 
   // Format the raw data from API
   const links: ShortenedLink[] = rawLinks ? rawLinks.map((link: any) => ({
@@ -61,8 +66,28 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
     createdAt: link.createdAt,
     title: link.title,
     tags: link.tags || [],
+    pixelIds: link.pixelIds || [],
     type: 'url' as const
   })) : [];
+
+  // Product: Lazy-load fire rates for links that have pixels attached
+  useEffect(() => {
+    if (!user?.id || links.length === 0) return;
+    links
+      .filter(l => l.pixelIds && l.pixelIds.length > 0 && !(l.shortCode in fireRates))
+      .forEach(l => {
+        setFireRates(prev => ({ ...prev, [l.shortCode]: null })); // mark loading
+        PixelService.getLinkPixelStats(l.shortCode, user.id)
+          .then(stats => {
+            setFireRates(prev => ({ ...prev, [l.shortCode]: stats.overallFireRate }));
+          })
+          .catch(() => {
+            setFireRates(prev => ({ ...prev, [l.shortCode]: -1 })); // -1 = error / no data
+          });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawLinks, user?.id]);
+
 
   const filteredLinks = links
     .filter(link => {
@@ -527,9 +552,26 @@ const LinksManager: React.FC<LinksManagerProps> = ({ onCreateClick }) => {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 text-xs text-gray-500">
+                      <div className="flex items-center space-x-2 text-xs text-gray-500">
                         <Eye className="w-3 h-3" />
                         <span>{link.clicks}</span>
+                        {/* Product: ⚡ Fire Rate Badge — shown for links with pixels */}
+                        {link.pixelIds && link.pixelIds.length > 0 && (() => {
+                          const rate = fireRates[link.shortCode];
+                          if (rate === undefined) return null; // not yet triggered
+                          if (rate === null) return <span className="text-indigo-400 animate-pulse">⚡ …</span>;
+                          if (rate === -1 || rate === 0) return null; // no data yet
+                          const color = rate >= 95 ? 'bg-green-100 text-green-700' : rate >= 80 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+                          return (
+                            <span
+                              title={`Pixel fire rate: ${rate}%`}
+                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer ${color}`}
+                              onClick={() => window.open(`/dashboard/links/${link.shortCode}/analytics`, '_blank', 'noopener,noreferrer')}
+                            >
+                              <Zap className="w-3 h-3" />{rate}%
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
 

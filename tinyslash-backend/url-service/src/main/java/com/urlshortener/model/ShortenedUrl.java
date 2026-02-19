@@ -119,6 +119,17 @@ public class ShortenedUrl {
     private GeoConfig geoConfig;
     private TrustBadgeConfig trustBadgeConfig;
 
+    // Retargeting Pixels
+    private java.util.List<String> pixelIds = new java.util.ArrayList<>();
+
+    public java.util.List<String> getPixelIds() {
+        return pixelIds;
+    }
+
+    public void setPixelIds(java.util.List<String> pixelIds) {
+        this.pixelIds = pixelIds;
+    }
+
     // Inner Classes for Configuration
     public static class DeepLinkConfig {
         private boolean enabled;

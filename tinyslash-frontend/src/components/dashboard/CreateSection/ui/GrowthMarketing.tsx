@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Share2, Globe, Smartphone, Lock, Plus, Trash2, HelpCircle, LayoutGrid, MessageCircle, Instagram, Globe2 } from 'lucide-react';
+import { Share2, Globe, Smartphone, Lock, Plus, Trash2, HelpCircle, LayoutGrid, MessageCircle, Instagram, Globe2, Target } from 'lucide-react';
 import { SmartLinkPreview, GeoConfig, DeepLinkConfig, LeadLockConfig, SmartActionConfig, CreateMode } from '../types';
+import { PixelSelector } from './PixelSelector'; // Imported PixelSelector
 
 interface GrowthMarketingProps {
   smartLinkPreview: SmartLinkPreview;
@@ -16,6 +17,8 @@ interface GrowthMarketingProps {
   featureAccess: any;
   upgradeModal: any;
   mode?: CreateMode;
+  selectedPixelIds?: string[];
+  setSelectedPixelIds?: (ids: string[]) => void;
 }
 
 export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
@@ -31,7 +34,9 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
   setSmartActionConfig,
   featureAccess,
   upgradeModal,
-  mode
+  mode,
+  selectedPixelIds,
+  setSelectedPixelIds
 }) => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -892,6 +897,68 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
     </div>
   );
 
+  /* --- 6. Retargeting Pixels --- */
+  const renderRetargetingPixels = () => {
+    if (!selectedPixelIds || !setSelectedPixelIds) return null;
+
+    return (
+      <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white transition-all hover:shadow-md mb-3">
+        <button
+          onClick={() => toggleSection('pixels')}
+          className="w-full text-left bg-white p-5 focus:outline-none transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className={`p-3 rounded-xl ${selectedPixelIds.length > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
+                <Target className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Retargeting Pixels</h3>
+                <p className="text-sm text-gray-500 mt-0.5">Every link click captures your audience — even when ad blockers are on.</p>
+              </div>
+            </div>
+            <span className="text-gray-400">
+              {expandedSection === 'pixels' ? (
+                <div className="bg-gray-100 p-2 rounded-full"><div className="w-4 h-0.5 bg-gray-500"></div></div>
+              ) : (
+                <Plus className="w-5 h-5" />
+              )}
+            </span>
+          </div>
+        </button>
+
+        {expandedSection === 'pixels' && (
+          <div className="p-5 pt-0 animate-fadeIn">
+            {/* 3 Bullet Benefits */}
+            <div className="ml-16 mb-6">
+              <ul className="space-y-2">
+                <li className="flex items-center text-sm text-gray-600">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span>
+                  <strong className="text-gray-700 mr-1">Never miss a conversion.</strong> Works even when users have ad blockers.
+                </li>
+                <li className="flex items-center text-sm text-gray-600">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span>
+                  <strong className="text-gray-700 mr-1">Build better audiences.</strong> Every click adds a high-intent user to your ad campaign.
+                </li>
+                <li className="flex items-center text-sm text-gray-600">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span>
+                  <strong className="text-gray-700 mr-1">Works with Meta, Google Ads & custom webhooks.</strong>
+                </li>
+              </ul>
+            </div>
+
+            <div className="border-t border-gray-100 pt-5 mt-2">
+              <PixelSelector
+                selectedPixelIds={selectedPixelIds}
+                onChange={setSelectedPixelIds}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {/* Smart Action is ONLY for QR Mode - Priority #1 */}
@@ -901,6 +968,7 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
       {renderOpenInApp()}
       {renderLocationLanguageRedirect()}
       {renderUnlockAfterSignup()}
+      {renderRetargetingPixels()}
     </div>
   );
 };

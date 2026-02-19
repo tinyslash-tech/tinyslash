@@ -25,6 +25,10 @@ interface AdvancedSettingsProps {
   expirationDays: number | '';
   setExpirationDays: (days: number | '') => void;
 
+  // Pixels Props
+  selectedPixelIds?: string[];
+  setSelectedPixelIds?: (ids: string[]) => void;
+
   // Max Clicks Props
   maxClicks: number | '';
   setMaxClicks: (clicks: number | '') => void;
@@ -118,7 +122,9 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   smartActionConfig,
   setSmartActionConfig,
   featureAccess,
-  upgradeModal
+  upgradeModal,
+  selectedPixelIds,
+  setSelectedPixelIds
 }) => {
   const [isBasicOpen, setIsBasicOpen] = useState(false);
   const [isGrowthOpen, setIsGrowthOpen] = useState(false);
@@ -258,21 +264,25 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
           setIsOpen={setIsGrowthOpen}
           headerColorClass="text-purple-600"
         >
-          <GrowthMarketing
-            smartLinkPreview={smartLinkPreview}
-            setSmartLinkPreview={setSmartLinkPreview}
-            geoConfig={geoConfig}
-            setGeoConfig={setGeoConfig}
-            deepLinkConfig={deepLinkConfig}
-            setDeepLinkConfig={setDeepLinkConfig}
-            leadLockConfig={leadLockConfig}
-            setLeadLockConfig={setLeadLockConfig}
-            smartActionConfig={smartActionConfig}
-            setSmartActionConfig={setSmartActionConfig}
-            featureAccess={featureAccess}
-            upgradeModal={upgradeModal}
-            mode={mode}
-          />
+          <div className="space-y-6">
+            <GrowthMarketing
+              smartLinkPreview={smartLinkPreview}
+              setSmartLinkPreview={setSmartLinkPreview}
+              geoConfig={geoConfig}
+              setGeoConfig={setGeoConfig}
+              deepLinkConfig={deepLinkConfig}
+              setDeepLinkConfig={setDeepLinkConfig}
+              leadLockConfig={leadLockConfig}
+              setLeadLockConfig={setLeadLockConfig}
+              smartActionConfig={smartActionConfig}
+              setSmartActionConfig={setSmartActionConfig}
+              featureAccess={featureAccess}
+              upgradeModal={upgradeModal}
+              mode={mode}
+              selectedPixelIds={selectedPixelIds}
+              setSelectedPixelIds={setSelectedPixelIds}
+            />
+          </div>
         </AccordionSection>
       )}
 

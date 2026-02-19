@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { ChartSkeleton, StatCardSkeleton } from '../ui/Skeleton';
@@ -16,18 +16,35 @@ import {
   Users,
   RefreshCw,
   Megaphone,
-  Target
+  Target,
+  Zap,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import LocationAnalytics from './LocationAnalytics';
+import { PixelService, PixelPerformance } from '../../services/PixelService';
 
 const AnalyticsSection: React.FC = () => {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [activeTab, setActiveTab] = useState<'overview' | 'location' | 'performance'>('overview');
+  const [pixelPerf, setPixelPerf] = useState<PixelPerformance | null>(null);
+  const [pixelPerfLoading, setPixelPerfLoading] = useState(false);
 
   // Use React Query for fast loading with caching
   const { stats, isLoading, isRefreshing, hasData, error, refetch } = useDashboardData();
+
+  // Load pixel performance when performance tab is active
+  useEffect(() => {
+    if (activeTab === 'performance' && user?.id && !pixelPerf && !pixelPerfLoading) {
+      setPixelPerfLoading(true);
+      PixelService.getPixelPerformance(user.id, 30)
+        .then(setPixelPerf)
+        .catch(() => { }) // silently fail
+        .finally(() => setPixelPerfLoading(false));
+    }
+  }, [activeTab, user?.id]);
 
   // Process analytics data from React Query stats
   const analyticsData = stats ? (() => {
@@ -407,6 +424,113 @@ const AnalyticsSection: React.FC = () => {
                     <Megaphone className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="font-medium text-gray-600 mb-1">No campaigns yet</p>
                     <p className="text-sm text-gray-400">Add Campaign Tracking when creating a link to see performance here.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Pixel Performance SaaS Card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Pixel Performance</h3>
+                <span className="ml-auto text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Last 30 days</span>
+              </div>
+            </div>
+            <div className="p-6">
+              {pixelPerfLoading && (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-10 bg-gray-100 rounded" />
+                  <div className="h-10 bg-gray-100 rounded" />
+                </div>
+              )}
+              {!pixelPerfLoading && pixelPerf && (
+                <>
+                  {/* Summary stats */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-xs text-green-600 font-medium">Captured</span>
+                      </div>
+                      <p className="text-2xl font-bold text-green-700">{pixelPerf.totalFired.toLocaleString()}</p>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <XCircle className="w-4 h-4 text-red-500" />
+                        <span className="text-xs text-red-500 font-medium">Missed</span>
+                      </div>
+                      <p className="text-2xl font-bold text-red-600">{pixelPerf.totalFailed.toLocaleString()}</p>
+                    </div>
+                    <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <TrendingUp className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs text-indigo-600 font-medium">Fire Rate</span>
+                      </div>
+                      <p className="text-2xl font-bold text-indigo-700">{pixelPerf.fireRate}%</p>
+                    </div>
+                  </div>
+
+                  {/* P4: Fire Rate Alert — shown when fire rate < 80% */}
+                  {pixelPerf.fireRateAlert && (
+                    <div className="mb-5 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-semibold text-amber-800">Pixel Fire Rate Below 80%</p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          Your pixels are failing at an elevated rate. This may indicate an expired access token, invalid pixel ID, or API quota exhaustion. Check your pixel configuration.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Daily trend */}
+                  {pixelPerf.byDay.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-sm font-medium text-gray-500 mb-2">Daily Trend</p>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <BarChart data={pixelPerf.byDay}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Bar dataKey="fired" name="Captured" fill="#10b981" radius={[3, 3, 0, 0]} />
+                          <Bar dataKey="failed" name="Missed" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Per-pixel breakdown */}
+                  {pixelPerf.byPixel.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Per-Pixel Breakdown</p>
+                      <div className="space-y-2">
+                        {pixelPerf.byPixel.map((p: any) => (
+                          <div key={p.pixelId} className="flex items-center justify-between text-sm p-2 rounded-lg bg-gray-50">
+                            <span className="font-medium text-gray-800">{p.name}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-green-600">{p.fired} ✓</span>
+                              {p.failed > 0 && <span className="text-red-500">{p.failed} ✗</span>}
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.fireRate >= 95 ? 'bg-green-100 text-green-700' : p.fireRate >= 80 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{p.fireRate}%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              {!pixelPerfLoading && !pixelPerf && (
+                <div className="h-[160px] flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <Zap className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm">No pixel events yet. Fire pixels by activating them on your links.</p>
                   </div>
                 </div>
               )}

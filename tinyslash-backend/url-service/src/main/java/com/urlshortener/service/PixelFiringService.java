@@ -50,7 +50,7 @@ public class PixelFiringService {
   @Autowired
   private EncryptionService encryptionService;
 
-  @Autowired
+  @Autowired(required = false) // Optional: rate limiting disabled gracefully when Redis unavailable
   private StringRedisTemplate redisTemplate;
 
   @Autowired
@@ -77,13 +77,15 @@ public class PixelFiringService {
       return;
 
     // P5: Sampling check is applied per-pixel inside the loop
-    // Rate Limiting: 1 fire per IP per link per 5 seconds
-    String rateLimitKey = "pixel_rate:" + linkId + ":" + context.getIpAddress();
-    Boolean isAllowed = redisTemplate.opsForValue().setIfAbsent(rateLimitKey, "1", Duration.ofSeconds(5));
-
-    if (Boolean.FALSE.equals(isAllowed)) {
-      meterRegistry.counter("pixel.fire.ratelimited").increment();
-      return; // Silently drop spam/bursts
+    // Rate Limiting: 1 fire per IP per link per 5 seconds (skipped if Redis
+    // unavailable)
+    if (redisTemplate != null) {
+      String rateLimitKey = "pixel_rate:" + linkId + ":" + context.getIpAddress();
+      Boolean isAllowed = redisTemplate.opsForValue().setIfAbsent(rateLimitKey, "1", Duration.ofSeconds(5));
+      if (Boolean.FALSE.equals(isAllowed)) {
+        meterRegistry.counter("pixel.fire.ratelimited").increment();
+        return; // Silently drop spam/bursts
+      }
     }
 
     List<Pixel> pixels = pixelRepository.findAllById(pixelIds);

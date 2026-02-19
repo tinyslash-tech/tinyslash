@@ -9,6 +9,16 @@ spring:
       database: pebly-database
       auto-index-creation: false
 
+    # Upstash Redis — set REDIS_URL in Render env vars
+    # Format: rediss://:<password>@<host>:<port>
+    redis:
+      url: ${REDIS_URL}
+      ssl:
+        enabled: true
+
+  cache:
+    type: redis
+
   # CORS handling moved to SecurityConfig.java
 
 app:

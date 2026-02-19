@@ -50,7 +50,7 @@ public class PixelFiringService {
   @Autowired
   private EncryptionService encryptionService;
 
-  @Autowired(required = false) // Optional: rate limiting disabled gracefully when Redis unavailable
+  @Autowired
   private StringRedisTemplate redisTemplate;
 
   @Autowired

@@ -4,36 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
 import { useUpgradeModal } from '../context/ModalContext';
 import { subscriptionService, UserPlanInfo } from '../services/subscriptionService';
-import { getMyDomains, addDomain, verifyDomain, deleteDomain } from '../services/domainService'; // Removed CustomDomain from here as it's defined locally
+import { getMyDomains, addDomain, verifyDomain, deleteDomain, CustomDomain } from '../services/domainService';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import CustomDomainOnboarding from './CustomDomainOnboarding';
-// Removed unused import - UpgradeModal is now global
-
-interface CustomDomain {
-  id: string;
-  domainName: string;
-  ownerType: string;
-  ownerId: string;
-  status: 'RESERVED' | 'PENDING' | 'VERIFIED' | 'ERROR' | 'SUSPENDED' | 'DELETING' | 'SOFT_BLOCKED';
-  sslStatus: 'PENDING' | 'ACTIVE' | 'ERROR' | 'EXPIRED' | 'PENDING_SSL' | 'SSL_ISSUED' | 'SSL_FAILED' | 'SSL_EXPIRED';
-  cnameTarget: string;
-  verificationToken: string;
-  reservedUntil?: string;
-  verificationAttempts: number;
-  lastVerificationAttempt?: string;
-  verificationError?: string;
-  sslProvider?: string;
-  sslIssuedAt?: string;
-  sslExpiresAt?: string;
-  sslError?: string;
-  isBlacklisted: boolean;
-  blacklistReason?: string;
-  totalRedirects: number;
-  lastUsed?: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface DomainTransferRequest {
   domainId: string;
@@ -73,10 +47,11 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
   const [isAddingDomain, setIsAddingDomain] = useState(false);
   const [newDomain, setNewDomain] = useState('');
   const [verificationMethod, setVerificationMethod] = useState<'dns' | 'file'>('dns');
-  const [showVerificationModal, setShowVerificationModal] = useState<CustomDomain | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingDomain, setOnboardingDomain] = useState<CustomDomain | undefined>(undefined);
 
   // Debug logging for custom domain access
   useEffect(() => {
@@ -255,50 +230,7 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
 
   // Re-implementing handlers correctly using service calls:
 
-  // Handler for adding a domain - uses imported addDomain
-  const handleSubmitAddDomain = async () => {
-    // This logic was in addDomainHandler in previous step
-    if (!newDomain.trim()) return;
 
-    const domainName = newDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
-
-    // Validate domain format
-    if (!isValidDomain(domainName)) {
-      toast.error('Please enter a valid domain name');
-      return;
-    }
-
-    // Check if domain already exists
-    if (domains.some(d => d.domainName === domainName)) {
-      toast.error('Domain already exists');
-      return;
-    }
-
-    try {
-      const response = await addDomain(domainName, ownerType, ownerId || user?.id);
-
-      if (response.success) {
-        const newCustomDomain = response.domain;
-        setDomains(prev => [...prev, newCustomDomain]);
-        setNewDomain('');
-        setIsAddingDomain(false);
-        setShowVerificationModal(newCustomDomain);
-
-        toast.success('Domain reserved! Please complete DNS verification.');
-
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('custom-domain-added', {
-          detail: newCustomDomain
-        }));
-      } else {
-        toast.error(response.message || 'Failed to add domain');
-      }
-    } catch (error: any) {
-      console.error('Failed to add domain:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to add domain. Please try again.';
-      toast.error(errorMessage);
-    }
-  };
 
 
 
@@ -782,7 +714,10 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
                   <div className="flex items-center space-x-2">
                     {(domain.status === 'RESERVED' || domain.status === 'PENDING') && (
                       <button
-                        onClick={() => setShowVerificationModal(domain)}
+                        onClick={() => {
+                          setOnboardingDomain(domain);
+                          setShowOnboarding(true);
+                        }}
                         className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm border border-blue-600 rounded hover:bg-blue-50 transition-colors"
                       >
                         Setup
@@ -831,199 +766,25 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
         )}
       </div>
 
-      {/* Verification Modal */}
-      {showVerificationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">
-                Verify Domain: {showVerificationModal.domainName}
-              </h3>
-              <button
-                onClick={() => setShowVerificationModal(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ×
-              </button>
-            </div>
 
-            <div className="space-y-6">
-              <div className="text-center mb-4">
-                <p className="text-gray-600">
-                  Configure these DNS records to verify and secure your domain.
-                </p>
-              </div>
-
-              {/* 1. Routing Record */}
-              <div className="bg-white border-l-4 border-blue-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-gray-800 flex items-center">
-                    <Globe className="w-5 h-5 mr-2 text-blue-500" />
-                    1. Connect Domain (Routing)
-                  </h4>
-                  <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">Required</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
-                    <div className="font-mono text-gray-900 mt-1">CNAME</div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
-                    <div className="flex items-center mt-1">
-                      <code className="bg-white px-2 py-1 rounded border text-sm flex-1 break-all">
-                        {(() => {
-                          const domain = showVerificationModal.domainName;
-                          const parts = domain.split('.');
-                          if (parts.length > 2) return parts[0]; // subdomain
-                          return '@'; // root
-                        })()}
-                      </code>
-                      <button
-                        onClick={() => {
-                          const domain = showVerificationModal.domainName;
-                          const parts = domain.split('.');
-                          const name = parts.length > 2 ? parts[0] : '@';
-                          copyToClipboard(name);
-                        }}
-                        className="ml-2 text-gray-400 hover:text-blue-600"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase">Target (Value)</label>
-                    <div className="flex items-center mt-1">
-                      <code className="bg-white px-2 py-1 rounded border text-sm flex-1">{PROXY_DOMAIN}</code>
-                      <button onClick={() => copyToClipboard(PROXY_DOMAIN)} className="ml-2 text-gray-400 hover:text-blue-600">
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. SSL Verification Record */}
-              {showVerificationModal.sslStatus === 'ACTIVE' ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-bold text-green-900 mb-2 flex items-center">
-                    <Shield className="w-5 h-5 mr-2" />
-                    SSL Active & Secured
-                  </h4>
-                  <p className="text-green-800 text-sm">
-                    This domain is successfully verified and secured with SSL. No further action is required.
-                  </p>
-                </div>
-              ) : showVerificationModal.verificationToken ? (
-                <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-bold text-gray-800 flex items-center">
-                      <Shield className="w-5 h-5 mr-2 text-green-500" />
-                      2. Verify Ownership (SSL)
-                    </h4>
-                    <span className="text-xs font-mono bg-green-100 text-green-800 px-2 py-1 rounded">Required</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
-                      <div className="font-mono text-gray-900 mt-1">TXT</div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
-                      <div className="flex items-center mt-1">
-                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title="@">@</code>
-                        <button onClick={() => copyToClipboard('@')} className="ml-2 text-gray-400 hover:text-blue-600">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase">Value</label>
-                      <div className="flex items-center mt-1">
-                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={`tinyslash-verify=${showVerificationModal.verificationToken}`}>
-                          tinyslash-verify={showVerificationModal.verificationToken.substring(0, 10)}...
-                        </code>
-                        <button onClick={() => copyToClipboard(`tinyslash-verify=${showVerificationModal.verificationToken}`)} className="ml-2 text-gray-400 hover:text-blue-600">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="font-bold text-red-900 mb-2 flex items-center">
-                    <Shield className="w-5 h-5 mr-2" />
-                    SSL Provisioning Failed
-                  </h4>
-                  <p className="text-red-800 text-sm mb-3">
-                    We could not generate the SSL verification details. This usually happens if the backend cannot reach Cloudflare.
-                  </p>
-                  <button
-                    onClick={() => verifyDomainReliably(showVerificationModal)}
-                    disabled={isVerifying === showVerificationModal.id}
-                    className="bg-red-100 text-red-800 px-4 py-2 rounded text-sm font-semibold hover:bg-red-200 transition-colors disabled:opacity-50"
-                    title="This will trigger the backend to retry Cloudflare provisioning"
-                  >
-                    {isVerifying === showVerificationModal.id ? 'Retrying and Checking...' : 'Retry Provisioning'}
-                  </button>
-                </div>
-              )}
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h4 className="font-semibold text-yellow-900 mb-2">Important Notes</h4>
-                <ul className="text-yellow-800 text-sm space-y-1">
-                  <li>• DNS changes can take 5-60 minutes to propagate.</li>
-                  <li>• You must add <strong>BOTH</strong> records above for the domain to work.</li>
-                  <li>• Once verified, SSL will be active immediately.</li>
-                </ul>
-              </div>
-
-              <div className="flex items-center justify-between mt-6">
-                <button
-                  onClick={() => setShowVerificationModal(null)}
-                  className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={async () => {
-                    const success = await verifyDomainReliably(showVerificationModal);
-                    if (success) {
-                      setShowVerificationModal(null);
-                    }
-                  }}
-                  disabled={isVerifying === showVerificationModal.id}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center font-semibold"
-                >
-                  {isVerifying === showVerificationModal.id ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                      Verifying Domain...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Verify Domain
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Custom Domain Onboarding Modal */}
       <CustomDomainOnboarding
         isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
-        onComplete={(domain) => {
-          setDomains(prev => [...prev, domain]);
+        onClose={() => {
           setShowOnboarding(false);
+          setOnboardingDomain(undefined);
+        }}
+        onComplete={(domain) => {
+          setDomains(prev => {
+            const exists = prev.some(d => d.id === domain.id);
+            if (exists) {
+              return prev.map(d => d.id === domain.id ? domain : d);
+            }
+            return [...prev, domain];
+          });
+          setShowOnboarding(false);
+          setOnboardingDomain(undefined);
           toast.success('🎉 Custom domain added successfully! DNS propagation may take 5-60 minutes.');
 
           // Dispatch event to notify other components
@@ -1031,6 +792,7 @@ const CustomDomainManager: React.FC<CustomDomainManagerProps> = ({
             detail: domain
           }));
         }}
+        initialDomain={onboardingDomain}
       />
 
       {/* Upgrade Modal is now mounted globally in App.tsx */}

@@ -67,6 +67,7 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/qr/*/redirect").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/files/*/redirect")
                                                 .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/urls/precheck").permitAll()
                                                 // Protected endpoints - require authentication
                                                 .requestMatchers("/api/v1/urls/**").authenticated()
                                                 .requestMatchers("/api/v1/qr/**").authenticated()

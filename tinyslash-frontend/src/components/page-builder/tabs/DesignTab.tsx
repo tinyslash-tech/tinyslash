@@ -3,6 +3,8 @@ import { Page, PageTheme } from '../../../types/page';
 import { Palette, Type, LayoutTemplate, Share2, User, Settings, Image as ImageIcon, Layout, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { pageService } from '../../../services/pageService';
+import { useSubscription } from '../../../context/SubscriptionContext';
+import { Lock } from 'lucide-react';
 
 interface DesignTabProps {
   page: Page;
@@ -113,6 +115,7 @@ const THEME_PRESETS: Partial<PageTheme>[] = [
 
 export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
   const theme = page.theme;
+  const { planInfo, showUpgradeModal } = useSubscription();
 
   const updateTheme = (updates: Partial<PageTheme>) => {
     onChange({ theme: { ...theme, ...updates } });
@@ -160,31 +163,41 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
       {/* THEME PRESETS */}
       <Section title="Themes" icon={Sparkles}>
         <div className="grid grid-cols-4 gap-3">
-          {THEME_PRESETS.map((preset, idx) => (
-            <button
-              key={idx}
-              onClick={() => updateTheme(preset)}
-              className="group relative aspect-square rounded-xl cursor-pointer hover:ring-2 ring-offset-2 ring-blue-500 transition-all border border-gray-200 overflow-hidden shadow-sm hover:shadow-md"
-              title="Apply Preset"
-            >
-              {preset.backgroundType === 'GRADIENT' ? (
-                <div className="absolute inset-0" style={{ background: `linear-gradient(${preset.gradientDirection}, ${preset.gradientStart}, ${preset.gradientEnd})` }} />
-              ) : (
-                <div className="absolute inset-0" style={{ background: preset.background }} />
-              )}
+          {THEME_PRESETS.map((preset, idx) => {
+            const isLocked = idx >= 4 && !planInfo?.canUsePremiumTemplates; // Lock index 4+ (Gradients/Advanced) for Free users
 
-              {/* Mini Preview of Content */}
-              <div className="absolute inset-x-2 bottom-2 space-y-1.5 opacity-80">
-                <div className={`h-2 rounded-full w-3/4 ${preset.textColor === '#ffffff' ? 'bg-white/50' : 'bg-black/20'}`} />
-                <div className={`h-6 rounded-lg w-full ${preset.buttonColor === '#ffffff' ? 'bg-white text-black' : 'bg-black/20'}`}
-                  style={{ backgroundColor: preset.buttonColor }}>
+            return (
+              <button
+                key={idx}
+                onClick={() => {
+                  if (isLocked) {
+                    showUpgradeModal('premium-templates', 'Upgrade to Starter to unlock premium themes.');
+                    return;
+                  }
+                  updateTheme(preset);
+                }}
+                className="group relative aspect-square rounded-xl cursor-pointer hover:ring-2 ring-offset-2 ring-blue-500 transition-all border border-gray-200 overflow-hidden shadow-sm hover:shadow-md"
+                title={isLocked ? "Premium Theme" : "Apply Preset"}
+              >
+                {preset.backgroundType === 'GRADIENT' ? (
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(${preset.gradientDirection}, ${preset.gradientStart}, ${preset.gradientEnd})` }} />
+                ) : (
+                  <div className="absolute inset-0" style={{ background: preset.background }} />
+                )}
+
+                {/* Mini Preview of Content */}
+                <div className="absolute inset-x-2 bottom-2 space-y-1.5 opacity-80">
+                  <div className={`h-2 rounded-full w-3/4 ${preset.textColor === '#ffffff' ? 'bg-white/50' : 'bg-black/20'}`} />
+                  <div className={`h-6 rounded-lg w-full ${preset.buttonColor === '#ffffff' ? 'bg-white text-black' : 'bg-black/20'}`}
+                    style={{ backgroundColor: preset.buttonColor }}>
+                  </div>
                 </div>
-              </div>
 
-              {/* Active Indicator (optional logic could be added) */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-            </button>
-          ))}
+                {/* Active Indicator (optional logic could be added) */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+              </button>
+            );
+          })}
         </div>
       </Section>
 
@@ -228,7 +241,7 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
 
         {theme.backgroundType === 'IMAGE' && (
           <div>
-            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors relative">
               {theme.background && !theme.background.startsWith('#') ? (
                 <div className="relative w-full h-full">
                   <img src={theme.background} alt="bg" className="w-full h-full object-cover rounded-lg opacity-50" />
@@ -242,7 +255,23 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
                   <p className="text-xs text-gray-500">Upload Image</p>
                 </div>
               )}
-              <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                  if (!planInfo?.canUsePremiumTemplates) {
+                    showUpgradeModal('premium-templates', 'Upgrade to Starter to upload custom backgrounds.');
+                    return;
+                  }
+                  handleImageUpload(e);
+                }}
+              />
+              {!planInfo?.canUsePremiumTemplates && (
+                <div className="absolute top-2 right-2 bg-gray-900/80 p-1 rounded-full text-white">
+                  <Lock className="w-3 h-3" />
+                </div>
+              )}
             </label>
           </div>
         )}
@@ -528,20 +557,29 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
 
           <div className="flex items-center justify-between pt-2">
             <div>
-              <span className="text-sm font-medium text-gray-900">Hide Branding</span>
+              <span className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                Hide Branding
+                {!planInfo?.canRemovePageBranding && <Lock className="w-3 h-3 text-gray-400" />}
+              </span>
               <p className="text-xs text-gray-500">Remove "Powered by TinySlash"</p>
             </div>
             <input
               type="checkbox"
               checked={theme.showBranding === false}
-              onChange={(e) => updateTheme({ showBranding: !e.target.checked })}
-              className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5 border-gray-300"
+              onChange={(e) => {
+                if (!planInfo?.canRemovePageBranding) {
+                  showUpgradeModal('remove-branding', 'Upgrade to the Business plan to remove branding.');
+                  return;
+                }
+                updateTheme({ showBranding: !e.target.checked });
+              }}
+              className={`rounded h-5 w-5 border-gray-300 ${!planInfo?.canRemovePageBranding ? 'cursor-not-allowed opacity-50' : 'text-blue-600 focus:ring-blue-500'}`}
             />
           </div>
         </div>
       </Section>
 
-    </div>
+    </div >
   );
 };
 

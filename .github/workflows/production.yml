@@ -1,0 +1,64 @@
+name: Production Pipeline
+on: [push, pull_request]
+
+env:
+  SPRING_PROFILES_ACTIVE: test # 🟢 Safety: Force Test Profile Globally
+
+jobs:
+  # JOB 1: Backend Verification
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with: { java-version: '21', cache: 'maven' }
+      
+      # SAST (Static Analysis) - Optional for now as SpotBugs is not yet configured in POM
+      # - run: mvn spotbugs:check
+      
+      # Unit & Integration Tests (Testcontainers spins Mongo/Redis)
+      - run: mvn verify -Pintegration-tests -f tinyslash-backend/url-service/pom.xml
+      
+      # Artifact Validation
+      - run: mvn clean package -DskipTests -f tinyslash-backend/url-service/pom.xml
+      
+      # Save Artifact
+      - uses: actions/upload-artifact@v3
+        with: { name: backend-jar, path: tinyslash-backend/url-service/target/*.jar }
+
+  # JOB 2: Frontend Verification
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tinyslash-frontend
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with: { node-version: '18', cache: 'npm' }
+      - run: npm ci
+      # - run: npm audit --audit-level=high # 🟢 Pragmatic Security Scan (Uncomment when audit is clean)
+      # - run: npm run lint # 🟢 ESLint (Uncomment when lint is clean)
+      - run: npm test -- --watchAll=false # Unit/Smoke with MSW
+
+  # JOB 3: E2E (Needs both to pass)
+  e2e:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    defaults:
+        run:
+            working-directory: tinyslash-frontend
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with: { java-version: '21', cache: 'maven' }
+      - uses: actions/setup-node@v3
+        with: { node-version: '18', cache: 'npm' }
+        
+      # Download Backend Artifact
+      - uses: actions/download-artifact@v3
+        with: { name: backend-jar, path: tinyslash-backend/url-service/target }
+      
+      # Playwright (Uses webServer config to start backend safely)
+      - run: npx playwright install --with-deps
+      - run: npx playwright test

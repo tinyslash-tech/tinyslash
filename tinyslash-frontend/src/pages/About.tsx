@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Link as LinkIcon, Users, Target, Heart, Code, Globe, Zap } from 'lucide-react';
+import { Users, Target, Heart, Code, Globe, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import PublicHeader from '../components/PublicHeader';
+import Footer from '../components/Footer';
 
 const About: React.FC = () => {
   const fadeInUp = {
@@ -12,31 +13,10 @@ const About: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/"
-              className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>Back to Home</span>
-            </Link>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <LinkIcon className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                TinySlash
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PublicHeader />
 
       {/* Hero Section */}
-      <section className="pt-16 pb-12 px-4 sm:px-6 lg:px-8">
+      <section className="pt-28 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial="initial"
@@ -129,23 +109,23 @@ const About: React.FC = () => {
               {/* Founder 1 */}
               <div className="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow">
                 <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-2xl font-bold text-white">S</span>
+                  <span className="text-2xl font-bold text-white">V</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Satish Kumar</h3>
-                <p className="text-blue-600 font-medium mb-4">Co-Founder & CEO</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Venkatesh</h3>
+                <p className="text-blue-600 font-medium mb-4">Co-Founder &amp; Developer</p>
                 <p className="text-gray-600 leading-relaxed">
-                  Visionary entrepreneur with 8+ years in tech startups. Passionate about creating
-                  user-centric products that solve real problems. Previously led product teams at
-                  major Indian tech companies.
+                  Passionate full-stack developer building scalable, user-friendly products.
+                  Drives the engineering vision behind TinySlash — from backend architecture
+                  to seamless frontend experiences.
                 </p>
                 <div className="flex justify-center space-x-4 mt-6">
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                     <Code className="w-4 h-4" />
-                    <span>Product Strategy</span>
+                    <span>Full-Stack Development</span>
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Target className="w-4 h-4" />
-                    <span>Business Development</span>
+                    <Zap className="w-4 h-4" />
+                    <span>System Design</span>
                   </div>
                 </div>
               </div>
@@ -155,21 +135,21 @@ const About: React.FC = () => {
                 <div className="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">S</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Shankar Reddy</h3>
-                <p className="text-purple-600 font-medium mb-4">Co-Founder & CTO</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Sankar</h3>
+                <p className="text-purple-600 font-medium mb-4">Co-Founder &amp; Developer</p>
                 <p className="text-gray-600 leading-relaxed">
-                  Full-stack engineer and tech architect with expertise in scalable systems.
-                  Passionate about clean code and innovative solutions. Previously worked at
-                  leading fintech and e-commerce companies.
+                  Creative developer with a sharp eye for product detail and user experience.
+                  Brings ideas to life with clean code and innovative thinking across
+                  the entire TinySlash stack.
                 </p>
                 <div className="flex justify-center space-x-4 mt-6">
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Zap className="w-4 h-4" />
-                    <span>System Architecture</span>
+                    <Globe className="w-4 h-4" />
+                    <span>Product Development</span>
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Globe className="w-4 h-4" />
-                    <span>Technical Innovation</span>
+                    <Target className="w-4 h-4" />
+                    <span>Innovation</span>
                   </div>
                 </div>
               </div>
@@ -232,37 +212,9 @@ const About: React.FC = () => {
         </div>
       </section>
 
-      {/* Contact CTA */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 sm:p-12 text-center text-white"
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to Get Started?</h2>
-            <p className="text-lg text-blue-100 mb-8">
-              Join thousands of users who trust TinySlash for their link management needs
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/dashboard"
-                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-              >
-                Start Free Today
-              </Link>
-              <Link
-                to="/pricing"
-                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
-              >
-                View Pricing
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* Bottom padding */}
+      <div className="pb-8" />
+      <Footer />
     </div>
   );
 };

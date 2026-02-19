@@ -24,11 +24,22 @@ public class SubscriptionService {
     @Autowired
     private com.urlshortener.repository.SubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    private com.urlshortener.repository.PageRepository pageRepository;
+
     /**
      * Get all subscriptions (for admin)
      */
     public List<com.urlshortener.model.Subscription> getAllSubscriptions() {
         return subscriptionRepository.findAll();
+    }
+
+    /**
+     * Get User entity (Internal use)
+     */
+    public User getUser(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
     }
 
     // Plan constants
@@ -203,6 +214,37 @@ public class SubscriptionService {
             policy = PlanPolicy.FREE;
 
         return policy.hasFeature(featureName);
+    }
+
+    // Pages Capability Checks
+    public boolean canCreatePage(String userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty())
+            return false;
+        User user = userOpt.get();
+
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user))
+            policy = PlanPolicy.FREE;
+
+        int currentPages = (int) pageRepository.countByUserId(userId);
+        return policy.canCreatePage(currentPages);
+    }
+
+    public boolean canRemovePageBranding(String userId) {
+        return checkFeature(userId, "removePageBranding");
+    }
+
+    public boolean canUsePageCustomDomain(String userId) {
+        return checkFeature(userId, "pageCustomDomain");
+    }
+
+    public boolean canUseSmartLinks(String userId) {
+        return checkFeature(userId, "smartLinks");
+    }
+
+    public boolean canUseLeadForms(String userId) {
+        return checkFeature(userId, "leadForms");
     }
 
     /**
@@ -482,6 +524,22 @@ public class SubscriptionService {
         info.setRemainingMonthlyFiles(getRemainingMonthlyFiles(userId));
         info.setMaxFileSizeMB(getMaxFileSizeMB(userId));
 
+        // Populate Pages Limits
+        PlanPolicy policy = PlanPolicy.fromString(user.getSubscriptionPlan());
+        // Handle expiration fallback if needed (though logic usually handles it in
+        // access checks)
+        if (policy != PlanPolicy.FREE && !isSubscriptionActive(user)) {
+            policy = PlanPolicy.FREE;
+        }
+
+        info.setMaxPages(policy.getPagesPerUser());
+        info.setLinksPerPage(policy.getLinksPerPage());
+        info.setCanRemovePageBranding(policy.hasRemovePageBranding());
+        info.setCanUsePageCustomDomain(policy.hasPageCustomDomain());
+        info.setCanUseSmartLinks(policy.hasSmartLinks());
+        info.setCanUseLeadForms(policy.hasLeadForms());
+        info.setCanUsePremiumTemplates(policy.hasPremiumTemplates());
+
         return info;
     }
 
@@ -523,6 +581,15 @@ public class SubscriptionService {
         private int remainingMonthlyQrCodes;
         private int remainingMonthlyFiles;
         private long maxFileSizeMB;
+
+        // Pages Limits
+        private int maxPages;
+        private int linksPerPage;
+        private boolean canRemovePageBranding;
+        private boolean canUsePageCustomDomain;
+        private boolean canUseSmartLinks;
+        private boolean canUseLeadForms;
+        private boolean canUsePremiumTemplates;
 
         public String getPlan() {
             return plan;
@@ -618,6 +685,63 @@ public class SubscriptionService {
 
         public void setMaxFileSizeMB(long maxFileSizeMB) {
             this.maxFileSizeMB = maxFileSizeMB;
+        }
+
+        // Pages Getters/Setters
+        public int getMaxPages() {
+            return maxPages;
+        }
+
+        public void setMaxPages(int maxPages) {
+            this.maxPages = maxPages;
+        }
+
+        public int getLinksPerPage() {
+            return linksPerPage;
+        }
+
+        public void setLinksPerPage(int linksPerPage) {
+            this.linksPerPage = linksPerPage;
+        }
+
+        public boolean isCanRemovePageBranding() {
+            return canRemovePageBranding;
+        }
+
+        public void setCanRemovePageBranding(boolean canRemovePageBranding) {
+            this.canRemovePageBranding = canRemovePageBranding;
+        }
+
+        public boolean isCanUsePageCustomDomain() {
+            return canUsePageCustomDomain;
+        }
+
+        public void setCanUsePageCustomDomain(boolean canUsePageCustomDomain) {
+            this.canUsePageCustomDomain = canUsePageCustomDomain;
+        }
+
+        public boolean isCanUseSmartLinks() {
+            return canUseSmartLinks;
+        }
+
+        public void setCanUseSmartLinks(boolean canUseSmartLinks) {
+            this.canUseSmartLinks = canUseSmartLinks;
+        }
+
+        public boolean isCanUseLeadForms() {
+            return canUseLeadForms;
+        }
+
+        public void setCanUseLeadForms(boolean canUseLeadForms) {
+            this.canUseLeadForms = canUseLeadForms;
+        }
+
+        public boolean isCanUsePremiumTemplates() {
+            return canUsePremiumTemplates;
+        }
+
+        public void setCanUsePremiumTemplates(boolean canUsePremiumTemplates) {
+            this.canUsePremiumTemplates = canUsePremiumTemplates;
         }
     }
 

@@ -1,6 +1,7 @@
 package com.urlshortener.service;
 
 import com.urlshortener.model.Page;
+import com.urlshortener.model.PlanPolicy;
 import com.urlshortener.model.PageTheme;
 import com.urlshortener.model.PageView;
 import com.urlshortener.model.User;
@@ -30,10 +31,15 @@ public class PageService {
   private PageViewRepository pageViewRepository;
 
   @Autowired
-  public PageService(PageRepository pageRepository, StorageService storageService, SlugService slugService) {
+  private SubscriptionService subscriptionService;
+
+  @Autowired
+  public PageService(PageRepository pageRepository, StorageService storageService, SlugService slugService,
+      SubscriptionService subscriptionService) {
     this.pageRepository = pageRepository;
     this.storageService = storageService;
     this.slugService = slugService;
+    this.subscriptionService = subscriptionService;
   }
 
   public String uploadAsset(MultipartFile file, String userId) throws IOException {
@@ -53,7 +59,16 @@ public class PageService {
   }
 
   public Page createPage(User user, Page pageData) {
-    // Enforce Limits based on plan (simulated logic for now)
+    // 1. Check Plan Limits
+    // Helper method to resolve plan
+    PlanPolicy userPlan = PlanPolicy.fromString(String.valueOf(user.getSubscriptionPlan())); // Handling potential
+                                                                                             // null/string mismatch
+
+    int currentPages = (int) pageRepository.countByUserId(user.getId());
+    if (!userPlan.canCreatePage(currentPages)) {
+      throw new IllegalStateException("Plan limit reached: You can only create " + userPlan.getPagesPerUser()
+          + " pages on the " + userPlan.getDisplayName() + " plan.");
+    }
 
     // Slug Logic
     String rawSlug = pageData.getSlug();
@@ -98,11 +113,44 @@ public class PageService {
       throw new RuntimeException("Unauthorized");
     }
 
+    // 1. Fetch Plan
+    User user = subscriptionService.getUser(userId); // Need to fetch user to get plan
+    PlanPolicy plan = PlanPolicy.fromString(String.valueOf(user.getSubscriptionPlan()));
+
+    // 2. Validate Link Count
+    if (updates.getBlocks() != null) {
+      long linkCount = updates.getBlocks().stream()
+          .filter(b -> "LINK".equals(b.getType()))
+          .count();
+      if (!plan.canAddLinkToPage((int) linkCount)) {
+        throw new IllegalArgumentException("Plan limit reached: You can only add " + plan.getLinksPerPage()
+            + " links per page on the " + plan.getDisplayName() + " plan.");
+      }
+    }
+
+    // 3. Validate Premium Features
+    if (updates.isRemoveBranding() && !plan.hasRemovePageBranding()) {
+      throw new IllegalArgumentException("Upgrade required: Removing branding is available on the Business plan.");
+    }
+
+    if (updates.getCustomDomain() != null && !updates.getCustomDomain().isEmpty() && !plan.hasPageCustomDomain()) {
+      throw new IllegalArgumentException("Upgrade required: Custom domains are available on the Pro plan.");
+    }
+
+    // 4. Validate Premium Blocks (Lead Forms)
+    if (updates.getBlocks() != null) {
+      boolean hasForm = updates.getBlocks().stream()
+          .anyMatch(b -> "FORM".equals(b.getType()) || "NEWSLETTER".equals(b.getType())); // Assuming FORM/NEWSLETTER
+                                                                                          // types
+      if (hasForm && !plan.hasLeadForms()) {
+        throw new IllegalArgumentException("Upgrade required: Lead forms are available on the Business plan.");
+      }
+    }
+
     existing.setTitle(updates.getTitle());
     existing.setBio(updates.getBio());
     existing.setAvatarUrl(updates.getAvatarUrl());
-    existing.setTheme(updates.getTheme());
-    existing.setBlocks(updates.getBlocks());
+    existing.setTheme(updates.getTheme()); // TODO: Validate Premium Themes if needed
     existing.setBlocks(updates.getBlocks());
     existing.setPublished(updates.isPublished());
 

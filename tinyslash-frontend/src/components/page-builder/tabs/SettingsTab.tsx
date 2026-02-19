@@ -11,6 +11,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCustomDomains } from '../../../components/dashboard/CreateSection/hooks/useCustomDomains';
 import { useSlugCheck } from '../../../hooks/useSlugCheck';
 import { sanitizeSlug } from '../../../utils/sanitizeSlug';
+import { useSubscription } from '../../../context/SubscriptionContext';
+import { Lock } from 'lucide-react';
 
 interface SettingsTabProps {
   page: Page;
@@ -85,6 +87,7 @@ const SlugEditor = ({ currentSlug, pageId, onCancel, onSave }: { currentSlug: st
 export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { planInfo, showUpgradeModal } = useSubscription();
   const { customDomains } = useCustomDomains();
   const [copySuccess, setCopySuccess] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -182,17 +185,29 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
         <div className="space-y-6">
           {/* Custom Domain Selection */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Domain</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-bold text-gray-700">Domain</label>
+              {!planInfo?.canUsePageCustomDomain && (
+                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> PRO
+                </span>
+              )}
+            </div>
             <div className="flex gap-2">
               <select
                 value={page.customDomain || 'tinyslash.com'}
                 onChange={(e) => {
+                  if (!planInfo?.canUsePageCustomDomain && e.target.value !== 'tinyslash.com') {
+                    showUpgradeModal('custom-domain');
+                    return;
+                  }
                   const val = e.target.value;
                   onChange({ customDomain: val === 'tinyslash.com' ? undefined : val });
                 }}
                 className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none transition-all"
               >
                 <option value="tinyslash.com">tinyslash.com</option>
+                {/* Only show custom domains if they exist or user is pro? Actually show them but lock selection if checking plan */}
                 {customDomains.map(domain => (
                   <option key={domain} value={domain}>{domain}</option>
                 ))}
@@ -368,7 +383,28 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2 flex items-center gap-2">
           Integrations <span className="text-[10px] bg-black text-white px-1.5 py-0.5 rounded">PRO</span>
         </h3>
-        <div className="space-y-4 opacity-80">
+
+        {!planInfo?.canAccessDetailedAnalytics && (
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-blue-900">Upgrade to Connect Integrations</p>
+                <p className="text-xs text-blue-700">Add pixels and tracking IDs with a Pro plan.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => showUpgradeModal('integrations')}
+              className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700"
+            >
+              Upgrade
+            </button>
+          </div>
+        )}
+
+        <div className={`space-y-4 ${!planInfo?.canAccessDetailedAnalytics ? 'opacity-50 pointer-events-none' : 'opacity-80'}`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Facebook Pixel ID</label>
             <input
@@ -377,6 +413,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
               onChange={(e) => onChange({ fbPixelId: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400"
               placeholder="e.g. 1234567890"
+              disabled={!planInfo?.canAccessDetailedAnalytics}
             />
           </div>
           <div>
@@ -387,6 +424,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
               onChange={(e) => onChange({ googleAnalyticsId: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400"
               placeholder="e.g. G-XXXXXXXXXX"
+              disabled={!planInfo?.canAccessDetailedAnalytics}
             />
           </div>
           <div>
@@ -397,6 +435,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs placeholder-gray-400"
               placeholder="<script>...</script>"
+              disabled={!planInfo?.canAccessDetailedAnalytics}
             />
           </div>
         </div>

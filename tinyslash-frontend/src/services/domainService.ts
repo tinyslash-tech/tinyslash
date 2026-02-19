@@ -5,7 +5,7 @@ export interface CustomDomain {
   domainName: string;
   ownerType: string;
   ownerId: string;
-  status: 'RESERVED' | 'PENDING' | 'VERIFIED' | 'ERROR' | 'SUSPENDED' | 'DELETING' | 'SOFT_BLOCKED';
+  status: 'RESERVED' | 'PENDING' | 'VERIFIED' | 'ERROR' | 'SUSPENDED' | 'DELETING' | 'SOFT_BLOCKED' | 'MOVED' | 'MISCONFIGURED' | 'BLOCKED' | 'DISABLED' | 'DELETION_PENDING';
   sslStatus: 'PENDING' | 'ACTIVE' | 'ERROR' | 'EXPIRED';
   cnameTarget: string;
   verificationToken: string;

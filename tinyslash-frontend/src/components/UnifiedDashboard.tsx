@@ -1,22 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
 import { useUpgradeModal } from '../context/ModalContext';
-import DashboardOverview from './dashboard/DashboardOverview';
-import TeamManagement from './TeamManagement';
-import TeamSettings from './TeamSettings';
-import CreateSection from './dashboard/CreateSection';
-import LinksManager from './dashboard/LinksManager';
-import QRManageSection from './dashboard/QRManageSection';
-import FileToUrlManager from './dashboard/FileToUrlManager';
-import AnalyticsSection from './dashboard/AnalyticsSection';
-import CustomDomainManager from './CustomDomainManager';
-import Leads from '../pages/dashboard/Leads';
-import TrustBadge from '../pages/dashboard/TrustBadge';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load dashboard sections to split bundles
+const DashboardOverview = lazy(() => import('./dashboard/DashboardOverview'));
+const TeamManagement = lazy(() => import('./TeamManagement'));
+const TeamSettings = lazy(() => import('./TeamSettings'));
+const CreateSection = lazy(() => import('./dashboard/CreateSection'));
+const LinksManager = lazy(() => import('./dashboard/LinksManager'));
+const QRManageSection = lazy(() => import('./dashboard/QRManageSection'));
+const FileToUrlManager = lazy(() => import('./dashboard/FileToUrlManager'));
+const AnalyticsSection = lazy(() => import('./dashboard/AnalyticsSection'));
+const CustomDomainManager = lazy(() => import('./CustomDomainManager'));
+const Leads = lazy(() => import('../pages/dashboard/Leads'));
+const TrustBadge = lazy(() => import('../pages/dashboard/TrustBadge'));
 
 type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
 type CreateMode = 'url' | 'qr' | 'file';
+
+const DashboardLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <Loader2 className="w-8 h-8 animate-spin text-blue-600 opacity-50" />
+  </div>
+);
 
 const UnifiedDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -150,9 +159,9 @@ const UnifiedDashboard: React.FC = () => {
   };
 
   return (
-    <>
+    <Suspense fallback={<DashboardLoader />}>
       {renderContent()}
-    </>
+    </Suspense>
   );
 };
 

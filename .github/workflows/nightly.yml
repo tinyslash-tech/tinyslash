@@ -1,0 +1,15 @@
+name: Nightly Security & Performance
+on:
+  schedule:
+    - cron: '0 2 * * *' # 2 AM UTC
+
+jobs:
+  security-and-load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # 🟢 Deep Security Scan
+      # - run: mvn org.owasp:dependency-check-maven:check -f tinyslash-backend/url-service/pom.xml
+      # 🟢 k6 Load Test
+      # - run: k6 run load-test.js
+      - run: echo "Nightly pipeline placeholder"

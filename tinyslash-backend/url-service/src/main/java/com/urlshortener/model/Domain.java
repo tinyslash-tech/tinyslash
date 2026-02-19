@@ -19,7 +19,8 @@ public class Domain {
     }
 
     public enum DomainStatus {
-        RESERVED, PENDING, VERIFIED, ERROR, SUSPENDED, DELETING, SOFT_BLOCKED
+        RESERVED, PENDING, VERIFIED, ERROR, SUSPENDED, DELETING, SOFT_BLOCKED,
+        MISCONFIGURED, MOVED, BLOCKED, DELETION_PENDING, DISABLED
     }
 
     public enum SslStatus {

@@ -59,6 +59,10 @@ public class ShortenedUrl {
     private boolean isPublic = true;
     private boolean trackClicks = true;
 
+    // Soft Delete for Default Domain Cooldown
+    private boolean isDeleted = false;
+    private LocalDateTime deletedAt;
+
     // Analytics counters
     private int totalClicks = 0;
     private int uniqueClicks = 0;
@@ -490,6 +494,22 @@ public class ShortenedUrl {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     public boolean isPublic() {

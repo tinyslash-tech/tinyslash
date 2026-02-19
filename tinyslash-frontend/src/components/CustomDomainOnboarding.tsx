@@ -1,515 +1,520 @@
-import React, { useState } from 'react';
-import { Globe, CheckCircle, Copy, ExternalLink, ArrowRight, Sparkles, Shield, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Globe, CheckCircle, Copy, ExternalLink, ArrowRight, Sparkles, Shield, Zap, Server, ChevronRight, AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
 import toast from 'react-hot-toast';
-import { addDomain } from '../services/domainService';
+import { addDomain, verifyDomain } from '../services/domainService';
 
 interface CustomDomainOnboardingProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (domain: any) => void;
+  initialDomain?: any;
 }
+
+type WizardStep = 'INPUT' | 'PROVIDER_SELECT' | 'DNS_INSTRUCTIONS' | 'VERIFICATION' | 'SUCCESS';
+type DomainType = 'SUBDOMAIN' | 'ROOT' | 'WWW';
+type ProviderPath = 'CLOUDFLARE' | 'ALIAS' | 'GODADDY_MIGRATION' | 'UNKNOWN';
 
 const CustomDomainOnboarding: React.FC<CustomDomainOnboardingProps> = ({
   isOpen,
   onClose,
-  onComplete
+  onComplete,
+  initialDomain
 }) => {
-  const { user, token } = useAuth();
-  const [step, setStep] = useState(1);
-  const [domainName, setDomainName] = useState('');
-  const [subdomain, setSubdomain] = useState('go');
-  const [setupType, setSetupType] = useState<'subdomain' | 'root'>('subdomain');
-  const [isAdding, setIsAdding] = useState(false);
+  // --- State Management ---
+  const { user } = useAuth();
+  const [step, setStep] = useState<WizardStep>('INPUT');
+  const [domainInput, setDomainInput] = useState('');
+  const [domainType, setDomainType] = useState<DomainType>('SUBDOMAIN');
+  const [detectedProvider, setDetectedProvider] = useState<ProviderPath>('UNKNOWN');
   const [addedDomain, setAddedDomain] = useState<any>(null);
-  const [dnsInstructions, setDnsInstructions] = useState<any>(null);
-  const [detectedProvider, setDetectedProvider] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+
+  // Enterprise State Machine
+  const [verificationStatus, setVerificationStatus] = useState<'WAITING' | 'DNS_FOUND' | 'LIVE' | 'CONFLICT' | 'BLOCKED' | 'TIMEOUT' | 'MOVED' | 'MISCONFIGURED'>('WAITING');
+
+  // Polling Refs for Smart Backoff
+  const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pollAttemptsRef = useRef(0);
 
   // Universal proxy domain configuration
-  const proxyDomain = 'tinyslash.com';
+  const PROXY_DOMAIN = 'tinyslash.com';
 
-  if (!isOpen) return null;
-
-  const handleAddDomain = async () => {
-    if (!domainName.trim()) {
-      toast.error('Please enter your domain name');
-      return;
-    }
-
-    const cleanDomain = domainName.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
-
-    if (!cleanDomain.includes('.')) {
-      toast.error('Please enter a valid domain name (e.g., yourdomain.com)');
-      return;
-    }
-
-    // Construct the full domain based on setup type
-    const fullDomain = setupType === 'subdomain' ? `${subdomain}.${cleanDomain}` : cleanDomain;
-
-    try {
-      setIsAdding(true);
-
-      // 10/10 Enterprise: Detect Provider first (async but don't block fully if it fails)
-      import('../services/domainService').then(mod => {
-        mod.detectProvider(fullDomain)
-          .then(res => {
-            if (res.success && res.provider !== 'UNKNOWN') {
-              setDetectedProvider(res.provider);
-            }
-          })
-          .catch(err => console.error('Provider detection failed:', err));
-      });
-
-      const response = await addDomain(fullDomain, 'USER');
-
-      if (response.success) {
-        setAddedDomain(response.domain);
-        setDnsInstructions(response.dnsInstructions);
-        setStep(2);
-        toast.success('Domain reserved successfully!');
-
-        window.dispatchEvent(new CustomEvent('custom-domain-added', {
-          detail: response.domain
-        }));
+  // --- Reset/Init Effect ---
+  useEffect(() => {
+    if (isOpen) {
+      if (initialDomain) {
+        // Resume existing domain
+        setAddedDomain(initialDomain);
+        setDomainInput(initialDomain.domainName);
+        detectDomainType(initialDomain.domainName);
+        setStep('VERIFICATION');
+        startSmartPolling(); // Start polling if reopening known domain
       } else {
-        toast.error(response.message || 'Failed to add domain');
+        // Start fresh
+        setStep('INPUT');
+        setDomainInput('');
+        setVerificationStatus('WAITING');
+        pollAttemptsRef.current = 0;
       }
-    } catch (error: any) {
-      console.error('Failed to add domain:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to add domain. Please try again.';
-      toast.error(errorMessage);
-    } finally {
-      setIsAdding(false);
+    }
+    return () => stopPolling();
+  }, [isOpen, initialDomain]);
+
+  // --- Helpers ---
+  const detectDomainType = (input: string) => {
+    const clean = input.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const parts = clean.split('.');
+
+    if (parts.length > 2) {
+      if (parts[0] === 'www') {
+        setDomainType('WWW');
+      } else {
+        setDomainType('SUBDOMAIN');
+      }
+    } else {
+      setDomainType('ROOT');
+    }
+    return clean;
+  };
+
+  const stopPolling = () => {
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
     }
   };
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success('Copied to clipboard!');
+      toast.success('Copied!');
     } catch (err) {
       console.error('Failed to copy:', err);
-      toast.error('Failed to copy to clipboard');
     }
   };
 
-  const getFullDomain = () => {
-    if (setupType === 'subdomain') {
-      return `${subdomain}.${domainName}`;
+  // --- Actions ---
+
+  const handleDomainSubmit = async () => {
+    const cleanDomain = domainInput.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (!cleanDomain.includes('.')) {
+      toast.error('Please enter a valid domain (e.g., go.yoursite.com)');
+      return;
     }
-    return domainName;
+
+    const type = detectDomainType(cleanDomain); // Update state
+    setIsAdding(true);
+
+    try {
+      // Create domain in backend
+      const response = await addDomain(cleanDomain, 'USER');
+
+      if (response.success) {
+        setAddedDomain(response.domain);
+
+        if (type === 'ROOT' || type === 'WWW') {
+          setStep('PROVIDER_SELECT');
+        } else {
+          setStep('DNS_INSTRUCTIONS');
+        }
+      } else {
+        toast.error(response.message || 'Failed to add domain');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error adding domain');
+    } finally {
+      setIsAdding(false);
+    }
   };
+
+  // --- Smart Polling Logic (Enterprise 10/10) ---
+  const startSmartPolling = () => {
+    if (pollTimeoutRef.current) return;
+    setVerificationStatus('WAITING');
+    pollAttemptsRef.current = 0;
+    runPollLoop();
+  };
+
+  const runPollLoop = async () => {
+    if (!addedDomain) return;
+
+    try {
+      const res = await verifyDomain(addedDomain.id, { verificationMethod: 'poll' });
+
+      if (res.success && res.domain) {
+        const { status, sslStatus, verificationError } = res.domain;
+
+        // Map Backend Status to UI State
+        if (status === 'VERIFIED') {
+          setVerificationStatus('LIVE');
+          stopPolling();
+          return; // Stop loop
+        } else if (status === 'MOVED') {
+          setVerificationStatus('MOVED');
+          stopPolling();
+          return;
+        } else if (status === 'BLOCKED') {
+          setVerificationStatus('BLOCKED');
+          stopPolling();
+          return;
+        } else if (status === 'MISCONFIGURED') {
+          setVerificationStatus('MISCONFIGURED');
+          stopPolling(); // Stop, user needs to fix
+          return;
+        }
+
+        // Granular Verification States
+        if (sslStatus === 'PENDING' && !verificationError?.includes('DNS')) {
+          setVerificationStatus('DNS_FOUND'); // DNS passed, waiting for SSL
+        } else {
+          setVerificationStatus('WAITING'); // Waiting for DNS
+        }
+      }
+    } catch (err) {
+      console.error('Polling error', err);
+    }
+
+    // Determine Next Delay (Backoff Strategy)
+    pollAttemptsRef.current += 1;
+    let delay = 5000; // Default 5s (Active Phase)
+
+    if (verificationStatus === 'DNS_FOUND') {
+      delay = 30000; // SSL takes longer, poll slower (30s)
+    } else if (pollAttemptsRef.current > 24) { // > 2 mins
+      delay = 60000; // 1 min backoff
+    } else if (pollAttemptsRef.current > 120) { // > 10 mins
+      setVerificationStatus('TIMEOUT');
+      stopPolling();
+      return;
+    }
+
+    // Recursively schedule next poll
+    pollTimeoutRef.current = setTimeout(runPollLoop, delay);
+  };
+
+  const handleRestartVerification = () => {
+    stopPolling();
+    startSmartPolling();
+  };
+
+  // --- Renders ---
+
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-sans">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                <Globe className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">Add Custom Domain</h2>
-                <p className="text-blue-100">Set up your branded short links in 3 simple steps</p>
-              </div>
+        {/* Header - Minimal & Clean */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-600 text-white p-2 rounded-lg">
+              <Globe className="w-5 h-5" />
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl"
-            >
-              ×
-            </button>
+            <h2 className="text-xl font-bold text-gray-900">Add Custom Domain</h2>
           </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
-        {/* Progress Steps */}
-        <div className="px-6 py-4 border-b">
-          <div className="flex items-center justify-center space-x-8">
-            {[
-              { num: 1, title: 'Enter Domain', active: step >= 1, completed: step > 1 },
-              { num: 2, title: 'Configure DNS', active: step >= 2, completed: step > 2 },
-              { num: 3, title: 'Verify & Test', active: step >= 3, completed: step > 3 }
-            ].map((s, i) => (
-              <div key={i} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${s.completed ? 'bg-green-500 text-white' :
-                  s.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                  {s.completed ? <CheckCircle className="w-4 h-4" /> : s.num}
-                </div>
-                <span className={`ml-2 text-sm font-medium ${s.active ? 'text-gray-900' : 'text-gray-500'
-                  }`}>
-                  {s.title}
-                </span>
-                {i < 2 && <ArrowRight className="w-4 h-4 text-gray-400 ml-4" />}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Content Area */}
+        <div className="p-8 flex-1">
 
-        <div className="p-6">
-          {/* Step 1: Enter Domain */}
-          {step === 1 && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  🌐 Step 1: Enter Your Domain
-                </h3>
-                <p className="text-gray-600">
-                  Enter the domain you want to use for your short links
-                </p>
+          {/* STEP 1: Enter Domain */}
+          {step === 'INPUT' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="text-center space-y-2">
+                <h3 className="text-2xl font-bold text-gray-900">What domain do you want to use?</h3>
+                <p className="text-gray-500">Enter the domain for your branded short links</p>
               </div>
 
-              <div className="max-w-md mx-auto space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Your Domain Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="yourdomain.com"
-                    value={domainName}
-                    onChange={(e) => setDomainName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                    autoFocus
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Enter without www or https:// (e.g., pdfcircle.com)
-                  </p>
+              <div className="max-w-md mx-auto">
+                <input
+                  autoFocus
+                  type="text"
+                  value={domainInput}
+                  onChange={(e) => setDomainInput(e.target.value)}
+                  placeholder="go.yoursite.com"
+                  className="w-full text-center text-2xl font-medium border-b-2 border-gray-200 focus:border-blue-600 focus:outline-none py-4 placeholder:text-gray-300 transition-colors"
+                />
+                <div className="flex justify-center mt-4 space-x-2 text-sm text-gray-400">
+                  <span>Examples:</span>
+                  <span className="text-gray-600">go.yoursite.com</span>
+                  <span>·</span>
+                  <span className="text-gray-600">yoursite.com</span>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Setup Type (Recommended: Subdomain)
-                  </label>
-                  <div className="space-y-3">
-                    <label className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input
-                        type="radio"
-                        name="setupType"
-                        value="subdomain"
-                        checked={setupType === 'subdomain'}
-                        onChange={(e) => setSetupType(e.target.value as 'subdomain')}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900">Subdomain Setup</span>
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Recommended
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Creates: <code className="bg-gray-100 px-1 rounded">{subdomain}.{domainName || 'yourdomain.com'}</code>
-                        </p>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <input
-                            type="text"
-                            placeholder="go"
-                            value={subdomain}
-                            onChange={(e) => setSubdomain(e.target.value)}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                            disabled={setupType !== 'subdomain'}
-                          />
-                          <span className="text-gray-500">.</span>
-                          <span className="text-gray-700">{domainName || 'yourdomain.com'}</span>
-                        </div>
-                      </div>
-                    </label>
-
-                    <label className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input
-                        type="radio"
-                        name="setupType"
-                        value="root"
-                        checked={setupType === 'root'}
-                        onChange={(e) => setSetupType(e.target.value as 'root')}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900">Root Domain Setup</span>
-                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                            Advanced
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Creates: <code className="bg-gray-100 px-1 rounded">{domainName || 'yourdomain.com'}</code>
-                        </p>
-                        <p className="text-xs text-orange-600 mt-1">
-                          ⚠️ This will redirect all traffic from your main domain
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-2">
-                    <Sparkles className="w-5 h-5 text-blue-500 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-blue-900">Your branded short links will look like:</h4>
-                      <div className="bg-white border rounded p-2 mt-2 font-mono text-sm">
-                        <div className="text-blue-600 font-semibold">{getFullDomain()}/abc123</div>
-                        <div className="text-gray-500 text-xs mt-1">↓ redirects to ↓</div>
-                        <div className="text-green-600">https://your-long-url.com/page</div>
-                      </div>
-                      <div className="flex items-center space-x-4 mt-2 text-xs text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          <Shield className="w-3 h-3 text-green-500" />
-                          <span>SSL Secured</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Zap className="w-3 h-3 text-blue-500" />
-                          <span>Fast Redirects</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Globe className="w-3 h-3 text-purple-500" />
-                          <span>Professional</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
+              <div className="flex justify-center pt-4">
                 <button
-                  onClick={handleAddDomain}
-                  disabled={!domainName.trim() || isAdding}
-                  className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                  onClick={handleDomainSubmit}
+                  disabled={!domainInput.trim() || isAdding}
+                  className="flex items-center space-x-2 bg-black text-white px-8 py-3 rounded-full text-lg font-medium hover:bg-gray-800 transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  {isAdding ? 'Adding Domain...' : 'Add Domain →'}
+                  {isAdding ? (
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Continue</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           )}
 
-
-          {/* Step 2: Configure DNS */}
-          {step === 2 && addedDomain && dnsInstructions && (
-            <div className="space-y-6">
+          {/* STEP 2: Provider Selection (Root/WWW Only) */}
+          {step === 'PROVIDER_SELECT' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
               <div className="text-center">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  🔧 Step 2: Configure DNS Provider
-                </h3>
-                {detectedProvider && (
-                  <div className="inline-flex items-center bg-blue-50 px-3 py-1 rounded-full text-blue-700 text-sm font-medium mb-2">
-                    <Zap className="w-4 h-4 mr-1" />
-                    Detected Provider: {detectedProvider}
-                  </div>
-                )}
-                <p className="text-gray-600">
-                  {detectedProvider === 'CLOUDFLARE'
-                    ? 'Since you use Cloudflare, please ensure the Proxy Status is set to "DNS Only" (Grey Cloud) initially.'
-                    : 'Add these records to your domain\'s DNS settings to connect securely'}
-                </p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Where is {addedDomain?.domainName}'s DNS managed?</h3>
               </div>
 
-              <div className="max-w-2xl mx-auto space-y-6">
-                {/* 1. Routing Record (CNAME) */}
-                <div className="bg-white border-l-4 border-blue-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-bold text-gray-800 flex items-center">
-                      <Globe className="w-5 h-5 mr-2 text-blue-500" />
-                      1. Connect Domain (Routing)
-                    </h4>
-                    <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">Required</span>
+              <div className="space-y-3 max-w-lg mx-auto">
+                {/* Option 1: Cloudflare */}
+                <button
+                  onClick={() => { setDetectedProvider('CLOUDFLARE'); setStep('DNS_INSTRUCTIONS'); }}
+                  className="w-full flex items-center p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group text-left"
+                >
+                  <div className="p-2 bg-orange-100 text-orange-600 rounded-lg mr-4 group-hover:bg-white transition-colors">
+                    <CloudIcon className="w-6 h-6" />
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
-                      <div className="font-mono text-gray-900 mt-1">{dnsInstructions.routing.type}</div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
-                      <div className="flex items-center mt-1">
-                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1">{dnsInstructions.routing.name}</code>
-                        <button onClick={() => copyToClipboard(dnsInstructions.routing.name)} className="ml-2 text-gray-400 hover:text-blue-600">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase">Target (Value)</label>
-                      <div className="flex items-center mt-1">
-                        <code className="bg-white px-2 py-1 rounded border text-sm flex-1">{dnsInstructions.routing.target}</code>
-                        <button onClick={() => copyToClipboard(dnsInstructions.routing.target || '')} className="ml-2 text-gray-400 hover:text-blue-600">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">Cloudflare DNS</div>
+                    <div className="text-sm text-gray-500">I use Cloudflare nameservers</div>
                   </div>
-                </div>
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-300 group-hover:text-blue-500" />
+                </button>
 
-
-
-                {/* 2. SSL Verification Record (TXT) - Conditional Render */}
-                {dnsInstructions.ssl ? (
-                  <div className="bg-white border-l-4 border-green-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-bold text-gray-800 flex items-center">
-                        <Shield className="w-5 h-5 mr-2 text-green-500" />
-                        2. Verify Ownership (SSL)
-                      </h4>
-                      <span className="text-xs font-mono bg-green-100 text-green-800 px-2 py-1 rounded">Required</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase">Type</label>
-                        <div className="font-mono text-gray-900 mt-1">{dnsInstructions.ssl.type}</div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase">Name (Host)</label>
-                        <div className="flex items-center mt-1">
-                          <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={dnsInstructions.ssl.name}>{dnsInstructions.ssl.name.substring(0, 20)}...</code>
-                          <button onClick={() => copyToClipboard(dnsInstructions.ssl.name)} className="ml-2 text-gray-400 hover:text-blue-600">
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase">Value</label>
-                        <div className="flex items-center mt-1">
-                          <code className="bg-white px-2 py-1 rounded border text-sm flex-1 truncate" title={dnsInstructions.ssl.value}>{dnsInstructions.ssl.value.substring(0, 20)}...</code>
-                          <button onClick={() => copyToClipboard(dnsInstructions.ssl.value)} className="ml-2 text-gray-400 hover:text-blue-600">
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                {/* Option 2: ALIAS Providers */}
+                <button
+                  onClick={() => { setDetectedProvider('ALIAS'); setStep('DNS_INSTRUCTIONS'); }}
+                  className="w-full flex items-center p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group text-left"
+                >
+                  <div className="p-2 bg-green-100 text-green-600 rounded-lg mr-4 group-hover:bg-white transition-colors">
+                    <Server className="w-6 h-6" />
                   </div>
-                ) : (
-                  <div className="bg-orange-50 border-l-4 border-orange-500 rounded-r-lg shadow-sm p-4 border border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-orange-900 flex items-center">
-                        <Shield className="w-5 h-5 mr-2 text-orange-500" />
-                        2. Verify Ownership (SSL)
-                      </h4>
-                      <span className="text-xs font-mono bg-orange-100 text-orange-800 px-2 py-1 rounded">Check Dashboard Needed</span>
-                    </div>
-                    <p className="text-sm text-orange-800 mb-4">
-                      SSL verification details are not yet available. Continue for now.
-                    </p>
+                  <div>
+                    <div className="font-semibold text-gray-900">Namecheap / Route53 / DNSimple</div>
+                    <div className="text-sm text-gray-500">My provider supports ALIAS records</div>
                   </div>
-                )}
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-300 group-hover:text-blue-500" />
+                </button>
 
-                <div className="mt-4 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100">
-                  <p className="flex items-center">
-                    <Zap className="w-4 h-4 mr-2" />
-                    <strong>Universal Setup:</strong> Works with GoDaddy, Namecheap, Cloudflare, Hostinger, etc.
-                  </p>
-                </div>
+                {/* Option 3: GoDaddy/Other (Default Recommended) */}
+                <button
+                  onClick={() => { setDetectedProvider('GODADDY_MIGRATION'); setStep('DNS_INSTRUCTIONS'); }}
+                  className="w-full flex items-center p-4 border-2 border-blue-100 bg-blue-50/50 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group text-left relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg font-medium">Recommended</div>
+                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg mr-4 group-hover:bg-white transition-colors">
+                    <Globe className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">GoDaddy / Hostinger / Other</div>
+                    <div className="text-sm text-gray-500">I'm not sure, or provider not listed</div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 ml-auto text-gray-300 group-hover:text-blue-500" />
+                </button>
+              </div>
 
-                <div className="flex items-center justify-between">
-                  {/* Step Buttons */}
-                  <button
-                    onClick={() => setStep(1)}
-                    className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    onClick={() => setStep(3)}
-                    className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-                  >
-                    I've Added the DNS Records →
-                  </button>
-                </div>
+              <div className="flex justify-center pt-4">
+                <button onClick={() => setStep('INPUT')} className="text-sm text-gray-500 hover:text-gray-900">
+                  ← Back
+                </button>
               </div>
             </div>
           )}
 
-          {/* Step 3: Verify & Test */}
-          {step === 3 && addedDomain && (
-            <div className="space-y-6">
+          {/* STEP 3: DNS Instructions */}
+          {step === 'DNS_INSTRUCTIONS' && addedDomain && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
+
+              {/* Header based on path */}
               <div className="text-center">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  ✅ Step 3: Verify & Test Your Domain
-                </h3>
-                <p className="text-gray-600">
-                  Let's check if your DNS is configured correctly
+                <h3 className="text-xl font-bold text-gray-900">Add these records to your DNS</h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  {detectedProvider === 'CLOUDFLARE' ? 'Log in to your Cloudflare dashboard' :
+                    detectedProvider === 'GODADDY_MIGRATION' ? 'We recommend moving DNS to Cloudflare (Free)' :
+                      'Log in to your domain provider'}
                 </p>
               </div>
 
-              <div className="max-w-2xl mx-auto space-y-6">
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 text-center">
-                  <div className="flex items-center justify-center space-x-2 mb-4">
-                    <Shield className="w-8 h-8 text-green-500" />
-                    <Sparkles className="w-6 h-6 text-blue-500" />
-                    <Globe className="w-8 h-8 text-purple-500" />
+              {/* Instructions Card */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-2 bg-gray-100 p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                  <div className="col-span-2">Type</div>
+                  <div className="col-span-3">Name</div>
+                  <div className="col-span-5">Value</div>
+                  <div className="col-span-2 text-right">Action</div>
+                </div>
+
+                {/* Record 1: Routing (CNAME/ALIAS) */}
+                <div className="grid grid-cols-12 gap-2 p-3 items-center border-b border-gray-100 hover:bg-white transition-colors">
+                  <div className="col-span-2 font-mono text-sm font-semibold text-gray-700">
+                    {detectedProvider === 'ALIAS' ? 'ALIAS' : 'CNAME'}
                   </div>
-                  <h4 className="font-bold text-green-900 mb-2 text-xl">🎉 Domain Setup Complete!</h4>
-                  <p className="text-green-800 mb-4">
-                    Your branded domain <strong className="bg-white px-2 py-1 rounded font-mono text-sm">{getFullDomain()}</strong> is now ready!
+                  <div className="col-span-3 font-mono text-sm text-gray-600 truncate" title={domainType === 'SUBDOMAIN' ? addedDomain.domainName.split('.')[0] : '@'}>
+                    {domainType === 'SUBDOMAIN' ? addedDomain.domainName.split('.')[0] : '@'}
+                  </div>
+                  <div className="col-span-5 font-mono text-sm text-blue-600 truncate" title={PROXY_DOMAIN}>
+                    {PROXY_DOMAIN}
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <button onClick={() => copyToClipboard(PROXY_DOMAIN)} className="text-gray-400 hover:text-blue-600 p-1">
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Record 2: SSL (TXT) */}
+                <div className="grid grid-cols-12 gap-2 p-3 items-center hover:bg-white transition-colors">
+                  <div className="col-span-2 font-mono text-sm font-semibold text-gray-700">TXT</div>
+                  <div className="col-span-3 font-mono text-sm text-gray-600">@</div>
+                  <div className="col-span-5 font-mono text-sm text-blue-600 truncate" title={`tinyslash-verify=${addedDomain.verificationToken}`}>
+                    tinyslash-verify={addedDomain.verificationToken?.substring(0, 8)}...
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <button onClick={() => copyToClipboard(`tinyslash-verify=${addedDomain.verificationToken}`)} className="text-gray-400 hover:text-blue-600 p-1">
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Path Specific Warnings/Info */}
+              {detectedProvider === 'CLOUDFLARE' && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start space-x-3">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                  <div className="text-sm text-orange-800">
+                    <strong>Important:</strong> Set the CNAME record to <strong>DNS Only (Grey Cloud)</strong> initially. You can enable the Orange Cloud after verification.
+                  </div>
+                </div>
+              )}
+
+              {detectedProvider === 'GODADDY_MIGRATION' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 mb-2">
+                    <strong>Why Cloudflare?</strong> Better speed, free SSL, and reliability.
                   </p>
-                  <div className="bg-white border rounded-lg p-4 mb-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-gray-700">Domain reserved & configured</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Shield className="w-4 h-4 text-blue-500" />
-                        <span className="text-gray-700">SSL certificate pending</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Zap className="w-4 h-4 text-yellow-500" />
-                        <span className="text-gray-700">DNS propagation: 5-60 min</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Globe className="w-4 h-4 text-purple-500" />
-                        <span className="text-gray-700">Ready for short links</span>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-xs text-blue-600 mb-2">
+                    ⚠️ <strong>Root Domain Warning:</strong> If you stay with GoDaddy, you MUST use 'www' subdomain or migrate to a provider supporting ALIAS records. Root domains (non-www) with A records are <strong>not recommended</strong>.
+                  </p>
+                  <a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-600 hover:underline flex items-center">
+                    Open Cloudflare Sign Up <ExternalLink className="w-3 h-3 ml-1" />
+                  </a>
                 </div>
+              )}
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-3">🎯 Next Steps:</h4>
-                  <ol className="text-blue-800 space-y-2 text-sm">
-                    <li className="flex items-start">
-                      <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-0.5">1</span>
-                      Wait 5-10 minutes for DNS propagation
-                    </li>
-                    <li className="flex items-start">
-                      <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-0.5">2</span>
-                      Create your first short link using this domain
-                    </li>
-                    <li className="flex items-start">
-                      <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-0.5">3</span>
-                      Test the link to ensure it works correctly
-                    </li>
-                  </ol>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => setStep(2)}
-                    className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                  >
-                    ← Back to DNS
-                  </button>
-                  <button
-                    onClick={() => {
-                      onComplete(addedDomain);
-                      toast.success('Custom domain setup complete! 🎉');
-                    }}
-                    className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
-                  >
-                    Complete Setup ✨
-                  </button>
-                </div>
+              <div className="flex justify-between items-center pt-4">
+                <button onClick={() => setStep(domainType === 'SUBDOMAIN' ? 'INPUT' : 'PROVIDER_SELECT')} className="text-sm text-gray-500 hover:text-gray-900">
+                  ← Back
+                </button>
+                <button
+                  onClick={() => { setStep('VERIFICATION'); startSmartPolling(); }}
+                  className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                >
+                  I've added these records
+                </button>
               </div>
             </div>
           )}
+
+          {/* STEP 4: Verification & Polling */}
+          {step === 'VERIFICATION' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-300 text-center py-6">
+
+              <div className="relative inline-block">
+                {/* Status Icon */}
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto transition-colors duration-500 ${verificationStatus === 'LIVE' ? 'bg-green-100' :
+                  verificationStatus === 'DNS_FOUND' ? 'bg-blue-100' :
+                    verificationStatus === 'MISCONFIGURED' || verificationStatus === 'BLOCKED' ? 'bg-red-100' :
+                      'bg-gray-100'
+                  }`}>
+                  {verificationStatus === 'LIVE' ? <CheckCircle className="w-10 h-10 text-green-600" /> :
+                    verificationStatus === 'DNS_FOUND' ? <Shield className="w-10 h-10 text-blue-600 animate-pulse" /> :
+                      verificationStatus === 'MISCONFIGURED' || verificationStatus === 'BLOCKED' ? <AlertTriangle className="w-10 h-10 text-red-600" /> :
+                        <RefreshCw className="w-10 h-10 text-gray-400 animate-spin" />}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {verificationStatus === 'LIVE' ? '🎉 Domain is Live!' :
+                    verificationStatus === 'DNS_FOUND' ? 'Issuing SSL Certificate...' :
+                      verificationStatus === 'MISCONFIGURED' ? 'Configuration Issue' :
+                        verificationStatus === 'BLOCKED' ? 'Verification Blocked' :
+                          verificationStatus === 'MOVED' ? 'Domain Moved' :
+                            verificationStatus === 'TIMEOUT' ? 'Verification Timed Out' :
+                              'Checking DNS Records...'}
+                </h3>
+                <p className="text-gray-500 max-w-sm mx-auto">
+                  {verificationStatus === 'LIVE' ? `You can now create branded links with ${addedDomain?.domainName}` :
+                    verificationStatus === 'DNS_FOUND' ? 'DNS is verified. We are now provisioning your free SSL certificate.' :
+                      verificationStatus === 'MISCONFIGURED' ? 'We can\'t detect the DNS records. Please check your provider settings.' :
+                        verificationStatus === 'BLOCKED' ? 'Cloudflare has blocked this domain. Please contact support.' :
+                          verificationStatus === 'MOVED' ? 'This domain is active on another Cloudflare account. Please remove it first.' :
+                            verificationStatus === 'TIMEOUT' ? 'We stopped checking after 10 minutes. Click retry to continue.' :
+                              'We check automatically every few seconds. DNS changes can take 5-30 minutes.'}
+                </p>
+              </div>
+
+              {/* Progress Bar (Fake Visual) */}
+              {(verificationStatus === 'WAITING' || verificationStatus === 'DNS_FOUND') && (
+                <div className="max-w-xs mx-auto w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className={`h-full bg-blue-600 rounded-full transition-all duration-1000 ${verificationStatus === 'DNS_FOUND' ? 'w-2/3' : 'w-1/3 animate-pulse'
+                    }`} />
+                </div>
+              )}
+
+              {/* Action Buttons based on Status */}
+              {verificationStatus === 'LIVE' && (
+                <div className="pt-4 animate-in zoom-in duration-300">
+                  <button
+                    onClick={() => { onComplete(addedDomain); onClose(); }}
+                    className="bg-black text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg hover:shadow-xl"
+                  >
+                    Create Your First Link →
+                  </button>
+                </div>
+              )}
+
+              {/* Retry / Back Actions */}
+              {(verificationStatus === 'MISCONFIGURED' || verificationStatus === 'TIMEOUT' || verificationStatus === 'WAITING') && (
+                <div className="pt-8 space-y-4">
+                  {(verificationStatus === 'MISCONFIGURED' || verificationStatus === 'TIMEOUT') && (
+                    <button
+                      onClick={handleRestartVerification}
+                      className="bg-gray-900 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center mx-auto space-x-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Retry Verification</span>
+                    </button>
+                  )}
+
+                  <button onClick={() => setStep('DNS_INSTRUCTIONS')} className="text-sm text-gray-400 hover:text-gray-600 block mx-auto">
+                    View DNS instructions
+                  </button>
+                </div>
+              )}
+
+            </div>
+          )}
+
         </div>
       </div>
-    </div >
+    </div>
   );
 };
+
+// Simple Icon Components to replace missing imports if any
+const CloudIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17.5 19c0-1.7-1.3-3-3-3h-11c-1.7 0-3 1.3-3 3s1.3 3 3 3h11c1.7 0 3-1.3 3-3z" /><path d="M17.5 19c0-3.3-2.7-6-6-6-.5 0-1 .1-1.4 .3A6 6 0 0 1 5.3 16" /><path d="M22 13a4.5 4.5 0 0 0-7.3-3.6" /></svg>
+);
 
 export default CustomDomainOnboarding;

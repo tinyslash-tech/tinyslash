@@ -12,6 +12,8 @@ import java.util.Collection;
 public interface PageRepository extends MongoRepository<Page, String> {
   List<Page> findByUserId(String userId);
 
+  long countByUserId(String userId);
+
   Optional<Page> findBySlug(String slug);
 
   Optional<Page> findByCustomDomain(String customDomain);

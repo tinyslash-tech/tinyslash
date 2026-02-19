@@ -86,6 +86,14 @@ public class SubscriptionController {
             planData.put("canAccessDetailedAnalytics", subscriptionService.canAccessDetailedAnalytics(userId));
             planData.put("canCustomizeQrCodes", subscriptionService.canCustomizeQrCodes(userId));
 
+            // Pages Features
+            planData.put("maxPages", planInfo.getMaxPages());
+            planData.put("linksPerPage", planInfo.getLinksPerPage());
+            planData.put("canRemovePageBranding", planInfo.isCanRemovePageBranding());
+            planData.put("canUsePageCustomDomain", planInfo.isCanUsePageCustomDomain());
+            planData.put("canUseSmartLinks", planInfo.isCanUseSmartLinks());
+            planData.put("canUseLeadForms", planInfo.isCanUseLeadForms());
+
             response.put("success", true);
             response.put("data", planData);
 
@@ -173,6 +181,42 @@ public class SubscriptionController {
                     hasAccess = subscriptionService.canCustomizeQrCodes(userId);
                     if (!hasAccess) {
                         message = "QR code customization is available with Premium plans.";
+                    }
+                    break;
+
+                // Pages Actions
+                case "create-page":
+                    hasAccess = subscriptionService.canCreatePage(userId);
+                    if (!hasAccess) {
+                        message = "You have reached the maximum number of pages for your plan.";
+                    }
+                    break;
+
+                case "remove-page-branding":
+                    hasAccess = subscriptionService.canRemovePageBranding(userId);
+                    if (!hasAccess) {
+                        message = "Remove branding is available on the Business plan.";
+                    }
+                    break;
+
+                case "page-custom-domain":
+                    hasAccess = subscriptionService.canUsePageCustomDomain(userId);
+                    if (!hasAccess) {
+                        message = "Custom domains are available on the Pro plan.";
+                    }
+                    break;
+
+                case "smart-links":
+                    hasAccess = subscriptionService.canUseSmartLinks(userId);
+                    if (!hasAccess) {
+                        message = "Smart links are available on the Pro plan.";
+                    }
+                    break;
+
+                case "lead-forms":
+                    hasAccess = subscriptionService.canUseLeadForms(userId);
+                    if (!hasAccess) {
+                        message = "Lead forms are available on the Business plan.";
                     }
                     break;
 

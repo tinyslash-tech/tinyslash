@@ -19,6 +19,15 @@ export interface UserPlanInfo {
   canUseCustomDomain: boolean;
   canAccessDetailedAnalytics: boolean;
   canCustomizeQrCodes: boolean;
+
+  // Pages Limits
+  maxPages?: number; // Optional for backward compatibility if needed, but backend sends it
+  linksPerPage?: number;
+  canRemovePageBranding?: boolean;
+  canUsePageCustomDomain?: boolean;
+  canUseSmartLinks?: boolean;
+  canUseLeadForms?: boolean;
+  canUsePremiumTemplates?: boolean;
 }
 
 export interface PricingPlan {
@@ -280,7 +289,15 @@ class SubscriptionService {
       'custom-domain': 'Custom domains are available with Pro plans. Use your own domain!',
       'detailed-analytics': 'Detailed analytics are available with Pro plans. See where your audience is from!',
       'customize-qr': 'QR code customization is available with Pro plans. Add your logo and colors!',
-      'daily-limit': 'You\'ve reached your monthly limit. Upgrade to Pro for unlimited access!'
+      'daily-limit': 'You\'ve reached your monthly limit. Upgrade to Pro for unlimited access!',
+
+      // Pages Messages
+      'pages-limit': 'You have reached the maximum number of pages for your plan.',
+      'links-limit': 'You have reached the maximum number of links for this page.',
+      'remove-branding': 'Remove TinySlash branding with the Business plan.',
+      'page-custom-domain': 'Connect your own domain with the Pro plan.',
+      'smart-links': 'Smart links and advanced routing are available on the Pro plan.',
+      'lead-forms': 'Lead generation forms are available on the Business plan.'
     };
 
     return messages[feature] || 'This feature is available with Pro plans.';

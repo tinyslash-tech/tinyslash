@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
 import PublicHeader from '../components/PublicHeader';
 import Footer from '../components/Footer';
 import { SEO } from '../components/SEO';
@@ -41,22 +41,11 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-lg mb-1">Office</h3>
-                  <p className="text-gray-500 mb-2">Come say hello at our office headquarters.</p>
+                  <p className="text-gray-500 mb-2">Come say hello at our office.</p>
                   <address className="not-italic text-gray-900 font-medium">
                     Hyderabad, Telangana<br />
-                    India
+                    India — 500 081
                   </address>
-                </div>
-              </div>
-
-              <div className="flex gap-4 p-6 bg-gray-50 rounded-2xl">
-                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center shrink-0">
-                  <Phone size={24} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg mb-1">Phone</h3>
-                  <p className="text-gray-500 mb-2">Mon-Fri from 8am to 5pm.</p>
-                  <p className="text-gray-900 font-medium">+91 91829 28956</p>
                 </div>
               </div>
             </div>

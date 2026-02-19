@@ -31,6 +31,7 @@ import com.urlshortener.model.ReservedDomain;
 import com.urlshortener.model.DomainAuditLog;
 import com.urlshortener.repository.ReservedDomainRepository;
 import com.urlshortener.repository.DomainAuditLogRepository;
+import com.urlshortener.repository.DomainCooldownRepository;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.Attributes;
@@ -71,6 +72,12 @@ public class DomainService {
 
     private final SecureRandom secureRandom = new SecureRandom();
 
+    @Autowired
+    private DomainCooldownRepository domainCooldownRepository;
+
+    @Autowired
+    private DomainVerificationWorker domainVerificationWorker;
+
     /**
      * Reserve a domain with rate limiting and quota enforcement
      */
@@ -88,6 +95,11 @@ public class DomainService {
         // Enterprise 10/10: Check Global Lock
         checkGlobalLock(request.getDomainName());
 
+        // Enterprise 10/10: Check Cooldown (Prevents race conditions/abuse)
+        if (domainCooldownRepository.existsById(request.getDomainName())) {
+            throw new IllegalArgumentException("Domain is in cooldown period. Please try again in 24 hours.");
+        }
+
         // Generate unique verification token
         String verificationToken = generateVerificationToken();
 
@@ -102,6 +114,9 @@ public class DomainService {
         createGlobalReservation(request.getDomainName(), request.getOwnerId());
 
         domain = domainRepository.save(domain);
+
+        // Clear cache so new domain shows up
+        clearDomainCache(request.getOwnerId(), request.getOwnerType());
 
         // 10/10: Audit Log
         logAudit(domain, currentUserId, DomainAuditLog.EventType.DOMAIN_ADDED, "Domain reserved");
@@ -263,11 +278,14 @@ public class DomainService {
             }
         }
 
+        // Reactive Trigger: If verified but not checked in > 6h, trigger check
+        triggerReactiveVerification(domain);
+
         return DomainResponse.forPublicApi(domain);
     }
 
     /**
-     * Soft delete domain with cooldown (Enterprise 10/10)
+     * Soft delete domain with synchronous Cloudflare removal and Cooldown
      */
     @Transactional
     public void softDeleteDomain(String domainId, String currentUserId) {
@@ -276,30 +294,46 @@ public class DomainService {
 
         validateDomainOwnership(domain, currentUserId);
 
-        // 1. Mark as DELETING
-        domain.setStatus(Domain.DomainStatus.DELETING);
-        domain.setDeletedAt(LocalDateTime.now());
+        // 1. Mark as DELETION_PENDING
+        domain.setStatus(Domain.DomainStatus.DELETION_PENDING);
         domainRepository.save(domain);
 
-        // 2. Update Global Lock to DELETING
-        Optional<ReservedDomain> reservation = reservedDomainRepository.findByDomainName(domain.getDomainName());
-        reservation.ifPresent(res -> {
-            res.setStatus("DELETING");
-            reservedDomainRepository.save(res);
-        });
-
-        // 3. Trigger Synchronous Cloudflare Deletion
+        // 2. Synchronous Cloudflare Deletion
         try {
             boolean cfDeleted = cloudflareSaasService.deleteCustomHostname(domain);
-            if (!cfDeleted) {
-                // Log error but keep in DELETING state for retry cron
+
+            if (cfDeleted) {
+                // 3. Success: Add to Cooldown & Delete from DB
+                com.urlshortener.model.DomainCooldown cooldown = new com.urlshortener.model.DomainCooldown(
+                        domain.getDomainName(),
+                        domain.getOwnerId(),
+                        "User requested deletion");
+                domainCooldownRepository.save(cooldown);
+
+                // Remove Global Lock
+                Optional<ReservedDomain> reservation = reservedDomainRepository
+                        .findByDomainName(domain.getDomainName());
+                reservation.ifPresent(reservedDomainRepository::delete);
+
+                // Actual Soft Delete (Set deletedAt)
+                domain.setStatus(Domain.DomainStatus.DELETING);
+                domain.setDeletedAt(LocalDateTime.now());
+                domainRepository.save(domain);
+
+                logAudit(domain, currentUserId, DomainAuditLog.EventType.DELETION_COMPLETED,
+                        "Synchronous deletion successful. Cooldown active.");
+                logger.info("Domain deleted and cooldown active: {}", domain.getDomainName());
+
+            } else {
+                // 4. Failed: Keep in DELETION_PENDING for Retry Worker/CRON
                 logAudit(domain, currentUserId, DomainAuditLog.EventType.DELETION_FAILED,
                         "Cloudflare API returned false");
-                logger.error("Cloudflare deletion failed for domain: {}", domain.getDomainName());
-            } else {
-                logAudit(domain, currentUserId, DomainAuditLog.EventType.DELETION_COMPLETED,
-                        "Soft-delete initiated. Cloudflare hostname removed.");
+                logger.error("Cloudflare deletion failed. Domain stuck in DELETION_PENDING: {}",
+                        domain.getDomainName());
+                // We do NOT delete from DB here to prevent orphanage.
+                // A background worker should retry DELETION_PENDING items.
             }
+
         } catch (Exception e) {
             logAudit(domain, currentUserId, DomainAuditLog.EventType.DELETION_FAILED, "Exception: " + e.getMessage());
             logger.error("Exception during Cloudflare deletion for domain: {}", domain.getDomainName(), e);
@@ -307,6 +341,19 @@ public class DomainService {
 
         // Clear cache
         clearDomainCache(domain.getOwnerId(), domain.getOwnerType());
+    }
+
+    // --- Helper for Reactive Trigger ---
+    private void triggerReactiveVerification(Domain domain) {
+        if ("VERIFIED".equals(domain.getStatus()) || "MISCONFIGURED".equals(domain.getStatus())) {
+            // Check if last verification was > 6 hours ago
+            LocalDateTime threshold = LocalDateTime.now().minusHours(6);
+            if (domain.getLastVerificationAttempt() == null
+                    || domain.getLastVerificationAttempt().isBefore(threshold)) {
+                logger.info("Triggering reactive re-verification for: {}", domain.getDomainName());
+                domainVerificationWorker.verifyConfigurationAsync(domain);
+            }
+        }
     }
 
     /**
@@ -374,9 +421,11 @@ public class DomainService {
     }
 
     private void validateDomainSafety(String domainName) {
-        // Check Redis blacklist cache first (if available)
+        String lowerDomain = domainName.toLowerCase();
+
+        // 1. Check Redis blacklist (Real-time blocklist)
         if (redisTemplate != null) {
-            String blacklistKey = DOMAIN_BLACKLIST_KEY + domainName;
+            String blacklistKey = DOMAIN_BLACKLIST_KEY + lowerDomain;
             Boolean isBlacklisted = (Boolean) redisTemplate.opsForValue().get(blacklistKey);
 
             if (Boolean.TRUE.equals(isBlacklisted)) {
@@ -384,10 +433,31 @@ public class DomainService {
             }
         }
 
-        // Basic domain validation
-        if (domainName.contains("localhost") ||
-                domainName.contains("127.0.0.1") ||
-                domainName.contains("0.0.0.0")) {
+        // 2. High-Risk TLD Filter (Abuse Prevention)
+        // Blocks TLDs frequently associated with phishing/malware
+        List<String> suspiciousTlds = List.of(".zip", ".mov", ".gq", ".cf", ".tk", ".ml", ".ga", ".top", ".work",
+                ".click");
+        for (String tld : suspiciousTlds) {
+            if (lowerDomain.endsWith(tld)) {
+                throw new IllegalArgumentException(
+                        "Domain TLD " + tld + " is restricted due to security policies. Contact support.");
+            }
+        }
+
+        // 3. Phishing Keyword Filter
+        List<String> phishingKeywords = List.of("paypal", "login", "verify", "secure", "update", "bank", "signin",
+                "support-", "admin-");
+        for (String keyword : phishingKeywords) {
+            if (lowerDomain.contains(keyword)) {
+                // Basic containment check. In production, use edit distance or regex.
+                throw new IllegalArgumentException("Domain contains restricted keyword: " + keyword);
+            }
+        }
+
+        // 4. Basic syntax & Localhost validation
+        if (lowerDomain.contains("localhost") ||
+                lowerDomain.contains("127.0.0.1") ||
+                lowerDomain.contains("0.0.0.0")) {
             throw new IllegalArgumentException("Invalid domain name");
         }
     }

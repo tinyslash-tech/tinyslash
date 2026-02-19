@@ -9,6 +9,7 @@ import React, { useEffect } from 'react';
 import { LivePreviewCard } from '../../components/page-builder/LivePreviewCard';
 import { useSlugCheck } from '../../hooks/useSlugCheck';
 import { sanitizeSlug } from '../../utils/sanitizeSlug';
+import { useSubscription } from '../../context/SubscriptionContext';
 
 const PagesDashboard = () => {
   const navigate = useNavigate();
@@ -97,16 +98,49 @@ const PagesDashboard = () => {
     );
   }
 
+  const { planInfo, showUpgradeModal } = useSubscription();
+  const maxPages = planInfo?.maxPages || 1; // Default to 1 if not loaded
+  const currentPages = pages?.length || 0;
+  const canCreate = currentPages < maxPages;
+
+  const handleCreateClick = () => {
+    if (canCreate) {
+      setIsCreateModalOpen(true);
+    } else {
+      // Smart Upgrade Message
+      let message = `You have reached the limit of ${maxPages} pages. Upgrade to create more!`;
+      const currentPlan = planInfo?.plan || 'free';
+
+      if (currentPlan.toLowerCase().includes('free')) {
+        message = "You've reached the 1-page limit. Upgrade to Starter for 2 pages or Pro for 5 pages.";
+      } else if (currentPlan.toLowerCase().includes('starter')) {
+        message = "You've reached the 2-page limit on Starter. Upgrade to Pro for 5 pages and advanced features.";
+      } else if (currentPlan.toLowerCase().includes('pro')) {
+        message = "You've reached the 5-page limit. Upgrade to Business for unlimited pages and team collaboration.";
+      }
+
+      showUpgradeModal('pages-limit', message);
+    }
+  };
+
   return (
     <div className="space-y-8 p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">TinySlash Pages</h1>
-          <p className="text-gray-500 mt-1">Create a beautiful link-in-bio page for your brand.</p>
+          <p className="text-gray-500 mt-1">
+            Create a beautiful link-in-bio page for your brand.
+            <span className="ml-2 text-sm bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+              {currentPages} / {maxPages === 2147483647 ? '∞' : maxPages} Used
+            </span>
+          </p>
         </div>
         <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+          onClick={handleCreateClick}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium
+            ${canCreate
+              ? 'bg-black hover:bg-gray-800 text-white'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
         >
           <Plus className="w-5 h-5" />
           Create New Page

@@ -34,6 +34,43 @@ public class UrlController {
     @Autowired
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
+    @Autowired
+    private com.urlshortener.service.SecurityService securityService;
+
+    @PostMapping("/precheck")
+    public ResponseEntity<Map<String, Object>> preCheckUrl(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String url = request.get("url");
+            if (url == null || url.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "URL is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            com.urlshortener.dto.SecurityDecision decision = securityService.preCheckUrl(url, null);
+
+            response.put("success", true);
+            response.put("decision", decision);
+
+            // Simplified status for frontend
+            String simpleStatus = "SAFE";
+            if (decision.getDecision() == com.urlshortener.dto.SecurityDecision.Decision.BLOCK ||
+                    decision.getDecision() == com.urlshortener.dto.SecurityDecision.Decision.BLOCK_TEMP) {
+                simpleStatus = "UNSAFE";
+            } else if (decision.getDecision() == com.urlshortener.dto.SecurityDecision.Decision.WARN) {
+                simpleStatus = "CAUTION";
+            }
+            response.put("simpleStatus", simpleStatus);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error checking URL: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     @PostMapping("/fix-urls")
     public ResponseEntity<Map<String, Object>> fixExistingUrls() {
         Map<String, Object> response = new HashMap<>();
@@ -52,6 +89,34 @@ public class UrlController {
             response.put("success", false);
             response.put("message", "Migration failed: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @GetMapping("/check-alias")
+    public ResponseEntity<Map<String, Object>> checkAliasAvailability(
+            @RequestParam String alias,
+            @RequestParam(required = false) String domain) {
+
+        Map<String, Object> response = new HashMap<>();
+        try {
+            boolean available = urlShorteningService.isAliasAvailable(domain, alias);
+
+            response.put("success", true);
+            response.put("available", available);
+            response.put("alias", alias);
+            response.put("domain", domain);
+
+            if (!available) {
+                response.put("message", "Alias is not available.");
+            } else {
+                response.put("message", "Alias is available!");
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

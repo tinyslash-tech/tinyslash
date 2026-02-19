@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
+import { Mail, MapPin, Clock, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { SEO } from '../components/SEO';
+import PublicHeader from '../components/PublicHeader';
+import Footer from '../components/Footer';
 
 const ContactUs: React.FC = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -52,17 +52,8 @@ const ContactUs: React.FC = () => {
         title="Contact Us"
         description="Get in touch with the TinySlash team. We're here to help with any questions about our URL shortener and QR code services."
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Back Button */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back</span>
-          </button>
-        </div>
+      <PublicHeader />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
 
         <motion.div
           initial="initial"
@@ -100,26 +91,14 @@ const ContactUs: React.FC = () => {
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
-                    <p className="text-gray-600">+91 9876543210</p>
-                    <p className="text-sm text-gray-500 mt-1">Monday to Friday, 9 AM - 6 PM IST</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <MapPin className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Address</h3>
                     <p className="text-gray-600">
-                      123 Tech Park, Sector 5<br />
-                      Bangalore, Karnataka 560001<br />
-                      India
+                      Hyderabad, Telangana<br />
+                      India — 500 081
                     </p>
                   </div>
                 </div>
@@ -262,6 +241,7 @@ const ContactUs: React.FC = () => {
           </motion.div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

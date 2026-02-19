@@ -3,13 +3,14 @@ import { Page, PageBlock } from '../../../types/page';
 import {
   GripVertical, Trash2, Eye, EyeOff, X, Plus,
   Link2, Type, Image as ImageIcon, Video, Share2, Mail, Layout, CreditCard, Minus,
-  ShoppingBag, LayoutGrid
+  ShoppingBag, LayoutGrid, Lock
 } from 'lucide-react';
 import {
   DragDropContext, Droppable, Draggable,
   DropResult, DroppableProvided, DraggableProvided
 } from '@hello-pangea/dnd';
 import { BlockEditor } from './BlockEditors';
+import { useSubscription } from '../../../context/SubscriptionContext';
 
 interface ContentTabProps {
   page: Page;
@@ -19,8 +20,21 @@ interface ContentTabProps {
 export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const { planInfo, showUpgradeModal } = useSubscription();
 
   const addBlock = (type: PageBlock['type']) => {
+    // Permission Checks
+    if ((type === 'FORM' || type === 'EMAIL') && !planInfo?.canUseLeadForms) {
+      showUpgradeModal('lead-forms', 'Upgrade to the Pro plan to use Lead Forms and capture emails.');
+      return;
+    }
+
+    // Using Smart Links permission for other advanced blocks as a proxy for now
+    if ((type === 'PAYMENT' || type === 'AFFILIATE' || type === 'CARD') && !planInfo?.canUseSmartLinks) {
+      showUpgradeModal('smart-links', 'Upgrade to the Pro plan to use Advanced Blocks.');
+      return;
+    }
+
     const newBlock: PageBlock = {
       id: crypto.randomUUID(),
       type,
@@ -247,8 +261,18 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
               <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Engagement</h5>
               <div className="grid grid-cols-2 gap-2">
                 <PickButton icon={Share2} label="Socials" onClick={() => addBlock('SOCIAL')} />
-                <PickButton icon={Layout} label="Form" onClick={() => addBlock('FORM')} />
-                <PickButton icon={Mail} label="Email Signup" onClick={() => addBlock('EMAIL')} />
+                <PickButton
+                  icon={Layout}
+                  label="Form"
+                  onClick={() => addBlock('FORM')}
+                  locked={!planInfo?.canUseLeadForms}
+                />
+                <PickButton
+                  icon={Mail}
+                  label="Email Signup"
+                  onClick={() => addBlock('EMAIL')}
+                  locked={!planInfo?.canUseLeadForms}
+                />
               </div>
             </div>
 
@@ -256,9 +280,24 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
               <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Advanced</h5>
               <div className="grid grid-cols-2 gap-2">
                 <PickButton icon={Minus} label="Divider" onClick={() => addBlock('DIVIDER')} />
-                <PickButton icon={CreditCard} label="Payment" onClick={() => addBlock('PAYMENT')} />
-                <PickButton icon={ShoppingBag} label="Affiliate" onClick={() => addBlock('AFFILIATE')} />
-                <PickButton icon={LayoutGrid} label="Card" onClick={() => addBlock('CARD')} />
+                <PickButton
+                  icon={CreditCard}
+                  label="Payment"
+                  onClick={() => addBlock('PAYMENT')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
+                <PickButton
+                  icon={ShoppingBag}
+                  label="Affiliate"
+                  onClick={() => addBlock('AFFILIATE')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
+                <PickButton
+                  icon={LayoutGrid}
+                  label="Card"
+                  onClick={() => addBlock('CARD')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
               </div>
             </div>
           </div>
@@ -268,14 +307,18 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
   );
 };
 
-const PickButton = ({ icon: Icon, label, onClick }: any) => (
+const PickButton = ({ icon: Icon, label, onClick, locked }: any) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-blue-400 hover:ring-1 hover:ring-blue-400 hover:bg-blue-50 transition-all text-left group"
+    className={`flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-blue-400 hover:ring-1 hover:ring-blue-400 hover:bg-blue-50 transition-all text-left group
+      ${locked ? 'opacity-75 bg-gray-50' : ''}`}
   >
-    <div className="p-2 bg-gray-100 rounded-md group-hover:bg-white text-gray-600 group-hover:text-blue-600 transition-colors">
+    <div className={`p-2 rounded-md transition-colors ${locked ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 group-hover:bg-white text-gray-600 group-hover:text-blue-600'}`}>
       <Icon className="w-4 h-4" />
     </div>
-    <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">{label}</span>
+    <div className="flex-1 flex justify-between items-center">
+      <span className={`text-sm font-medium ${locked ? 'text-gray-500' : 'text-gray-700 group-hover:text-blue-700'}`}>{label}</span>
+      {locked && <Lock className="w-3 h-3 text-gray-400" />}
+    </div>
   </button>
 );

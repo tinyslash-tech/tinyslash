@@ -47,13 +47,15 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Features */}
+          {/* Platforms */}
           <div>
-            <h3 className="text-xl font-bold text-white mb-6">Features</h3>
+            <h3 className="text-xl font-bold text-white mb-6">Platforms</h3>
             <ul className="space-y-4">
               <li><Link to="/short-links" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">Short Links</Link></li>
               <li><Link to="/qr-codes" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">QR Codes</Link></li>
               <li><Link to="/file-to-link" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">File to Link</Link></li>
+              <li><Link to="/pages" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">TinySlash Pages</Link></li>
+              <li><Link to="/link-checker" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">Link Checker</Link></li>
             </ul>
           </div>
 
@@ -64,8 +66,11 @@ const Footer: React.FC = () => {
               <li><Link to="/solutions/social-media" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">Social Media</Link></li>
               <li><Link to="/solutions/digital-marketing" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">Digital Marketing</Link></li>
               <li><Link to="/solutions/customer-support" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">Customer Support</Link></li>
+              <li><Link to="/solutions/pages" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">TinySlash Pages</Link></li>
+              <li><Link to="/solutions/file-sharing" className="text-gray-300 hover:text-white transition-colors duration-200 text-lg font-medium block">File Sharing</Link></li>
             </ul>
           </div>
+
 
           {/* Quick Links */}
           {/* Company */}

@@ -86,9 +86,18 @@ public interface ShortenedUrlRepository extends MongoRepository<ShortenedUrl, St
     // Custom domain support - find by shortCode and domain
     Optional<ShortenedUrl> findByShortCodeAndDomain(String shortCode, String domain);
 
+    // Find active URLs by shortCode and domain (excluding soft deleted)
+    Optional<ShortenedUrl> findByShortCodeAndDomainAndIsDeletedFalse(String shortCode, String domain);
+
     // Find URLs by domain (for domain analytics)
     List<ShortenedUrl> findByDomain(String domain);
 
     // Count URLs by domain
     long countByDomain(String domain);
+
+    // Find all by short code (for disambiguation)
+    List<ShortenedUrl> findAllByShortCode(String shortCode);
+
+    // Find by short code and user
+    List<ShortenedUrl> findByShortCodeAndUserId(String shortCode, String userId);
 }

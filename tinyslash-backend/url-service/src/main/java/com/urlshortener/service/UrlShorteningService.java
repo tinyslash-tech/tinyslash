@@ -110,14 +110,36 @@ public class UrlShorteningService {
     public ShortenedUrl createShortUrl(ShortenedUrl template) {
         String originalUrl = template.getOriginalUrl();
         String userId = template.getUserId();
+        // 1. Explicit Normalization (Lowercase, Trim, No Trailing Slash)
         String customAlias = template.getCustomAlias();
+        if (customAlias != null) {
+            customAlias = customAlias.trim();
+            if (customAlias.endsWith("/")) {
+                customAlias = customAlias.substring(0, customAlias.length() - 1);
+            }
+            // Optional: enforce lowercase for consistency, though some users might want
+            // case-sensitive (unlikely for domains)
+            // standard practice is case-insensitive for domains/aliases usually
+            // but shortCodes like Base62 are case sensitive.
+            // Custom aliases are usually case-insensitive in user minds.
+            // Let's stick to the plan: Lowercase normalization if requested, or at least
+            // consistent.
+            // Requirement said "Lowercase normalization".
+            customAlias = customAlias.toLowerCase();
+        }
+
         String password = template.getPassword();
         Integer maxClicks = template.getMaxClicks();
         String title = template.getTitle();
         String description = template.getDescription();
         String scopeType = template.getScopeType() != null ? template.getScopeType() : "USER";
         String scopeId = template.getScopeId() != null ? template.getScopeId() : userId;
+
+        // 2. Default Domain Handling (Never Null)
         String customDomain = template.getDomain();
+        String defaultDomain = extractDomainFromUrl(shortUrlDomain);
+        String finalDomain = (customDomain != null && !customDomain.isEmpty()) ? customDomain : defaultDomain;
+
         String utmSource = template.getUtmSource();
         String utmMedium = template.getUtmMedium();
         String utmCampaign = template.getUtmCampaign();
@@ -153,8 +175,7 @@ public class UrlShorteningService {
         try {
             java.net.URI uri = java.net.URI.create(originalUrl);
             String targetHost = uri.getHost();
-            String myDomain = customDomain != null ? customDomain : extractDomainFromUrl(shortUrlDomain);
-            if (targetHost != null && targetHost.equalsIgnoreCase(myDomain)) {
+            if (targetHost != null && targetHost.equalsIgnoreCase(finalDomain)) {
                 throw new RuntimeException("Cannot shorten a URL from the same domain (Loop Prevention)");
             }
         } catch (Exception e) {
@@ -169,7 +190,7 @@ public class UrlShorteningService {
         }
 
         // Check premium features
-        if (customAlias != null && !customAlias.trim().isEmpty() && !subscriptionService.canUseCustomAlias(userId)) {
+        if (customAlias != null && !customAlias.isEmpty() && !subscriptionService.canUseCustomAlias(userId)) {
             throw new RuntimeException("Custom aliases are available with Premium plans only.");
         }
 
@@ -181,35 +202,32 @@ public class UrlShorteningService {
             throw new RuntimeException("Link expiration is available with Premium plans only.");
         }
 
-        // Generate or validate short code
-        String shortCode;
-        Long numericId = null;
-
-        if (customAlias != null && !customAlias.trim().isEmpty()) {
-            if (shortenedUrlRepository.existsByCustomAlias(customAlias)) {
-                throw new RuntimeException("Custom alias already exists");
+        // check reserved words if on default domain
+        if (finalDomain.equals(defaultDomain) && customAlias != null) {
+            // List of reserved words
+            java.util.List<String> reserved = java.util.List.of("admin", "api", "dashboard", "login", "register",
+                    "pricing", "contact", "about", "terms", "privacy");
+            if (reserved.contains(customAlias)) {
+                throw new RuntimeException("This alias is reserved.");
             }
-            shortCode = customAlias;
-            // numericId remains null for custom aliases (or we could assign one, but
-            // usually not needed for lookup if we check alias field)
-            // But to keep consistency with the new engine, custom aliases might bypass the
-            // Feistel logic.
-            // Our plan says createUrl uses new logic.
-        } else {
-            // New Logic: 7-character Random Alphanumeric (to match QrCodeService)
-            // Was: Auto-Increment -> Feistel -> Base62 (approx 6-7 chars)
+        }
 
-            // Generate 7-char short code
-            // Collision check loop
-            do {
-                // Using substring of UUID or similar math to get 7 chars.
-                // UUID is hex, but we want alphanumeric (Base62 alike).
-                // Let's use a simpler approach or reuse Base62Encoder with a random large
-                // number ensuring 7 chars.
-                // 62^7 is > 2^42. To guarantee 7 chars in Base62, number must be > 62^6 (~56.8
-                // billion).
+        ShortenedUrl saved = null;
+        int attempts = 0;
+        int MAX_ATTEMPTS = 5;
 
-                // Simple approach: Custom 7-char alphanumeric generator
+        // 3. Optimized Generation Loop & Duplicate Handling
+        while (saved == null && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            String shortCode;
+            Long numericId = null;
+
+            if (customAlias != null && !customAlias.isEmpty()) {
+                shortCode = customAlias;
+                // For custom alias, we only try once. If it fails, it's taken.
+                MAX_ATTEMPTS = 1;
+            } else {
+                // Generate 7-char short code (Random Alphanumeric)
                 // chars: 0-9, a-z, A-Z
                 String chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
                 StringBuilder sb = new StringBuilder(7);
@@ -218,181 +236,153 @@ public class UrlShorteningService {
                     sb.append(chars.charAt(random.nextInt(chars.length())));
                 }
                 shortCode = sb.toString();
-            } while (shortenedUrlRepository.findByShortCode(shortCode).isPresent());
 
-            // numericId is strictly for sequence tracking if needed, but for random mode
-            // it's less critical
-            // We can still consume the sequence to keep it moving or leave null.
-            // Leaving numericId as generated for reference, though it doesn't map to
-            // shortCode effectively anymore.
-            long id = sequenceGenerator.generateSequence("url_sequence");
-            numericId = id;
-        }
-
-        // Create shortened URL (Reuse template to keep advanced configs)
-        ShortenedUrl shortenedUrl = template;
-        shortenedUrl.setShortCode(shortCode);
-        // Ensure timestamp is set if not already
-        if (shortenedUrl.getCreatedAt() == null)
-            shortenedUrl.setCreatedAt(LocalDateTime.now());
-        if (shortenedUrl.getUpdatedAt() == null)
-            shortenedUrl.setUpdatedAt(LocalDateTime.now());
-
-        // Ensure scope is set
-        if (shortenedUrl.getScopeType() == null)
-            shortenedUrl.setScopeType(scopeType);
-        if (shortenedUrl.getScopeId() == null)
-            shortenedUrl.setScopeId(scopeId);
-        if (numericId != null) {
-            shortenedUrl.setNumericId(numericId);
-        }
-
-        // Set password protection first (before generating short URL)
-        boolean isPasswordProtected = password != null && !password.trim().isEmpty();
-        if (isPasswordProtected) {
-            shortenedUrl.setPassword(password);
-            shortenedUrl.setPasswordProtected(true);
-        }
-
-        // Set the complete short URL with custom domain or default domain
-        String domainToUse = customDomain != null ? customDomain : shortUrlDomain;
-        String baseUrl = domainToUse.startsWith("http") ? domainToUse : "https://" + domainToUse;
-
-        // For password-protected links, use /redirect/ path
-        String fullShortUrl;
-        if (isPasswordProtected) {
-            fullShortUrl = baseUrl + "/redirect/" + shortCode;
-        } else {
-            fullShortUrl = baseUrl + "/" + shortCode;
-        }
-        shortenedUrl.setShortUrl(fullShortUrl);
-
-        // Store the domain for multi-tenant support
-        if (customDomain != null) {
-            // For custom domains, store the custom domain
-            shortenedUrl.setDomain(customDomain);
-        } else {
-            // For default domain URLs, store the default domain (not the original URL's
-            // domain)
-            String defaultDomain = extractDomainFromUrl(shortUrlDomain);
-            shortenedUrl.setDomain(defaultDomain);
-        }
-
-        shortenedUrl.setCustomAlias(customAlias);
-        shortenedUrl.setTitle(title);
-        shortenedUrl.setDescription(description);
-
-        // UTM Tracking: store on model + auto-append to destination URL
-        if (utmSource != null && !utmSource.trim().isEmpty()) {
-            shortenedUrl.setUtmSource(utmSource.trim().toLowerCase());
-        }
-        if (utmMedium != null && !utmMedium.trim().isEmpty()) {
-            shortenedUrl.setUtmMedium(utmMedium.trim().toLowerCase());
-        }
-        if (utmCampaign != null && !utmCampaign.trim().isEmpty()) {
-            shortenedUrl.setUtmCampaign(utmCampaign.trim().toLowerCase().replace(" ", "_"));
-        }
-
-        // Auto-append UTM params to the original/destination URL
-        if (shortenedUrl.getUtmSource() != null || shortenedUrl.getUtmMedium() != null
-                || shortenedUrl.getUtmCampaign() != null) {
-            StringBuilder utmParams = new StringBuilder();
-            if (shortenedUrl.getUtmSource() != null) {
-                utmParams.append("utm_source=")
-                        .append(URLEncoder.encode(shortenedUrl.getUtmSource(), StandardCharsets.UTF_8));
-            }
-            if (shortenedUrl.getUtmMedium() != null) {
-                if (utmParams.length() > 0)
-                    utmParams.append("&");
-                utmParams.append("utm_medium=")
-                        .append(URLEncoder.encode(shortenedUrl.getUtmMedium(), StandardCharsets.UTF_8));
-            }
-            if (shortenedUrl.getUtmCampaign() != null) {
-                if (utmParams.length() > 0)
-                    utmParams.append("&");
-                utmParams.append("utm_campaign=")
-                        .append(URLEncoder.encode(shortenedUrl.getUtmCampaign(), StandardCharsets.UTF_8));
+                // Sequence for numeric ID if needed
+                long id = sequenceGenerator.generateSequence("url_sequence");
+                numericId = id;
             }
 
-            String currentUrl = shortenedUrl.getOriginalUrl();
+            // Prepare Entity
+            ShortenedUrl shortenedUrl = template; // Note: careful with modifying template in loop if not reset, but
+                                                  // here we set fields that overwrite
+            shortenedUrl.setShortCode(shortCode);
+            if (shortenedUrl.getCreatedAt() == null)
+                shortenedUrl.setCreatedAt(LocalDateTime.now());
+            if (shortenedUrl.getUpdatedAt() == null)
+                shortenedUrl.setUpdatedAt(LocalDateTime.now());
 
-            // Handle URL fragments (#section) — UTM must go before fragment
-            String fragment = "";
-            int hashIndex = currentUrl.indexOf('#');
-            if (hashIndex != -1) {
-                fragment = currentUrl.substring(hashIndex); // includes #
-                currentUrl = currentUrl.substring(0, hashIndex);
+            if (shortenedUrl.getScopeType() == null)
+                shortenedUrl.setScopeType(scopeType);
+            if (shortenedUrl.getScopeId() == null)
+                shortenedUrl.setScopeId(scopeId);
+            if (numericId != null)
+                shortenedUrl.setNumericId(numericId);
+
+            boolean isPasswordProtected = password != null && !password.trim().isEmpty();
+            if (isPasswordProtected) {
+                shortenedUrl.setPassword(password);
+                shortenedUrl.setPasswordProtected(true);
             }
 
-            // Strip any existing utm_ params to prevent duplicates
-            if (currentUrl.contains("?")) {
-                String[] parts = currentUrl.split("\\?", 2);
-                String urlBase = parts[0];
-                String queryString = parts[1];
-                // Remove existing utm_ params
-                String cleanedQuery = java.util.Arrays.stream(queryString.split("&"))
-                        .filter(param -> !param.startsWith("utm_"))
-                        .collect(java.util.stream.Collectors.joining("&"));
-                currentUrl = cleanedQuery.isEmpty() ? urlBase : urlBase + "?" + cleanedQuery;
+            // Set the complete short URL
+            // domainToUse is finalDomain
+            String baseUrl = finalDomain.startsWith("http") ? finalDomain : "https://" + finalDomain;
+            String fullShortUrl;
+            if (isPasswordProtected) {
+                fullShortUrl = baseUrl + "/redirect/" + shortCode;
+            } else {
+                fullShortUrl = baseUrl + "/" + shortCode;
+            }
+            shortenedUrl.setShortUrl(fullShortUrl);
+
+            // Store the domain (Explicitly defaults to tinyslash.com if null)
+            shortenedUrl.setDomain(finalDomain);
+            shortenedUrl.setCustomAlias(customAlias); // Persist normalized alias
+            shortenedUrl.setTitle(title);
+            shortenedUrl.setDescription(description);
+
+            // UTM Logic (same as before)
+            if (utmSource != null && !utmSource.trim().isEmpty())
+                shortenedUrl.setUtmSource(utmSource.trim().toLowerCase());
+            if (utmMedium != null && !utmMedium.trim().isEmpty())
+                shortenedUrl.setUtmMedium(utmMedium.trim().toLowerCase());
+            if (utmCampaign != null && !utmCampaign.trim().isEmpty())
+                shortenedUrl.setUtmCampaign(utmCampaign.trim().toLowerCase().replace(" ", "_"));
+
+            // Auto-append UTM params
+            if (shortenedUrl.getUtmSource() != null || shortenedUrl.getUtmMedium() != null
+                    || shortenedUrl.getUtmCampaign() != null) {
+                // ... (Detailed UTM appending logic from previous code) ...
+                // To avoid huge code duplication in this replacement block, I will use a helper
+                // or inline it compactly.
+                // For now, let's inline robustly as previous code.
+                StringBuilder utmParams = new StringBuilder();
+                if (shortenedUrl.getUtmSource() != null)
+                    utmParams.append("utm_source=")
+                            .append(URLEncoder.encode(shortenedUrl.getUtmSource(), StandardCharsets.UTF_8));
+                if (shortenedUrl.getUtmMedium() != null) {
+                    if (utmParams.length() > 0)
+                        utmParams.append("&");
+                    utmParams.append("utm_medium=")
+                            .append(URLEncoder.encode(shortenedUrl.getUtmMedium(), StandardCharsets.UTF_8));
+                }
+                if (shortenedUrl.getUtmCampaign() != null) {
+                    if (utmParams.length() > 0)
+                        utmParams.append("&");
+                    utmParams.append("utm_campaign=")
+                            .append(URLEncoder.encode(shortenedUrl.getUtmCampaign(), StandardCharsets.UTF_8));
+                }
+
+                String currentUrl = shortenedUrl.getOriginalUrl();
+                String fragment = "";
+                int hashIndex = currentUrl.indexOf('#');
+                if (hashIndex != -1) {
+                    fragment = currentUrl.substring(hashIndex);
+                    currentUrl = currentUrl.substring(0, hashIndex);
+                }
+                if (currentUrl.contains("?")) {
+                    String[] parts = currentUrl.split("\\?", 2);
+                    String cleanedQuery = java.util.Arrays.stream(parts[1].split("&"))
+                            .filter(p -> !p.startsWith("utm_")).collect(java.util.stream.Collectors.joining("&"));
+                    currentUrl = cleanedQuery.isEmpty() ? parts[0] : parts[0] + "?" + cleanedQuery;
+                }
+                String separator = currentUrl.contains("?") ? "&" : "?";
+                if (currentUrl.endsWith("?") || currentUrl.endsWith("&"))
+                    separator = "";
+                shortenedUrl.setOriginalUrl(currentUrl + separator + utmParams.toString() + fragment);
             }
 
-            // Append UTM with correct separator
-            String separator = currentUrl.contains("?") ? "&" : "?";
-            // Handle edge case: URL ends with ? or &
-            if (currentUrl.endsWith("?") || currentUrl.endsWith("&")) {
-                separator = "";
+            if (expirationDays != null && expirationDays > 0)
+                shortenedUrl.setExpiresAt(LocalDateTime.now().plusDays(expirationDays));
+            if (maxClicks != null && maxClicks > 0)
+                shortenedUrl.setMaxClicks(maxClicks);
+
+            // SAVE with DB Constraint Check
+            try {
+                saved = shortenedUrlRepository.save(shortenedUrl);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                // Determine if it was domain+shortCode conflict
+                if (customAlias != null) {
+                    throw new RuntimeException("Alias '" + customAlias + "' is already taken on " + finalDomain);
+                }
+                // If random, we just loop again (saved is null, attempts increments)
+                logger.warn("Random collision for code {} on domain {}, retrying...", shortCode, finalDomain);
             }
-
-            shortenedUrl.setOriginalUrl(currentUrl + separator + utmParams.toString() + fragment);
-            logger.info("UTM auto-appended to URL: {} -> {}", originalUrl, shortenedUrl.getOriginalUrl());
         }
 
-        // Set expiration
-        if (expirationDays != null && expirationDays > 0) {
-            shortenedUrl.setExpiresAt(LocalDateTime.now().plusDays(expirationDays));
+        if (saved == null) {
+            throw new RuntimeException(
+                    "Failed to generate unique short code after " + MAX_ATTEMPTS + " attempts. Please try again.");
         }
 
-        // Set max clicks limit
-        if (maxClicks != null && maxClicks > 0) {
-            shortenedUrl.setMaxClicks(maxClicks);
-        }
-
-        // Note: Domain is already set above for custom domains
-        // Don't overwrite the custom domain with the original URL's domain
-
-        // Check for existence (idempotency safety) within the specific domain
-        // Although Feistel guarantees uniqueness, this safety check is good
-        // AND it now checks (Domain + Code) instead of global
-        if (shortenedUrlRepository.findByShortCodeAndDomain(shortCode, shortenedUrl.getDomain()).isPresent()) {
-            // In the rare case of collision or re-use, we could regenerate or fail
-            // Given Feistel is 1:1, this implies a re-submission or manual conflict
-            // We'll trust the sequence generator but logging would be good
-            logger.warn("ShortCode {} already exists for domain {}", shortCode, shortenedUrl.getDomain());
-        }
-
-        // Save to database
-        ShortenedUrl saved = shortenedUrlRepository.save(shortenedUrl);
-
-        // Update user statistics and usage tracking
+        // Update stats
         if (userId != null) {
             updateUserStats(userId);
             subscriptionService.incrementUrlUsage(userId);
-            // Invalidate user URLs cache
             cacheService.clearCache("userUrls", userId);
         }
 
-        logger.info("Created short URL: {} for user: {}", shortCode, userId);
-
+        logger.info("Created short URL: {} for user: {} on domain: {}", saved.getShortCode(), userId, finalDomain);
         return saved;
     }
 
     public Optional<ShortenedUrl> getByShortCode(String shortCode) {
-        return shortenedUrlRepository.findByShortCode(shortCode);
+        // Ambiguous lookup - prefer one if unique, else warn/error
+        List<ShortenedUrl> candidates = shortenedUrlRepository.findAllByShortCode(shortCode);
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        if (candidates.size() == 1) {
+            ShortenedUrl url = candidates.get(0);
+            return url.isDeleted() ? Optional.empty() : Optional.of(url);
+        }
+        // Return first non-deleted
+        return candidates.stream().filter(u -> !u.isDeleted()).findFirst();
     }
 
     /**
      * Find URL by shortCode and domain for multi-tenant support
-     * Enhanced with better error handling and fallback logic
+     * Strict lookup filtering out soft-deleted URLs
      */
     public Optional<ShortenedUrl> getByShortCodeAndDomain(String shortCode, String domain) {
         try {
@@ -401,7 +391,6 @@ public class UrlShorteningService {
         } catch (Exception e) {
             logger.warn("Cache lookup failed for shortCode: {} domain: {}, falling back to direct DB query: {}",
                     shortCode, domain, e.getMessage());
-            // Fallback to direct database query without caching
             return getByShortCodeAndDomainDirect(shortCode, domain);
         }
     }
@@ -411,29 +400,20 @@ public class UrlShorteningService {
         return getByShortCodeAndDomainDirect(shortCode, domain);
     }
 
-    /**
-     * Direct database lookup without caching (fallback method)
-     */
     public Optional<ShortenedUrl> getByShortCodeAndDomainDirect(String shortCode, String domain) {
         try {
-            // First try to find by shortCode and exact domain match
-            Optional<ShortenedUrl> urlOpt = shortenedUrlRepository.findByShortCodeAndDomain(shortCode, domain);
+            // Strict lookup: Must match domain AND not be deleted
+            Optional<ShortenedUrl> urlOpt = shortenedUrlRepository.findByShortCodeAndDomainAndIsDeletedFalse(shortCode,
+                    domain);
 
-            // If not found and we have a domain, try some fallback strategies
+            // Fallback for default domain if not found (legacy support)
             if (urlOpt.isEmpty() && domain != null) {
                 String defaultDomain = extractDomainFromUrl(shortUrlDomain);
-
-                // For default domain requests, also try with null domain (legacy URLs)
-                if (domain.equals(defaultDomain)) {
-                    urlOpt = shortenedUrlRepository.findByShortCodeAndDomain(shortCode, null);
-                }
-
-                // If still not found, try shortCode only (most permissive)
-                if (urlOpt.isEmpty()) {
-                    urlOpt = shortenedUrlRepository.findByShortCode(shortCode);
+                if (domain.equalsIgnoreCase(defaultDomain)) {
+                    // Try with null domain just in case (legacy)
+                    urlOpt = shortenedUrlRepository.findByShortCodeAndDomainAndIsDeletedFalse(shortCode, null);
                 }
             }
-
             return urlOpt;
         } catch (Exception e) {
             logger.error("Database lookup failed for shortCode: {} domain: {}", shortCode, domain, e);
@@ -441,12 +421,8 @@ public class UrlShorteningService {
         }
     }
 
-    /**
-     * Fallback method to find URL by shortCode only, ignoring domain
-     * Used for URLs created with incorrect domain values
-     */
     public Optional<ShortenedUrl> findByShortCodeIgnoreDomain(String shortCode) {
-        return shortenedUrlRepository.findByShortCode(shortCode);
+        return getByShortCode(shortCode);
     }
 
     private String extractDomainFromUrl(String url) {
@@ -476,15 +452,25 @@ public class UrlShorteningService {
     }
 
     public ShortenedUrl updateUrl(String shortCode, String userId, ShortenedUrl updates) {
-        Optional<ShortenedUrl> existingOpt = shortenedUrlRepository.findByShortCode(shortCode);
+        // Disambiguation Logic
+        List<ShortenedUrl> candidates = shortenedUrlRepository.findByShortCodeAndUserId(shortCode, userId);
 
-        if (existingOpt.isEmpty()) {
+        ShortenedUrl existing = null;
+        if (candidates.isEmpty()) {
             throw new RuntimeException("URL not found");
+        } else if (candidates.size() == 1) {
+            existing = candidates.get(0);
+        } else {
+            // Ambiguity!
+            throw new RuntimeException(
+                    "Ambiguous: You have multiple URLs with code '" + shortCode + "'. please specify domain.");
         }
 
-        ShortenedUrl existing = existingOpt.get();
+        if (existing.isDeleted()) {
+            throw new RuntimeException("URL is deleted");
+        }
 
-        // Check ownership
+        // Check ownership (Double check, although query included userId)
         if (!existing.getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized to update this URL");
         }
@@ -497,10 +483,6 @@ public class UrlShorteningService {
             if (!isValidUrl(updates.getOriginalUrl())) {
                 throw new RuntimeException("Invalid URL format");
             }
-            // Temporarily set the base original URL (without UTMs if they are being updated
-            // separately,
-            // but usually we get the raw destination here)
-            // We'll recalculate the full URL with UTMs below
             existing.setOriginalUrl(updates.getOriginalUrl());
             rebuildUrl = true;
         }
@@ -521,8 +503,7 @@ public class UrlShorteningService {
 
         // Rebuild the Final Original URL if needed
         if (rebuildUrl) {
-            // 1. Get the base destination URL (stripping existing UTMs to avoid
-            // duplication/mess)
+            // 1. Get the base destination URL
             String currentUrl = existing.getOriginalUrl();
 
             // Strip any existing utm_ params from the base URL to start fresh
@@ -571,7 +552,6 @@ public class UrlShorteningService {
 
                 existing.setOriginalUrl(currentUrl + separator + utmParams.toString() + fragment);
             } else {
-                // No UTM params, just use the cleaned base URL
                 existing.setOriginalUrl(currentUrl);
             }
         }
@@ -585,27 +565,12 @@ public class UrlShorteningService {
             existing.setPassword(updates.getPassword());
             existing.setPasswordProtected(!updates.getPassword().trim().isEmpty());
         }
-        // Handle expiration updates
+
         if (updates.getExpiresAt() != null) {
             existing.setExpiresAt(updates.getExpiresAt());
         }
-        // Using a customized check or assuming null in 'updates' means "no change" vs
-        // "clear" is tricky.
-        // For now, let's assume if it is NOT null in 'updates', we set it.
-        // If the user wants to clear it, we might need a specific flag or send a
-        // far-future date.
-        // Or, we can check if the field was explicitly present in the request map in
-        // the controller.
-        // Simplified: The controller constructs 'updates', if we need to clear, we
-        // might need a specific helper.
-        // Let's rely on the controller passing null if no change, or a specific value
-        // if changed.
-        // If we want to allow clearing, we might need to handle a specific "CLEAR"
-        // value logic in controller.
 
-        if (updates.getMaxClicks() != null)
-
-        {
+        if (updates.getMaxClicks() != null) {
             existing.setMaxClicks(updates.getMaxClicks());
         }
 
@@ -651,27 +616,42 @@ public class UrlShorteningService {
     }
 
     public void deleteUrl(String shortCode, String userId) {
-        Optional<ShortenedUrl> existingOpt = shortenedUrlRepository.findByShortCode(shortCode);
+        // Disambiguation Logic
+        List<ShortenedUrl> candidates = shortenedUrlRepository.findByShortCodeAndUserId(shortCode, userId);
 
-        if (existingOpt.isEmpty()) {
+        ShortenedUrl urlToDelete = null;
+        if (candidates.isEmpty()) {
             throw new RuntimeException("URL not found");
+        } else if (candidates.size() == 1) {
+            urlToDelete = candidates.get(0);
+        } else {
+            throw new RuntimeException(
+                    "Ambiguous: You have multiple URLs with code '" + shortCode + "'. please specify domain.");
         }
 
-        ShortenedUrl existing = existingOpt.get();
+        // Check Domain for Lifecycle Policy
+        String domain = urlToDelete.getDomain();
+        String defaultDomain = extractDomainFromUrl(shortUrlDomain); // "tinyslash.com"
 
-        // Check ownership
-        if (!existing.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to delete this URL");
+        // Policy: Custom Domain -> Immediate Hard Delete
+        // Policy: Default Domain -> Soft Delete (7 Day Cooldown)
+
+        if (domain != null && !domain.equalsIgnoreCase(defaultDomain)) {
+            // Custom Domain: Hard Delete
+            shortenedUrlRepository.delete(urlToDelete);
+            logger.info("Hard deleted URL {} on custom domain {}", shortCode, domain);
+        } else {
+            // Default Domain: Soft Delete
+            urlToDelete.setDeleted(true);
+            urlToDelete.setDeletedAt(LocalDateTime.now());
+            urlToDelete.setActive(false); // Also deactivate
+            shortenedUrlRepository.save(urlToDelete);
+            logger.info("Soft deleted URL {} on default domain {} (Cooldown starts)", shortCode, domain);
         }
-
-        // Hard delete - actually remove from database
-        shortenedUrlRepository.delete(existing);
 
         // Invalidate relevant caches
         cacheService.clearCache("userUrls", userId);
         cacheService.invalidateUrlAnalytics(shortCode, userId);
-
-        logger.info("Permanently deleted URL: {} for user: {}", shortCode, userId);
     }
 
     // Removed generateUniqueShortCode and generateRandomString as they are
@@ -689,6 +669,30 @@ public class UrlShorteningService {
 
     public List<ShortenedUrl> getAllUrls() {
         return shortenedUrlRepository.findAll();
+    }
+
+    public boolean isAliasAvailable(String domain, String alias) {
+        if (alias == null || alias.trim().isEmpty()) {
+            return false;
+        }
+
+        String normalizedAlias = alias.trim().toLowerCase();
+        // Check reserved words for default domain
+        String defaultDomain = extractDomainFromUrl(shortUrlDomain);
+        // If domain is null or empty, assume default domain for check
+        String targetDomain = (domain != null && !domain.isEmpty()) ? domain : defaultDomain;
+
+        if (targetDomain.equalsIgnoreCase(defaultDomain)) {
+            java.util.List<String> reserved = java.util.List.of("admin", "api", "dashboard", "login", "register",
+                    "pricing", "contact", "about", "terms", "privacy");
+            if (reserved.contains(normalizedAlias)) {
+                return false;
+            }
+        }
+
+        // Check availability in DB (including soft-deleted ones as they are in
+        // cooldown)
+        return shortenedUrlRepository.findByShortCodeAndDomain(normalizedAlias, targetDomain).isEmpty();
     }
 
     private void updateUserStats(String userId) {

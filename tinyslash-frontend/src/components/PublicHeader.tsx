@@ -1,14 +1,43 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Link2, QrCode, FileText, Layout, Share2, BarChart3, MessageSquare, FolderOpen, ChevronDown } from 'lucide-react';
 import AuthModal from './AuthModal';
+import LinkCheckModal from './LinkCheckModal';
+
+interface NavDropdownItemProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  onClick: () => void;
+  colorClass?: string;
+}
+
+const NavDropdownItem: React.FC<NavDropdownItemProps> = ({ icon: Icon, title, description, onClick, colorClass = "text-blue-600" }) => (
+  <button
+    onClick={onClick}
+    className="group flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 w-full text-left"
+  >
+    <div className={`p-2.5 rounded-lg bg-gray-50 group-hover:bg-white group-hover:shadow-md transition-all duration-200 ${colorClass}`}>
+      <Icon size={20} />
+    </div>
+    <div>
+      <h4 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+        {title}
+      </h4>
+      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+        {description}
+      </p>
+    </div>
+  </button>
+);
 
 const PublicHeader: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLinkCheckModalOpen, setIsLinkCheckModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   const handleAuthSuccess = () => {
@@ -50,38 +79,104 @@ const PublicHeader: React.FC = () => {
             {/* Desktop Menu */}
             <div className="hidden md:flex flex-1 justify-center items-center space-x-8">
 
-              {/* Features Dropdown */}
+              {/* Platforms Dropdown */}
               <div className="relative group">
                 <button
-                  className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors py-2"
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors py-4"
                   onClick={(e) => { e.preventDefault(); }}
                 >
-                  Features
-                  <span className="text-xs">▼</span>
+                  Platforms
+                  <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-200" />
                 </button>
-                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
-                  <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-2 flex flex-col">
-                    <button onClick={() => navigate('/short-links')} className="text-left px-4 py-3 hover:bg-gray-50 rounded-lg text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                      Short Links
-                    </button>
-                    <button onClick={() => navigate('/qr-codes')} className="text-left px-4 py-3 hover:bg-gray-50 rounded-lg text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                      QR Codes
-                    </button>
-                    <button onClick={() => navigate('/file-to-link')} className="text-left px-4 py-3 hover:bg-gray-50 rounded-lg text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                      File to Link
-                    </button>
-                    <div className="h-px bg-gray-100 my-1"></div>
-                    <button onClick={() => navigate('/pages')} className="text-left px-4 py-3 hover:bg-blue-50 rounded-lg text-sm text-gray-900 hover:text-blue-600 font-bold transition-colors flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                      TinySlash Pages
-                    </button>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-[520px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <NavDropdownItem
+                        icon={Link2}
+                        title="Short Links"
+                        description="Create branded short links in seconds."
+                        onClick={() => navigate('/short-links')}
+                      />
+                      <NavDropdownItem
+                        icon={QrCode}
+                        title="QR Codes"
+                        description="Generate custom QR codes for your business."
+                        onClick={() => navigate('/qr-codes')}
+                        colorClass="text-purple-600"
+                      />
+                      <NavDropdownItem
+                        icon={FileText}
+                        title="File to Link"
+                        description="Convert files into shareable links."
+                        onClick={() => navigate('/file-to-link')}
+                        colorClass="text-orange-600"
+                      />
+                      <NavDropdownItem
+                        icon={Layout}
+                        title="TinySlash Pages"
+                        description="Build beautiful landing pages effortlessly."
+                        onClick={() => navigate('/pages')}
+                        colorClass="text-pink-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Solutions Dropdown */}
+              <div className="relative group">
+                <button
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors py-4"
+                  onClick={(e) => { e.preventDefault(); }}
+                >
+                  Solutions
+                  <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-200" />
+                </button>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-[520px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                  <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <NavDropdownItem
+                        icon={Share2}
+                        title="Social Media"
+                        description="Boost engagement on social platforms."
+                        onClick={() => navigate('/solutions/social-media')}
+                        colorClass="text-indigo-600"
+                      />
+                      <NavDropdownItem
+                        icon={BarChart3}
+                        title="Digital Marketing"
+                        description="Track and optimize your marketing campaigns."
+                        onClick={() => navigate('/solutions/digital-marketing')}
+                        colorClass="text-green-600"
+                      />
+                      <NavDropdownItem
+                        icon={MessageSquare}
+                        title="Customer Support"
+                        description="Enhance support with smart links."
+                        onClick={() => navigate('/solutions/customer-support')}
+                        colorClass="text-teal-600"
+                      />
+                      <NavDropdownItem
+                        icon={FolderOpen}
+                        title="File Sharing"
+                        description="Securely share files with your team."
+                        onClick={() => navigate('/solutions/file-sharing')}
+                        colorClass="text-cyan-600"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               <button onClick={() => navigate('/pricing')} className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Pricing</button>
               <button onClick={() => navigate('/blog')} className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Blog</button>
-              <button onClick={() => navigate('/faq')} className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">FAQ</button>
+
+              <button
+                onClick={() => setIsLinkCheckModalOpen(true)}
+                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Check your Link
+              </button>
 
             </div>
 
@@ -121,13 +216,29 @@ const PublicHeader: React.FC = () => {
             >
               <div className="px-4 py-6 space-y-4">
                 <div className="space-y-1 pl-4 border-l-2 border-gray-100 ml-1">
-                  <button onClick={() => { navigate('/short-links'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left">Short Links</button>
-                  <button onClick={() => { navigate('/qr-codes'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left">QR Codes</button>
-                  <button onClick={() => { navigate('/file-to-link'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left">File to Link</button>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Platforms</p>
+                  <button onClick={() => { navigate('/short-links'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">Short Links</button>
+                  <button onClick={() => { navigate('/qr-codes'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">QR Codes</button>
+                  <button onClick={() => { navigate('/file-to-link'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">File to Link</button>
+                  <button onClick={() => { navigate('/pages'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">TinySlash Pages</button>
                 </div>
-                <button onClick={() => { navigate('/pricing'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left">Pricing</button>
-                <button onClick={() => { navigate('/blog'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left">Blog</button>
-                <button onClick={() => { navigate('/faq'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left">FAQ</button>
+
+                <div className="space-y-1 pl-4 border-l-2 border-gray-100 ml-1 pt-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Solutions</p>
+                  <button onClick={() => { navigate('/solutions/social-media'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">Social Media</button>
+                  <button onClick={() => { navigate('/solutions/digital-marketing'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">Digital Marketing</button>
+                  <button onClick={() => { navigate('/solutions/customer-support'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">Customer Support</button>
+                  <button onClick={() => { navigate('/solutions/file-sharing'); setIsMenuOpen(false); }} className="block text-sm font-medium text-gray-500 py-1 w-full text-left hover:text-blue-600">File Sharing</button>
+                </div>
+
+                <button onClick={() => { navigate('/pricing'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left hover:text-blue-600">Pricing</button>
+                <button onClick={() => { navigate('/blog'); setIsMenuOpen(false); }} className="block text-base font-medium text-gray-600 w-full text-left hover:text-blue-600">Blog</button>
+                <button
+                  onClick={() => { setIsLinkCheckModalOpen(true); setIsMenuOpen(false); }}
+                  className="block text-base font-medium text-gray-600 w-full text-left hover:text-blue-600"
+                >
+                  Check your Link
+                </button>
 
 
                 <div className="pt-4 border-t border-gray-100 space-y-3">
@@ -157,6 +268,12 @@ const PublicHeader: React.FC = () => {
         mode={authMode}
         onSwitchMode={setAuthMode}
         onSuccess={handleAuthSuccess}
+      />
+
+      {/* Link Check Modal */}
+      <LinkCheckModal
+        isOpen={isLinkCheckModalOpen}
+        onClose={() => setIsLinkCheckModalOpen(false)}
       />
     </>
   );

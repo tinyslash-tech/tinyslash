@@ -45,7 +45,7 @@ console.log('🔌 API Connected to:', API_BASE_URL);
 // Create axios instances
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Increased to 20s to handle Render.com cold starts
 });
 
 const analyticsClient = axios.create({
@@ -147,7 +147,14 @@ apiClient.interceptors.response.use(
         console.log('Token refreshed successfully, retrying original request');
         return apiClient(originalRequest);
       } else {
-        clearAuthData();
+        // Only clear auth data if this is a genuine auth failure.
+        // If the backend was unreachable (no response / timeout), don't sign out.
+        const isNetworkError = !error.response || error.code === 'ECONNABORTED';
+        if (!isNetworkError) {
+          clearAuthData();
+        } else {
+          console.warn('⚠️ Token refresh skipped sign-out — backend appears unreachable');
+        }
         return Promise.reject(error);
       }
     }

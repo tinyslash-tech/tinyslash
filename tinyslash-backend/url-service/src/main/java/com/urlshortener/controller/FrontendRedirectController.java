@@ -36,7 +36,20 @@ public class FrontendRedirectController {
             "/cancellation-refund",
             "/privacy",
             "/verified/**",
-            "/unlock/**"
+            "/unlock/**",
+            "/link-checker",
+            "/careers",
+            "/careers/**",
+            "/solutions/**",
+            "/short-links",
+            "/qr-codes",
+            "/file-to-link",
+            "/pages",
+            "/faq",
+            "/blog",
+            "/blog/**",
+            "/p/**",
+            "/file/**"
     })
     public RedirectView redirectToFrontend(HttpServletRequest request) {
         String requestUri = request.getRequestURI();

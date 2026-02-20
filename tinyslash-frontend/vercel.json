@@ -111,6 +111,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/link-checker",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/link-checker/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/faq",
       "destination": "/index.html"
     },

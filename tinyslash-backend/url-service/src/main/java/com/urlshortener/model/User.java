@@ -47,7 +47,8 @@ public class User {
 
     // Monthly usage tracking (resets every month)
     private int monthlyUrlsCreated = 0;
-    private int monthlyQrCodesCreated = 0;
+    private int monthlyQrCodesCreated = 0; // static QR
+    private Integer monthlyDynamicQrCreated = 0; // dynamic QR (tracked separately)
     private int monthlyFilesUploaded = 0;
     private LocalDateTime lastMonthlyReset = LocalDateTime.now();
 
@@ -319,6 +320,14 @@ public class User {
 
     public void setMonthlyQrCodesCreated(int monthlyQrCodesCreated) {
         this.monthlyQrCodesCreated = monthlyQrCodesCreated;
+    }
+
+    public Integer getMonthlyDynamicQrCreated() {
+        return monthlyDynamicQrCreated != null ? monthlyDynamicQrCreated : 0;
+    }
+
+    public void setMonthlyDynamicQrCreated(int monthlyDynamicQrCreated) {
+        this.monthlyDynamicQrCreated = monthlyDynamicQrCreated;
     }
 
     public int getMonthlyFilesUploaded() {

@@ -1,72 +1,379 @@
 package com.urlshortener.model;
 
 /**
- * Centralized Plan Policy System for Pebly SaaS Platform
- * This enum defines all plan limits and features in one place
- * Must be kept in sync with frontend planPolicy.ts
- * 
- * CORRECTED PLAN STRUCTURE:
- * - FREE: 0 domains, 0 team members, 75 URLs/month, 30 QR/month, 5 files/month,
- * 7-day team trial (1 member)
- * - PRO: 1 domain, 3 team members, 1000 URLs/month, 100 QR/month, 50
- * files/month, 7-day trial
- * - BUSINESS: 3 domains, 10 team members, 10000 URLs/month, 1000 QR/month, 500
- * files/month, 14-day trial
- * - BUSINESS_TRIAL: Same as BUSINESS but with trial period active
+ * Centralized Plan Policy for TinySlash SaaS Platform.
+ *
+ * planType strings stored in User.subscriptionPlan:
+ * FREE | STARTER_MONTHLY | STARTER_YEARLY | PRO_MONTHLY | PRO_YEARLY |
+ * BUSINESS_MONTHLY | BUSINESS_YEARLY
+ *
+ * -1 = unlimited for numeric limits.
+ * fromString() maps any planType → the correct tier enum.
  */
 public enum PlanPolicy {
-    // FREE: 1 Page, 5 Links/Page, Basic Theme, View Count
-    FREE("Free", 0, 0, 50, 50, 5, 0,
-            false, false, false, false, false, false,
-            false, false, false, false,
-            false, false, false, false, false,
-            1, 5, false, false, false, false, false,
-            0, 0, false),
 
-    // STARTER: 2 Pages, Unlimited Links, Basic Customization + Premium Templates
-    STARTER("Starter", 0, 0, 1000, Integer.MAX_VALUE, 100, 0,
-            false, false, false, false, false, false,
-            true, true, true, true,
-            true, true, false, false, false,
-            2, Integer.MAX_VALUE, false, false, false, false, false,
-            0, 0, false),
+    // ─────────────────── FREE ───────────────────
+    FREE("Free",
+            /* urls, staticQr, dynamicQr, files */15, 15, 0, 3,
+            /* maxFileSizeMb, domains, teamMembers, analyticsRetentionDays */10, 0, 1, 7,
+            /* pages, linksPerPage, maxPixelsPerAccount, maxPixelsPerLink */1, 5, 0, 0,
 
-    // PRO: 5 Pages, Custom Domain, Advanced Analytics, Smart Links, Lead Forms
-    // Pixel: 5 Saved, 2 Per Link, Basic Analytics
-    PRO("Pro", 1, 3, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0,
-            true, true, true, false, true, true,
-            true, true, true, true,
+            // ── Short Link Features ──
+            /* customAlias */false,
+            /* passwordProtection */false,
+            /* linkExpiration */false,
+            /* clickLimits */false,
+            /* richLinkPreview */false,
+            /* openInApp */false,
+            /* languageRouting */false,
+            /* locationRouting */false,
+            /* unlockAfterSignup */false,
+            /* pixelRetargeting */false,
+            /* abTesting */false,
+            /* bulkImport */false,
+            /* smartRedirectRules */false,
+            /* webhooks */false,
+
+            // ── QR Code Features ──
+            /* dynamicQR */false,
+            /* customQRColors */false,
+            /* qrLogo */false,
+            /* qrBranding */false,
+            /* advancedQRSettings */false,
+            /* multiActionQR */false,
+            /* openInAppQR */false,
+            /* locationRoutingQR */false,
+            /* languageRoutingQR */false,
+            /* leadCaptureQR */false,
+            /* pixelRetargetingQR */false,
+            /* bulkQRGeneration */false,
+            /* whiteLabelQR */false,
+
+            // ── Pixel ──
+            /* metaCapi */false,
+            /* googleAds */false,
+            /* googleAnalytics4 */false,
+            /* webhookPixel */false,
+            /* advancedPixelAnalytics */false,
+
+            // ── Verified Badge ──
+            /* verifiedBadge */false,
+            /* whiteLabelBadge */false,
+            /* badgeAnalytics */false,
+            /* agencyMode */false,
+
+            // ── File Sharing ──
+            /* advancedFileSettings */false,
+            /* leadCaptureBeforeDownload */false,
+            /* fileExpiration */false,
+            /* removeBranding */false,
+
+            // ── Pages ──
+            /* removePageBranding */false,
+            /* pageCustomDomain */false,
+            /* pageAdvancedAnalytics */false,
+            /* smartLinks */false,
+            /* leadForms */false,
+            /* whiteLabelPages */false,
+            /* customCSSInjection */false,
+
+            // ── Core ──
+            /* customDomain */false,
+            /* analytics */true,
+            /* teamCollaboration */false,
+            /* whiteLabel */false,
+            /* apiAccess */false,
+            /* prioritySupport */false),
+
+    // ─────────────────── STARTER ───────────────────
+    STARTER("Starter",
+            1000, -1, 25, 50,
+            100, 0, 1, 30,
+            2, -1, 0, 0,
+
+            true, // customAlias
+            true, // passwordProtection
+            true, // linkExpiration
+            true, // clickLimits
+            true, // richLinkPreview
+            false, // openInApp
+            false, // languageRouting
+            false, // locationRouting
+            false, // unlockAfterSignup
+            false, // pixelRetargeting
+            false, // abTesting
+            false, // bulkImport
+            false, // smartRedirectRules
+            false, // webhooks
+
+            true, // dynamicQR
+            true, // customQRColors
+            false, // qrLogo
+            false, // qrBranding
+            false, // advancedQRSettings
+            false, // multiActionQR
+            false, // openInAppQR
+            false, // locationRoutingQR
+            false, // languageRoutingQR
+            false, // leadCaptureQR
+            false, // pixelRetargetingQR
+            false, // bulkQRGeneration
+            false, // whiteLabelQR
+
+            false, // metaCapi
+            false, // googleAds
+            false, // googleAnalytics4
+            false, // webhookPixel
+            false, // advancedPixelAnalytics
+
+            false, // verifiedBadge
+            false, // whiteLabelBadge
+            false, // badgeAnalytics
+            false, // agencyMode
+
+            true, // advancedFileSettings
+            false, // leadCaptureBeforeDownload
+            false, // fileExpiration
+            true, // removeBranding
+
+            true, // removePageBranding
+            false, // pageCustomDomain
+            false, // pageAdvancedAnalytics
+            false, // smartLinks
+            false, // leadForms
+            false, // whiteLabelPages
+            false, // customCSSInjection
+
+            false, // customDomain
+            true, // analytics
+            false, // teamCollaboration
+            false, // whiteLabel
+            false, // apiAccess
+            false), // prioritySupport
+
+    // ─────────────────── PRO ───────────────────
+    PRO("Pro",
+            -1, -1, 500, 200,
+            500, 2, 3, 90,
+            5, -1, 5, 2,
+
+            true, // customAlias
+            true, // passwordProtection
+            true, // linkExpiration
+            true, // clickLimits
+            true, // richLinkPreview
+            true, // openInApp
+            true, // languageRouting
+            true, // locationRouting
+            true, // unlockAfterSignup
+            true, // pixelRetargeting
+            false, // abTesting
+            false, // bulkImport
+            false, // smartRedirectRules
+            false, // webhooks
+
+            true, // dynamicQR
+            true, // customQRColors
+            true, // qrLogo
+            true, // qrBranding
+            true, // advancedQRSettings
+            true, // multiActionQR
+            true, // openInAppQR
+            true, // locationRoutingQR
+            true, // languageRoutingQR
+            true, // leadCaptureQR
+            true, // pixelRetargetingQR
+            false, // bulkQRGeneration
+            false, // whiteLabelQR
+
+            true, // metaCapi
+            true, // googleAds
+            false, // googleAnalytics4
+            false, // webhookPixel
+            false, // advancedPixelAnalytics
+
+            true, // verifiedBadge
+            false, // whiteLabelBadge
+            false, // badgeAnalytics
+            false, // agencyMode
+
+            true, // advancedFileSettings
+            false, // leadCaptureBeforeDownload
+            false, // fileExpiration
+            true, // removeBranding
+
+            true, // removePageBranding
+            true, // pageCustomDomain
+            true, // pageAdvancedAnalytics
+            true, // smartLinks
+            false, // leadForms
+            false, // whiteLabelPages
+            false, // customCSSInjection
+
+            true, // customDomain
+            true, // analytics
+            true, // teamCollaboration
+            false, // whiteLabel
+            true, // apiAccess
+            true), // prioritySupport
+
+    // ─────────────────── BUSINESS ───────────────────
+    BUSINESS("Business",
+            -1, -1, -1, -1,
+            2048, 10, 10, 365,
+            -1, -1, -1, 5,
+
+            true, // customAlias
+            true, // passwordProtection
+            true, // linkExpiration
+            true, // clickLimits
+            true, // richLinkPreview
+            true, // openInApp
+            true, // languageRouting
+            true, // locationRouting
+            true, // unlockAfterSignup
+            true, // pixelRetargeting
+            true, // abTesting
+            true, // bulkImport
+            true, // smartRedirectRules
+            true, // webhooks
+
+            true, // dynamicQR
+            true, // customQRColors
+            true, // qrLogo
+            true, // qrBranding
+            true, // advancedQRSettings
+            true, // multiActionQR
+            true, // openInAppQR
+            true, // locationRoutingQR
+            true, // languageRoutingQR
+            true, // leadCaptureQR
+            true, // pixelRetargetingQR
+            true, // bulkQRGeneration
+            true, // whiteLabelQR
+
+            true, // metaCapi
+            true, // googleAds
+            true, // googleAnalytics4
+            true, // webhookPixel
+            true, // advancedPixelAnalytics
+
+            true, // verifiedBadge
+            true, // whiteLabelBadge
+            true, // badgeAnalytics
+            true, // agencyMode
+
+            true, // advancedFileSettings
+            true, // leadCaptureBeforeDownload
+            true, // fileExpiration
+            true, // removeBranding
+
+            true, // removePageBranding
+            true, // pageCustomDomain
+            true, // pageAdvancedAnalytics
+            true, // smartLinks
+            true, // leadForms
+            true, // whiteLabelPages
+            true, // customCSSInjection
+
+            true, // customDomain
+            true, // analytics
+            true, // teamCollaboration
+            true, // whiteLabel
+            true, // apiAccess
+            true), // prioritySupport
+
+    // ─────────────────── BUSINESS_TRIAL (same as BUSINESS) ───────────────────
+    BUSINESS_TRIAL("Business Trial",
+            -1, -1, -1, -1,
+            2048, 10, 10, 365,
+            -1, -1, -1, 5,
+            true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, true, true, true, true, true, true, true, true,
             true, true, true, true, true,
-            5, Integer.MAX_VALUE, false, true, true, true, true,
-            5, 2, false),
-
-    // BUSINESS: Unlimited Pages, White-label, Lead Forms, Team
-    // Pixel: Unlimited Saved, 5 Per Link, Advanced Analytics
-    BUSINESS("Business", 3, 10, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0,
-            true, true, true, true, true, true,
             true, true, true, true,
-            true, true, true, true, true,
-            Integer.MAX_VALUE, Integer.MAX_VALUE, true, true, true, true, true,
-            Integer.MAX_VALUE, 5, true),
-
-    // BUSINESS TRIAL
-    BUSINESS_TRIAL("Business Trial", 3, 10, Integer.MAX_VALUE, Integer.MAX_VALUE,
-            Integer.MAX_VALUE, 14,
-            true, true, true, true, true, true,
             true, true, true, true,
-            true, true, true, true, true,
-            Integer.MAX_VALUE, Integer.MAX_VALUE, true, true, true, true, true,
-            Integer.MAX_VALUE, 5, true);
+            true, true, true, true, true, true, true,
+            true, true, true, true, true, true);
+
+    // ─────────────── Fields ───────────────
 
     private final String displayName;
+
+    // Usage Limits (-1 = unlimited)
+    private final int urlsPerMonth;
+    private final int staticQrPerMonth; // -1 = unlimited
+    private final int dynamicQrPerMonth; // 0 = not available, -1 = unlimited
+    private final int filesPerMonth; // -1 = unlimited
+    private final int maxFileSizeMb;
     private final int domains;
     private final int teamMembers;
-    private final int urlsPerMonth;
-    private final int qrCodesPerMonth;
-    private final int filesPerMonth;
-    private final int trialDays;
+    private final int analyticsRetentionDays;
+    private final int pagesPerUser; // -1 = unlimited
+    private final int linksPerPage; // -1 = unlimited
+    private final int maxPixelsPerAccount; // -1 = unlimited
+    private final int maxPixelsPerLink;
 
-    // Core features
+    // Short Link Features
+    private final boolean customAlias;
+    private final boolean passwordProtection;
+    private final boolean linkExpiration;
+    private final boolean clickLimits;
+    private final boolean richLinkPreview;
+    private final boolean openInApp;
+    private final boolean languageRouting;
+    private final boolean locationRouting;
+    private final boolean unlockAfterSignup;
+    private final boolean pixelRetargeting;
+    private final boolean abTesting;
+    private final boolean bulkImport;
+    private final boolean smartRedirectRules;
+    private final boolean webhooks;
+
+    // QR Code Features
+    private final boolean dynamicQR;
+    private final boolean customQRColors;
+    private final boolean qrLogo;
+    private final boolean qrBranding;
+    private final boolean advancedQRSettings;
+    private final boolean multiActionQR;
+    private final boolean openInAppQR;
+    private final boolean locationRoutingQR;
+    private final boolean languageRoutingQR;
+    private final boolean leadCaptureQR;
+    private final boolean pixelRetargetingQR;
+    private final boolean bulkQRGeneration;
+    private final boolean whiteLabelQR;
+
+    // Pixel Platform Features
+    private final boolean metaCapi;
+    private final boolean googleAds;
+    private final boolean googleAnalytics4;
+    private final boolean webhookPixel;
+    private final boolean advancedPixelAnalytics;
+
+    // Verified Badge
+    private final boolean verifiedBadge;
+    private final boolean whiteLabelBadge;
+    private final boolean badgeAnalytics;
+    private final boolean agencyMode;
+
+    // File Sharing Features
+    private final boolean advancedFileSettings;
+    private final boolean leadCaptureBeforeDownload;
+    private final boolean fileExpiration;
+    private final boolean removeBranding;
+
+    // Pages Features
+    private final boolean removePageBranding;
+    private final boolean pageCustomDomain;
+    private final boolean pageAdvancedAnalytics;
+    private final boolean smartLinks;
+    private final boolean leadForms;
+    private final boolean whiteLabelPages;
+    private final boolean customCSSInjection;
+
+    // Core
     private final boolean customDomain;
     private final boolean analytics;
     private final boolean teamCollaboration;
@@ -74,87 +381,127 @@ public enum PlanPolicy {
     private final boolean apiAccess;
     private final boolean prioritySupport;
 
-    // URL Shortener Premium Features
-    private final boolean customAlias;
-    private final boolean passwordProtection;
-    private final boolean linkExpiration;
-    private final boolean clickLimits;
+    // ─────────────── Constructor ───────────────
 
-    // QR Code Premium Features
-    private final boolean customQRColors;
-    private final boolean qrLogo;
-    private final boolean qrBranding;
-    private final boolean advancedQRSettings;
-
-    // File Upload Premium Features
-    private final boolean advancedFileSettings;
-
-    // Pages Features (NEW)
-    private final int pagesPerUser;
-    private final int linksPerPage;
-    private final boolean removePageBranding;
-    private final boolean pageCustomDomain; // Use existing customDomain? Or specific? Using specific for clarity
-    private final boolean pageAdvancedAnalytics;
-    private final boolean smartLinks;
-    private final boolean leadForms;
-    private final boolean premiumTemplates; // New Feature
-
-    // Pixel Features (NEW)
-    private final int maxPixels;
-    private final int maxPixelsPerLink;
-    private final boolean advancedPixelAnalytics;
-
-    PlanPolicy(String displayName, int domains, int teamMembers, int urlsPerMonth,
-            int qrCodesPerMonth, int filesPerMonth, int trialDays,
+    PlanPolicy(String displayName,
+            int urlsPerMonth, int staticQrPerMonth, int dynamicQrPerMonth, int filesPerMonth,
+            int maxFileSizeMb, int domains, int teamMembers, int analyticsRetentionDays,
+            int pagesPerUser, int linksPerPage, int maxPixelsPerAccount, int maxPixelsPerLink,
+            boolean customAlias, boolean passwordProtection, boolean linkExpiration, boolean clickLimits,
+            boolean richLinkPreview, boolean openInApp, boolean languageRouting, boolean locationRouting,
+            boolean unlockAfterSignup, boolean pixelRetargeting, boolean abTesting, boolean bulkImport,
+            boolean smartRedirectRules, boolean webhooks,
+            boolean dynamicQR, boolean customQRColors, boolean qrLogo, boolean qrBranding,
+            boolean advancedQRSettings, boolean multiActionQR, boolean openInAppQR,
+            boolean locationRoutingQR, boolean languageRoutingQR, boolean leadCaptureQR,
+            boolean pixelRetargetingQR, boolean bulkQRGeneration, boolean whiteLabelQR,
+            boolean metaCapi, boolean googleAds, boolean googleAnalytics4, boolean webhookPixel,
+            boolean advancedPixelAnalytics,
+            boolean verifiedBadge, boolean whiteLabelBadge, boolean badgeAnalytics, boolean agencyMode,
+            boolean advancedFileSettings, boolean leadCaptureBeforeDownload, boolean fileExpiration,
+            boolean removeBranding,
+            boolean removePageBranding, boolean pageCustomDomain, boolean pageAdvancedAnalytics,
+            boolean smartLinks, boolean leadForms, boolean whiteLabelPages, boolean customCSSInjection,
             boolean customDomain, boolean analytics, boolean teamCollaboration,
-            boolean whiteLabel, boolean apiAccess, boolean prioritySupport,
-            boolean customAlias, boolean passwordProtection, boolean linkExpiration,
-            boolean clickLimits, boolean customQRColors, boolean qrLogo,
-            boolean qrBranding, boolean advancedQRSettings, boolean advancedFileSettings,
-            int pagesPerUser, int linksPerPage, boolean removePageBranding,
-            boolean pageCustomDomain, boolean pageAdvancedAnalytics, boolean smartLinks, boolean leadForms,
-            int maxPixels, int maxPixelsPerLink, boolean advancedPixelAnalytics) {
+            boolean whiteLabel, boolean apiAccess, boolean prioritySupport) {
+
         this.displayName = displayName;
+        this.urlsPerMonth = urlsPerMonth;
+        this.staticQrPerMonth = staticQrPerMonth;
+        this.dynamicQrPerMonth = dynamicQrPerMonth;
+        this.filesPerMonth = filesPerMonth;
+        this.maxFileSizeMb = maxFileSizeMb;
         this.domains = domains;
         this.teamMembers = teamMembers;
-        this.urlsPerMonth = urlsPerMonth;
-        this.qrCodesPerMonth = qrCodesPerMonth;
-        this.filesPerMonth = filesPerMonth;
-        this.trialDays = trialDays;
+        this.analyticsRetentionDays = analyticsRetentionDays;
+        this.pagesPerUser = pagesPerUser;
+        this.linksPerPage = linksPerPage;
+        this.maxPixelsPerAccount = maxPixelsPerAccount;
+        this.maxPixelsPerLink = maxPixelsPerLink;
+        this.customAlias = customAlias;
+        this.passwordProtection = passwordProtection;
+        this.linkExpiration = linkExpiration;
+        this.clickLimits = clickLimits;
+        this.richLinkPreview = richLinkPreview;
+        this.openInApp = openInApp;
+        this.languageRouting = languageRouting;
+        this.locationRouting = locationRouting;
+        this.unlockAfterSignup = unlockAfterSignup;
+        this.pixelRetargeting = pixelRetargeting;
+        this.abTesting = abTesting;
+        this.bulkImport = bulkImport;
+        this.smartRedirectRules = smartRedirectRules;
+        this.webhooks = webhooks;
+        this.dynamicQR = dynamicQR;
+        this.customQRColors = customQRColors;
+        this.qrLogo = qrLogo;
+        this.qrBranding = qrBranding;
+        this.advancedQRSettings = advancedQRSettings;
+        this.multiActionQR = multiActionQR;
+        this.openInAppQR = openInAppQR;
+        this.locationRoutingQR = locationRoutingQR;
+        this.languageRoutingQR = languageRoutingQR;
+        this.leadCaptureQR = leadCaptureQR;
+        this.pixelRetargetingQR = pixelRetargetingQR;
+        this.bulkQRGeneration = bulkQRGeneration;
+        this.whiteLabelQR = whiteLabelQR;
+        this.metaCapi = metaCapi;
+        this.googleAds = googleAds;
+        this.googleAnalytics4 = googleAnalytics4;
+        this.webhookPixel = webhookPixel;
+        this.advancedPixelAnalytics = advancedPixelAnalytics;
+        this.verifiedBadge = verifiedBadge;
+        this.whiteLabelBadge = whiteLabelBadge;
+        this.badgeAnalytics = badgeAnalytics;
+        this.agencyMode = agencyMode;
+        this.advancedFileSettings = advancedFileSettings;
+        this.leadCaptureBeforeDownload = leadCaptureBeforeDownload;
+        this.fileExpiration = fileExpiration;
+        this.removeBranding = removeBranding;
+        this.removePageBranding = removePageBranding;
+        this.pageCustomDomain = pageCustomDomain;
+        this.pageAdvancedAnalytics = pageAdvancedAnalytics;
+        this.smartLinks = smartLinks;
+        this.leadForms = leadForms;
+        this.whiteLabelPages = whiteLabelPages;
+        this.customCSSInjection = customCSSInjection;
         this.customDomain = customDomain;
         this.analytics = analytics;
         this.teamCollaboration = teamCollaboration;
         this.whiteLabel = whiteLabel;
         this.apiAccess = apiAccess;
         this.prioritySupport = prioritySupport;
-        this.customAlias = customAlias;
-        this.passwordProtection = passwordProtection;
-        this.linkExpiration = linkExpiration;
-        this.clickLimits = clickLimits;
-        this.customQRColors = customQRColors;
-        this.qrLogo = qrLogo;
-        this.qrBranding = qrBranding;
-        this.advancedQRSettings = advancedQRSettings;
-        this.advancedFileSettings = advancedFileSettings;
-        this.pagesPerUser = pagesPerUser;
-        this.linksPerPage = linksPerPage;
-        this.removePageBranding = removePageBranding;
-        this.pageCustomDomain = pageCustomDomain;
-        this.pageAdvancedAnalytics = pageAdvancedAnalytics;
-        this.smartLinks = smartLinks;
-        this.leadForms = leadForms;
-        this.maxPixels = maxPixels;
-        this.maxPixelsPerLink = maxPixelsPerLink;
-        this.advancedPixelAnalytics = advancedPixelAnalytics;
-        // Logic: Premium templates available for Paid plans (Starter+)
-        this.premiumTemplates = this.urlsPerMonth > 75; // Hacky but works based on existing consts, or just pass it?
-        // Let's rely on isPaid() derivation for now to avoid changing constructor
-        // signature too much unless needed.
     }
 
-    // Existing getters...
+    // ─────────────── Getters ───────────────
+
     public String getDisplayName() {
         return displayName;
+    }
+
+    public int getUrlsPerMonth() {
+        return urlsPerMonth;
+    }
+
+    public int getStaticQrPerMonth() {
+        return staticQrPerMonth;
+    }
+
+    public int getDynamicQrPerMonth() {
+        return dynamicQrPerMonth;
+    }
+
+    /** @deprecated use getStaticQrPerMonth() or getDynamicQrPerMonth() */
+    public int getQrCodesPerMonth() {
+        return staticQrPerMonth;
+    }
+
+    public int getFilesPerMonth() {
+        return filesPerMonth;
+    }
+
+    public int getMaxFileSizeMb() {
+        return maxFileSizeMb;
     }
 
     public int getDomains() {
@@ -165,20 +512,218 @@ public enum PlanPolicy {
         return teamMembers;
     }
 
-    public int getUrlsPerMonth() {
-        return urlsPerMonth;
+    public int getAnalyticsRetentionDays() {
+        return analyticsRetentionDays;
     }
 
-    public int getQrCodesPerMonth() {
-        return qrCodesPerMonth;
+    public int getPagesPerUser() {
+        return pagesPerUser;
     }
 
-    public int getFilesPerMonth() {
-        return filesPerMonth;
+    public int getLinksPerPage() {
+        return linksPerPage;
     }
 
-    public int getTrialDays() {
-        return trialDays;
+    public int getMaxPixelsPerAccount() {
+        return maxPixelsPerAccount;
+    }
+
+    public int getMaxPixelsPerLink() {
+        return maxPixelsPerLink;
+    }
+
+    // Short Link
+    public boolean hasCustomAlias() {
+        return customAlias;
+    }
+
+    public boolean hasPasswordProtection() {
+        return passwordProtection;
+    }
+
+    public boolean hasLinkExpiration() {
+        return linkExpiration;
+    }
+
+    public boolean hasClickLimits() {
+        return clickLimits;
+    }
+
+    public boolean hasRichLinkPreview() {
+        return richLinkPreview;
+    }
+
+    public boolean hasOpenInApp() {
+        return openInApp;
+    }
+
+    public boolean hasLanguageRouting() {
+        return languageRouting;
+    }
+
+    public boolean hasLocationRouting() {
+        return locationRouting;
+    }
+
+    public boolean hasUnlockAfterSignup() {
+        return unlockAfterSignup;
+    }
+
+    public boolean hasPixelRetargeting() {
+        return pixelRetargeting;
+    }
+
+    public boolean hasAbTesting() {
+        return abTesting;
+    }
+
+    public boolean hasBulkImport() {
+        return bulkImport;
+    }
+
+    public boolean hasSmartRedirectRules() {
+        return smartRedirectRules;
+    }
+
+    public boolean hasWebhooks() {
+        return webhooks;
+    }
+
+    // QR
+    public boolean hasDynamicQR() {
+        return dynamicQR;
+    }
+
+    public boolean hasCustomQRColors() {
+        return customQRColors;
+    }
+
+    public boolean hasQrLogo() {
+        return qrLogo;
+    }
+
+    public boolean hasQrBranding() {
+        return qrBranding;
+    }
+
+    public boolean hasAdvancedQRSettings() {
+        return advancedQRSettings;
+    }
+
+    public boolean hasMultiActionQR() {
+        return multiActionQR;
+    }
+
+    public boolean hasOpenInAppQR() {
+        return openInAppQR;
+    }
+
+    public boolean hasLocationRoutingQR() {
+        return locationRoutingQR;
+    }
+
+    public boolean hasLanguageRoutingQR() {
+        return languageRoutingQR;
+    }
+
+    public boolean hasLeadCaptureQR() {
+        return leadCaptureQR;
+    }
+
+    public boolean hasPixelRetargetingQR() {
+        return pixelRetargetingQR;
+    }
+
+    public boolean hasBulkQRGeneration() {
+        return bulkQRGeneration;
+    }
+
+    public boolean hasWhiteLabelQR() {
+        return whiteLabelQR;
+    }
+
+    // Pixel
+    public boolean hasMetaCapi() {
+        return metaCapi;
+    }
+
+    public boolean hasGoogleAds() {
+        return googleAds;
+    }
+
+    public boolean hasGoogleAnalytics4() {
+        return googleAnalytics4;
+    }
+
+    public boolean hasWebhookPixel() {
+        return webhookPixel;
+    }
+
+    public boolean hasAdvancedPixelAnalytics() {
+        return advancedPixelAnalytics;
+    }
+
+    // Verified Badge
+    public boolean hasVerifiedBadge() {
+        return verifiedBadge;
+    }
+
+    public boolean hasWhiteLabelBadge() {
+        return whiteLabelBadge;
+    }
+
+    public boolean hasBadgeAnalytics() {
+        return badgeAnalytics;
+    }
+
+    public boolean hasAgencyMode() {
+        return agencyMode;
+    }
+
+    // File Sharing
+    public boolean hasAdvancedFileSettings() {
+        return advancedFileSettings;
+    }
+
+    public boolean hasLeadCaptureBeforeDownload() {
+        return leadCaptureBeforeDownload;
+    }
+
+    public boolean hasFileExpiration() {
+        return fileExpiration;
+    }
+
+    public boolean hasRemoveBranding() {
+        return removeBranding;
+    }
+
+    // Pages
+    public boolean hasRemovePageBranding() {
+        return removePageBranding;
+    }
+
+    public boolean hasPageCustomDomain() {
+        return pageCustomDomain;
+    }
+
+    public boolean hasPageAdvancedAnalytics() {
+        return pageAdvancedAnalytics;
+    }
+
+    public boolean hasSmartLinks() {
+        return smartLinks;
+    }
+
+    public boolean hasLeadForms() {
+        return leadForms;
+    }
+
+    public boolean hasWhiteLabelPages() {
+        return whiteLabelPages;
+    }
+
+    public boolean hasCustomCSSInjection() {
+        return customCSSInjection;
     }
 
     // Core
@@ -206,154 +751,239 @@ public enum PlanPolicy {
         return prioritySupport;
     }
 
-    // URL
-    public boolean hasCustomAlias() {
-        return customAlias;
+    // ─────────────── Capacity checks (-1 = unlimited always passes)
+    // ───────────────
+
+    public boolean canCreateUrl(int current) {
+        return urlsPerMonth == -1 || current < urlsPerMonth;
     }
 
-    public boolean hasPasswordProtection() {
-        return passwordProtection;
+    public boolean canCreateStaticQR(int current) {
+        return staticQrPerMonth == -1 || current < staticQrPerMonth;
     }
 
-    public boolean hasLinkExpiration() {
-        return linkExpiration;
+    public boolean canCreateDynamicQR(int current) {
+        return dynamicQrPerMonth == -1 || (dynamicQrPerMonth > 0 && current < dynamicQrPerMonth);
     }
 
-    public boolean hasClickLimits() {
-        return clickLimits;
+    /** Legacy compat */
+    public boolean canCreateQR(int current) {
+        return canCreateStaticQR(current);
     }
 
-    // QR
-    public boolean hasCustomQRColors() {
-        return customQRColors;
+    public boolean canUploadFile(int current) {
+        return filesPerMonth == -1 || current < filesPerMonth;
     }
 
-    public boolean hasQrLogo() {
-        return qrLogo;
+    public boolean canCreatePage(int current) {
+        return pagesPerUser == -1 || current < pagesPerUser;
     }
 
-    public boolean hasQrBranding() {
-        return qrBranding;
+    public boolean canAddLinkToPage(int current) {
+        return linksPerPage == -1 || current < linksPerPage;
     }
 
-    public boolean hasAdvancedQRSettings() {
-        return advancedQRSettings;
+    public boolean canCreatePixel(int current) {
+        return maxPixelsPerAccount == -1 || current < maxPixelsPerAccount;
     }
 
-    // File
-    public boolean hasAdvancedFileSettings() {
-        return advancedFileSettings;
+    public boolean canAddPixelToLink(int current) {
+        return maxPixelsPerLink == -1 || current < maxPixelsPerLink;
     }
 
-    // Pages (NEW)
-    public int getPagesPerUser() {
-        return pagesPerUser;
+    public boolean canAddDomain(int current) {
+        return current < domains;
     }
 
-    public int getLinksPerPage() {
-        return linksPerPage;
+    public boolean canAddTeamMember(int current) {
+        return current < teamMembers;
     }
 
-    public boolean hasRemovePageBranding() {
-        return removePageBranding;
+    // ─────────────── hasFeature dispatcher ───────────────
+
+    public boolean hasFeature(String featureName) {
+        switch (featureName.toLowerCase().replace("-", "").replace("_", "")) {
+            // Short Link
+            case "customalias":
+                return customAlias;
+            case "passwordprotection":
+                return passwordProtection;
+            case "linkexpiration":
+                return linkExpiration;
+            case "clicklimits":
+                return clickLimits;
+            case "richlinkpreview":
+                return richLinkPreview;
+            case "openinapp":
+                return openInApp;
+            case "languagerouting":
+                return languageRouting;
+            case "locationrouting":
+                return locationRouting;
+            case "unlockaftersignup":
+                return unlockAfterSignup;
+            case "pixelretargeting":
+                return pixelRetargeting;
+            case "abtesting":
+                return abTesting;
+            case "bulkimport":
+                return bulkImport;
+            case "smartredirectrules":
+                return smartRedirectRules;
+            case "webhooks":
+                return webhooks;
+            // QR
+            case "dynamicqr":
+                return dynamicQR;
+            case "customqrcolors":
+                return customQRColors;
+            case "qrlogo":
+                return qrLogo;
+            case "qrbranding":
+                return qrBranding;
+            case "advancedqrsettings":
+                return advancedQRSettings;
+            case "multiactionqr":
+                return multiActionQR;
+            case "openinappqr":
+                return openInAppQR;
+            case "locationroutingqr":
+                return locationRoutingQR;
+            case "languageroutingqr":
+                return languageRoutingQR;
+            case "leadcaptureqr":
+                return leadCaptureQR;
+            case "pixelretargetingqr":
+                return pixelRetargetingQR;
+            case "bulkqrgeneration":
+                return bulkQRGeneration;
+            case "whitelabelqr":
+                return whiteLabelQR;
+            // Pixel platforms
+            case "metacapi":
+                return metaCapi;
+            case "googleads":
+                return googleAds;
+            case "googleanalytics4":
+                return googleAnalytics4;
+            case "webhookpixel":
+                return webhookPixel;
+            case "advancedpixelanalytics":
+                return advancedPixelAnalytics;
+            case "pixels":
+                return maxPixelsPerAccount == -1 || maxPixelsPerAccount > 0;
+            // Verified Badge
+            case "verifiedbadge":
+                return verifiedBadge;
+            case "whitelabelbadge":
+                return whiteLabelBadge;
+            case "badgeanalytics":
+                return badgeAnalytics;
+            case "agencymode":
+                return agencyMode;
+            // File
+            case "advancedfilesettings":
+                return advancedFileSettings;
+            case "leadcapturebeforedownload":
+                return leadCaptureBeforeDownload;
+            case "fileexpiration":
+                return fileExpiration;
+            case "removebranding":
+                return removeBranding;
+            // Pages
+            case "removepagebranding":
+                return removePageBranding;
+            case "pagecustomdomain":
+                return pageCustomDomain;
+            case "pageadvancedanalytics":
+                return pageAdvancedAnalytics;
+            case "smartlinks":
+                return smartLinks;
+            case "leadforms":
+                return leadForms;
+            case "whitelabelpages":
+                return whiteLabelPages;
+            case "customcssinjection":
+                return customCSSInjection;
+            // Core
+            case "customdomain":
+                return customDomain;
+            case "analytics":
+                return analytics;
+            case "teamcollaboration":
+                return teamCollaboration;
+            case "whitelabel":
+                return whiteLabel;
+            case "apiaccess":
+                return apiAccess;
+            case "prioritysupport":
+                return prioritySupport;
+            default:
+                return false;
+        }
     }
 
-    public boolean hasPageCustomDomain() {
-        return pageCustomDomain;
-    }
+    // ─────────────── Plan resolution ───────────────
 
-    public boolean hasPageAdvancedAnalytics() {
-        return pageAdvancedAnalytics;
-    }
-
-    public boolean hasSmartLinks() {
-        return smartLinks;
-    }
-
-    public boolean hasLeadForms() {
-        return leadForms;
-    }
-
-    public boolean hasPremiumTemplates() {
-        return isPaid(); // Available on Starter, Pro, Business
-    }
-
-    // Pixel Limits
-    public int getMaxPixels() {
-        return maxPixels;
-    }
-
-    public int getMaxPixelsPerLink() {
-        return maxPixelsPerLink;
-    }
-
-    public boolean hasAdvancedPixelAnalytics() {
-        return advancedPixelAnalytics;
-    }
-
+    /**
+     * Maps any planType string → PlanPolicy tier.
+     * Accepts: FREE, STARTER_MONTHLY, STARTER_YEARLY,
+     * PRO_MONTHLY, PRO_YEARLY,
+     * BUSINESS_MONTHLY, BUSINESS_YEARLY, BUSINESS_TRIAL
+     */
     public static PlanPolicy fromString(String planName) {
-        if (planName == null || planName.trim().isEmpty()) {
+        if (planName == null || planName.trim().isEmpty())
             return FREE;
-        }
-        try {
-            String normalizedPlan = planName.toUpperCase().replaceAll("[^A-Z_]", "");
-            if (normalizedPlan.startsWith("STARTER"))
-                return STARTER;
-            if (normalizedPlan.startsWith("PRO_"))
-                return PRO;
-            if (normalizedPlan.startsWith("BUSINESS_") && !normalizedPlan.contains("TRIAL"))
-                return BUSINESS;
-            if (normalizedPlan.equals("BUSINESS_TRIAL"))
-                return BUSINESS_TRIAL;
-            return PlanPolicy.valueOf(normalizedPlan);
-        } catch (IllegalArgumentException e) {
+        String p = planName.toUpperCase().trim();
+        if (p.startsWith("BUSINESS_TRIAL") || p.equals("BUSINESS_TRIAL"))
+            return BUSINESS_TRIAL;
+        if (p.startsWith("BUSINESS"))
+            return BUSINESS;
+        if (p.startsWith("PRO"))
+            return PRO;
+        if (p.startsWith("STARTER"))
+            return STARTER;
+        if (p.equals("FREE"))
             return FREE;
-        }
+        return FREE; // safe fallback
     }
 
-    public boolean canAddDomain(int currentDomainCount) {
-        return currentDomainCount < this.domains;
-    }
-
-    public boolean canAddTeamMember(int currentMemberCount) {
-        return currentMemberCount < this.teamMembers;
-    }
-
-    public boolean canCreateUrl(int currentUrlCount) {
-        return currentUrlCount < this.urlsPerMonth;
-    }
-
-    public boolean canCreateQR(int currentQRCount) {
-        return currentQRCount < this.qrCodesPerMonth;
-    }
-
-    public boolean canUploadFile(int currentFileCount) {
-        return currentFileCount < this.filesPerMonth;
-    }
-
-    // NEW Page Checks
-    public boolean canCreatePage(int currentPageCount) {
-        return currentPageCount < this.pagesPerUser;
-    }
-
-    public boolean canAddLinkToPage(int currentLinkCount) {
-        return currentLinkCount < this.linksPerPage;
-    }
-
-    public boolean canCreatePixel(int currentPixelCount) {
-        return currentPixelCount < this.maxPixels;
-    }
-
-    public boolean canAddPixelToLink(int currentLinkPixelCount) {
-        return currentLinkPixelCount < this.maxPixelsPerLink;
+    /** Extract billing cycle from planType string */
+    public static String getBillingCycle(String planType) {
+        if (planType == null)
+            return "FREE";
+        String p = planType.toUpperCase();
+        if (p.contains("YEARLY"))
+            return "YEARLY";
+        if (p.contains("MONTHLY"))
+            return "MONTHLY";
+        return "FREE";
     }
 
     /**
-     * Get upgrade path for current plan
+     * Backward compat — PlanValidationService calls this to compute trial end date
      */
+    public int getTrialDays() {
+        return this == BUSINESS_TRIAL ? 1 : 0;
+    }
+
+    public boolean isFree() {
+        return this == FREE;
+    }
+
+    public boolean isPaid() {
+        return this != FREE;
+    }
+
+    public boolean isTrial() {
+        return this == BUSINESS_TRIAL;
+    }
+
     public PlanPolicy getUpgradePath() {
         switch (this) {
             case FREE:
+                return STARTER;
+            case STARTER:
                 return PRO;
             case PRO:
                 return BUSINESS;
@@ -362,128 +992,13 @@ public enum PlanPolicy {
         }
     }
 
-    /**
-     * Check if plan is a trial plan
-     */
-    public boolean isTrial() {
-        return this.name().contains("TRIAL");
-    }
-
-    /**
-     * Check if plan is free
-     */
-    public boolean isFree() {
-        return this == FREE;
-    }
-
-    /**
-     * Check if plan is paid
-     */
-    public boolean isPaid() {
-        return this != FREE;
-    }
-
-    /**
-     * Check if user has access to a specific feature
-     * This mirrors the frontend hasFeature function
-     */
-    public boolean hasFeature(String featureName) {
-        switch (featureName.toLowerCase()) {
-            case "customdomain":
-                return hasCustomDomain();
-            case "analytics":
-                return hasAnalytics();
-            case "teamcollaboration":
-                return hasTeamCollaboration();
-            case "whitelabel":
-                return hasWhiteLabel();
-            case "apiaccess":
-                return hasApiAccess();
-            case "prioritysupport":
-                return hasPrioritySupport();
-            case "customalias":
-                return hasCustomAlias();
-            case "passwordprotection":
-                return hasPasswordProtection();
-            case "linkexpiration":
-                return hasLinkExpiration();
-            case "clicklimits":
-                return hasClickLimits();
-            case "customqrcolors":
-                return hasCustomQRColors();
-            case "qrlogo":
-                return hasQrLogo();
-            case "qrbranding":
-                return hasQrBranding();
-            case "advancedqrsettings":
-                return hasAdvancedQRSettings();
-            case "advancedfilesettings":
-                return hasAdvancedFileSettings();
-            // Pages Features
-            case "removepagebranding":
-                return hasRemovePageBranding();
-            case "pagecustomdomain":
-                return hasPageCustomDomain();
-            case "pageadvancedanalytics":
-                return hasPageAdvancedAnalytics();
-            case "smartlinks":
-                return hasSmartLinks();
-            case "leadforms":
-                return hasLeadForms();
-            case "premiumtemplates":
-                return hasPremiumTemplates();
-            case "pixels":
-                return maxPixels > 0;
-            case "advancedpixelanalytics":
-                return hasAdvancedPixelAnalytics();
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * Get upgrade reason message (mirrors frontend logic)
-     */
     public String getUpgradeReason(String feature, Integer currentCount) {
-        if (this.isFree()) {
-            return String.format("Upgrade to %s to unlock %s", this.getUpgradePath().getDisplayName(), feature);
+        if (isFree()) {
+            return "Upgrade to " + getUpgradePath().getDisplayName() + " to unlock " + feature;
         }
-
-        if ("Custom Domains".equals(feature) && this == PRO) {
-            return "Upgrade to Business for more domains";
-        }
-
-        if ("Team Members".equals(feature) && this == PRO) {
-            return "Upgrade to Business for larger teams";
-        }
-
         if (currentCount != null) {
-            return String.format("You've reached your %s limit for the %s plan", feature.toLowerCase(),
-                    this.displayName);
+            return "You've reached your " + feature.toLowerCase() + " limit for the " + displayName + " plan";
         }
-
-        return String.format("%s is not available in your current plan", feature);
-    }
-
-    /**
-     * Check if user should see upgrade modal (mirrors frontend logic)
-     */
-    public boolean shouldShowUpgradeModal(String feature, Integer currentCount) {
-        // Free users always see upgrade modal for paid features
-        if (this.isFree() && !this.hasFeature(feature)) {
-            return true;
-        }
-
-        // Paid users see upgrade modal when they hit limits
-        if (this.isPaid() && currentCount != null) {
-            if ("Custom Domains".equals(feature) && !this.canAddDomain(currentCount)) {
-                return this == PRO; // PRO users can upgrade to BUSINESS
-            }
-            if ("Team Members".equals(feature) && !this.canAddTeamMember(currentCount)) {
-                return this == PRO; // PRO users can upgrade to BUSINESS
-            }
-        }
-
-        return false;
+        return feature + " is not available in your current plan";
     }
 }

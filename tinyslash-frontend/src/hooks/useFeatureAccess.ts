@@ -105,17 +105,17 @@ export const useFeatureAccess = (user?: User | null): FeatureAccessResult => {
       return !!limits.features[feature];
     };
 
-    // Usage limit functions
+    // Usage limit functions (-1 means unlimited)
     const canCreateUrl = (currentCount: number): boolean => {
-      return currentCount < limits.urlsPerMonth;
+      return limits.urlsPerMonth === -1 || currentCount < limits.urlsPerMonth;
     };
 
     const canCreateQR = (currentCount: number): boolean => {
-      return currentCount < limits.qrCodesPerMonth;
+      return limits.dynamicQrPerMonth === -1 || currentCount < limits.dynamicQrPerMonth;
     };
 
     const canUploadFile = (currentCount: number): boolean => {
-      return currentCount < limits.filesPerMonth;
+      return limits.filesPerMonth === -1 || currentCount < limits.filesPerMonth;
     };
 
     // Helper functions

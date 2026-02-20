@@ -38,6 +38,14 @@ public class FileUploadService {
     @Value("${app.shorturl.domain:https://tinyslash.com}")
     private String shortUrlDomain;
 
+    /**
+     * Backend URL used to build the file view/download URL when no external
+     * public CDN (R2/S3) is configured. Falls back to the Render production URL.
+     * Set BACKEND_URL env var in production.
+     */
+    @Value("${app.backend.url:${BACKEND_URL:https://urlshortner-mrrl.onrender.com}}")
+    private String backendUrl;
+
     @Autowired
     public FileUploadService(UploadedFileRepository uploadedFileRepository,
             UserRepository userRepository,
@@ -128,9 +136,16 @@ public class FileUploadService {
             // Check if public access URL is available
             String publicUrl = storageService.getPublicUrl(uploadedFile.getFileCode());
             if (publicUrl != null) {
-                // If R2/S3 public access is enabled, use that URL
+                // R2/S3 with public domain configured — use CDN URL directly.
                 uploadedFile.setFileUrl(publicUrl);
-                logger.info("Using public URL for file: {}", publicUrl);
+                logger.info("Using public CDN URL for file: {}", publicUrl);
+            } else {
+                // GridFS or storage without public domain — serve via the backend API
+                // so that <img src> resolves correctly in ALL environments (dev + prod).
+                // /view/{fileCode} returns Content-Disposition: inline, perfect for images.
+                String viewUrl = backendUrl.replaceAll("/+$", "") + "/api/v1/files/view/" + uploadedFile.getFileCode();
+                uploadedFile.setFileUrl(viewUrl);
+                logger.info("Using backend view URL for file: {}", viewUrl);
             }
 
             // Save metadata to database

@@ -13,7 +13,8 @@ import org.springframework.http.HttpStatus;
 @Controller
 public class FrontendRedirectController {
 
-    private static final String FRONTEND_URL = "https://tinyslash.com";
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:https://tinyslash.com}")
+    private String frontendUrl;
 
     /**
      * Redirect /dashboard and all its sub-routes to frontend
@@ -37,6 +38,7 @@ public class FrontendRedirectController {
             "/privacy",
             "/verified/**",
             "/unlock/**",
+            "/link-checker",
 
             "/careers",
             "/careers/**",
@@ -56,15 +58,22 @@ public class FrontendRedirectController {
         String queryString = request.getQueryString();
 
         // Build the full frontend URL with path and query params
-        String frontendUrl = FRONTEND_URL + requestUri;
+        String targetUrl = frontendUrl + requestUri;
         if (queryString != null && !queryString.isEmpty()) {
-            frontendUrl += "?" + queryString;
+            targetUrl += "?" + queryString;
         }
 
-        System.out.println("🔄 Redirecting backend URL to frontend: " + requestUri + " → " + frontendUrl);
+        // Prevent infinite redirects (simple check)
+        if (targetUrl.equals(request.getRequestURL().toString())) {
+            System.err.println("⚠️ Loop detected! Request URL matches Target URL: " + targetUrl);
+            // Verify if we can just return 404 or some error to break loop
+            // For now, let's append a param to indicate redirect? Or just return
+        }
+
+        System.out.println("🔄 Redirecting backend URL to frontend: " + requestUri + " → " + targetUrl);
 
         RedirectView redirectView = new RedirectView();
-        redirectView.setUrl(frontendUrl);
+        redirectView.setUrl(targetUrl);
         redirectView.setStatusCode(HttpStatus.FOUND); // 302 redirect (temporary, not cached)
         return redirectView;
     }

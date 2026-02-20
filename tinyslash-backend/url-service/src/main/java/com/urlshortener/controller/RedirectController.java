@@ -4,6 +4,9 @@ import com.urlshortener.model.ShortenedUrl;
 import com.urlshortener.service.UrlShorteningService;
 import com.urlshortener.service.AnalyticsService;
 import com.urlshortener.service.GeoIPService;
+import com.urlshortener.service.PixelFiringService;
+import com.urlshortener.dto.PixelRequestContext;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,6 +32,9 @@ public class RedirectController {
 
     @Autowired
     private com.urlshortener.service.TrustVerificationService trustService;
+
+    @Autowired
+    private PixelFiringService pixelFiringService;
 
     /**
      * Strict Domain Resolution (FIX 1)
@@ -157,6 +163,30 @@ public class RedirectController {
             } catch (Exception e) {
                 System.err.println("Warning: Failed to increment clicks for " + shortCode + ": " + e.getMessage());
                 // Non-critical failure, proceed with redirect
+            }
+
+            // --- FEATURE: PIXEL FIRING (Async) ---
+            if (url.getPixelIds() != null && !url.getPixelIds().isEmpty()) {
+                try {
+                    String referer = request.getHeader("Referer");
+                    // userAgent is already defined at line 121
+
+                    PixelRequestContext context = PixelRequestContext.builder()
+                            .linkId(url.getId())
+                            .shortCode(url.getShortCode())
+                            .originalUrl(url.getOriginalUrl())
+                            .userId(url.getUserId())
+                            .ipAddress(getClientIpAddress(request))
+                            .userAgent(userAgent != null ? userAgent : "unknown")
+                            .referrer(referer)
+                            .clickTime(java.time.Instant.now())
+                            .eventId(UUID.randomUUID().toString())
+                            .build();
+
+                    pixelFiringService.fireAsync(url.getId(), url.getShortCode(), url.getPixelIds(), context);
+                } catch (Exception e) {
+                    System.err.println("Pixel firing error: " + e.getMessage());
+                }
             }
 
             // 5. Password Protection Handling

@@ -173,6 +173,13 @@ public class FileController {
     @Value("${app.shorturl.domain}")
     private String shortUrlDomain;
 
+    /**
+     * Backend URL used to build file view/download URLs. Reads from app.backend.url
+     * which is configured in application-prod.yml as https://api.tinyslash.com.
+     */
+    @Value("${app.backend.url:${BACKEND_URL:https://api.tinyslash.com}}")
+    private String backendUrl;
+
     @GetMapping("/{fileCode}/preview")
     public ResponseEntity<Map<String, Object>> getFilePreview(@PathVariable String fileCode,
             @RequestParam(required = false) String password) {
@@ -223,14 +230,10 @@ public class FileController {
 
             // Only provide download URL if authorized
             if (authorized) {
-                String backendUrl = System.getenv("BACKEND_URL");
-                if (backendUrl == null) {
-                    backendUrl = "https://urlshortner-1-hpyu.onrender.com";
-                }
-                fileData.put("downloadUrl", backendUrl + "/api/v1/files/" + fileCode);
+                fileData.put("downloadUrl", backendUrl.replaceAll("/+$", "") + "/api/v1/files/" + fileCode);
 
                 // Set default preview URL to the inline view endpoint
-                fileData.put("previewUrl", backendUrl + "/api/v1/files/view/" + fileCode);
+                fileData.put("previewUrl", backendUrl.replaceAll("/+$", "") + "/api/v1/files/view/" + fileCode);
 
                 // We ALWAYS use the internal view endpoint for previews now.
                 // This ensures:
@@ -612,14 +615,11 @@ public class FileController {
             }
 
             // Return the download URL (full backend URL for actual file download)
-            String backendUrl = System.getenv("BACKEND_URL");
-            if (backendUrl == null) {
-                backendUrl = "https://urlshortner-1-hpyu.onrender.com"; // fallback to production backend
-            }
+            // backendUrl is injected via @Value from app.backend.url (application-prod.yml)
 
             Map<String, Object> fileData = new HashMap<>();
-            fileData.put("fileUrl", backendUrl + "/api/v1/files/" + fileCode);
-            fileData.put("downloadUrl", backendUrl + "/api/v1/files/" + fileCode);
+            fileData.put("fileUrl", backendUrl.replaceAll("/+$", "") + "/api/v1/files/" + fileCode);
+            fileData.put("downloadUrl", backendUrl.replaceAll("/+$", "") + "/api/v1/files/" + fileCode);
             fileData.put("fileCode", file.getFileCode());
             fileData.put("originalFileName", file.getOriginalFileName());
             fileData.put("fileType", file.getFileType());

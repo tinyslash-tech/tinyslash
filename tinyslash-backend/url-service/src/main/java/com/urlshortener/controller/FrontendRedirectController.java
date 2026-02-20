@@ -37,7 +37,7 @@ public class FrontendRedirectController {
             "/privacy",
             "/verified/**",
             "/unlock/**",
-            "/link-checker",
+
             "/careers",
             "/careers/**",
             "/solutions/**",

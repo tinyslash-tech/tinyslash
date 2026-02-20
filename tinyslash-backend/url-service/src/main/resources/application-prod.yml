@@ -9,13 +9,15 @@ spring:
       database: pebly-database
       auto-index-creation: false
 
-    # Upstash Redis connection is provided via Render env vars:
-    # SPRING_DATA_REDIS_HOST, SPRING_DATA_REDIS_PORT,
-    # SPRING_DATA_REDIS_PASSWORD, SPRING_DATA_REDIS_SSL_ENABLED
-    # Spring Boot reads these automatically via relaxed binding — no yaml needed.
+    redis:
+      host: ${REDIS_HOST:liberal-antelope-51934.upstash.io}
+      port: ${REDIS_PORT:6380}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: true
 
   cache:
-    type: redis
+    type: ${CACHE_TYPE:simple}
 
   # CORS handling moved to SecurityConfig.java
 

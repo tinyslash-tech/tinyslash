@@ -348,74 +348,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (validationError: any) {
               console.warn('Token validation error:', validationError);
 
-              // ── KEY FIX: Don't sign out on transient network errors ──────────
-              // If the backend is unreachable (timeout, 5xx, no response), keep
-              // the user logged in using cached data. Only clear auth on a genuine
-              // 401 Unauthorized response, which means the token is actually invalid.
-              if (isNetworkOrTimeoutError(validationError)) {
-                console.warn('⚠️ Backend unreachable during token validation — keeping user logged in from cache');
-                if (savedUser) {
-                  restoreFromCache(savedUser, savedToken);
+              // ── SAFE FALLBACK: Always restore from cache when savedUser exists ─
+              // The /auth/validate endpoint returns 400 (not 401) on backend errors
+              // during cold-start. isNetworkOrTimeoutError only catches 5xx, so
+              // 4xx warm-up errors were treated as genuine token failures → sign-out.
+              // Fix: if we have a cached user, ALWAYS restore from cache on any
+              // validation error. Only clear auth if there is no cached user at all.
+              if (savedUser) {
+                if (isNetworkOrTimeoutError(validationError)) {
+                  console.warn('⚠️ Backend unreachable during token validation — restoring from cache');
+                } else {
+                  console.warn('⚠️ Backend returned error during token validation — restoring from cache instead of signing out');
+                  console.warn('   Error details:', validationError?.response?.status, validationError?.message);
                 }
-                // Don't clear auth — they'll be validated on next successful request
+                restoreFromCache(savedUser, savedToken);
+                // Reset expiry so fast-path works on next load
+                localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
               } else {
-                // Genuine token failure (401) — try to refresh
-                console.log('Token rejected by backend — attempting refresh...');
-                try {
-                  const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api');
-                  const refreshResponse = await fetch(`${apiUrl}/v1/auth/refresh`, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${savedToken}`,
-                      'Content-Type': 'application/json',
-                    },
-                  });
-
-                  const refreshData = await refreshResponse.json();
-
-                  if (refreshData.success && refreshData.token && refreshData.user) {
-                    console.log('Token refreshed successfully during initialization');
-
-                    const refreshedUser: User = {
-                      id: refreshData.user.id,
-                      name: `${refreshData.user.firstName} ${refreshData.user.lastName}`.trim() || refreshData.user.email.split('@')[0],
-                      email: refreshData.user.email,
-                      plan: normalizePlanName(refreshData.user.subscriptionPlan || 'FREE'),
-                      subscriptionPlan: refreshData.user.subscriptionPlan,
-                      subscriptionExpiry: refreshData.user.subscriptionExpiry || undefined,
-                      avatar: refreshData.user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(refreshData.user.firstName || refreshData.user.email.split('@')[0])}&background=3b82f6&color=fff`,
-                      picture: refreshData.user.profilePicture,
-                      createdAt: refreshData.user.createdAt,
-                      timezone: 'Asia/Kolkata',
-                      language: 'en',
-                      isAuthenticated: true,
-                      authProvider: refreshData.user.authProvider === 'GOOGLE' ? 'google' : 'email'
-                    };
-
-                    localStorage.setItem('token', refreshData.token);
-                    localStorage.setItem('user', JSON.stringify(refreshedUser));
-                    localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
-                    setCookie('token', refreshData.token, 7);
-
-                    setAuthState({ user: refreshedUser, token: refreshData.token, isAuthenticated: true, isLoading: false });
-                    console.log('Authentication restored via token refresh');
-                  } else {
-                    throw new Error('Token refresh failed');
-                  }
-                } catch (refreshError: any) {
-                  // Only clear auth if this is also a real auth failure, not a network issue
-                  if (isNetworkOrTimeoutError(refreshError)) {
-                    console.warn('⚠️ Backend unreachable during refresh — keeping user logged in from cache');
-                    if (savedUser) restoreFromCache(savedUser, savedToken);
-                  } else {
-                    console.error('Token refresh truly failed — clearing auth');
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('tokenExpiry');
-                    removeCookie('token');
-                    setAuthState({ user: null, token: null, isAuthenticated: false, isLoading: false });
-                  }
-                }
+                // No cached user — nothing to restore, just stop loading
+                console.warn('No cached user found — stopping auth loading without sign-out');
+                setAuthState(prev => ({ ...prev, isLoading: false }));
               }
             }
           }

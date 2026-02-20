@@ -113,6 +113,17 @@ apiClient.interceptors.request.use(
   }
 );
 
+// ── Login Grace Period ─────────────────────────────────────────────────────────
+// If the token was written in the last 90 seconds the user just logged in.
+// Never sign them out during this window — the backend may still be warming up
+// and a cold-start 401 must not undo a successful login.
+const isWithinLoginGracePeriod = (): boolean => {
+  const tokenExpiry = localStorage.getItem('tokenExpiry');
+  if (!tokenExpiry) return false;
+  const tokenAge = (Date.now() + 86400000) - parseInt(tokenExpiry); // ms since token was set
+  return tokenAge < 90_000; // < 90 seconds old
+};
+
 // Enhanced response interceptor with proper retry limits to prevent infinite loops
 apiClient.interceptors.response.use(
   (response) => response,
@@ -129,6 +140,15 @@ apiClient.interceptors.response.use(
 
     // Handle 401/403 - Token refresh
     if (error.response?.status === 401 || error.response?.status === 403) {
+      // ── Grace Period Protection ─────────────────────────────────────────────
+      // If the user just logged in (token < 90s old), NEVER sign them out on a
+      // 401. The backend may still be cold-starting on Render.com and may reject
+      // the first authenticated request even with a perfectly valid token.
+      if (isWithinLoginGracePeriod()) {
+        console.warn('⚠️ Got 401 within login grace period — skipping sign-out to protect fresh login.');
+        return Promise.reject(error);
+      }
+
       // Don't retry refresh endpoint or if already retried
       if (originalRequest.url?.includes('/auth/refresh') || originalRequest._retry) {
         console.warn('Token refresh failed or already retried - clearing auth');

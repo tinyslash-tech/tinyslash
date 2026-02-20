@@ -34,8 +34,13 @@ export SPRING_DATA_REDIS_DATABASE="$REDIS_DATABASE"
 export SPRING_DATA_REDIS_TIMEOUT="$REDIS_TIMEOUT"
 export SPRING_DATA_REDIS_SSL_ENABLED="true"
 
-echo "✅ Environment configured for PRODUCTION."
+echo "✅ Environment configured for PRODUCTION (local run)."
 echo "Using MongoDB URI: $PROD_MONGODB_URI"
+echo "⚠️  Redis port 6380 is blocked locally — using simple in-memory cache instead."
+
+# Override cache type to simple (in-memory) since Upstash Redis port 6380
+# is typically blocked by local ISP/firewalls. Production MongoDB is still used.
+export CACHE_TYPE=simple
 
 # Run the application with prod profile
-./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
+./mvnw spring-boot:run -Dspring-boot.run.profiles=prod -Dspring-boot.run.jvmArguments="-Dspring.cache.type=simple"

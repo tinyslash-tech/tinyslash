@@ -247,8 +247,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!error) return false;
       // Axios timeout
       if (error.code === 'ECONNABORTED') return true;
-      // Axios network error (no response)
-      if (error.code === 'NETWORK_ERROR' || !error.response) return true;
+      // Axios network errors — note: axios uses 'ERR_NETWORK' not 'NETWORK_ERROR'
+      if (error.code === 'ERR_NETWORK') return true;
+      if (error.code === 'NETWORK_ERROR') return true; // legacy fallback
+      // Any error with no response means the backend was unreachable
+      if (!error.response) return true;
       // Server-side errors (5xx) — backend unavailable, not a token problem
       if (error.response?.status >= 500) return true;
       return false;

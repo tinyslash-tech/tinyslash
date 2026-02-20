@@ -149,7 +149,10 @@ apiClient.interceptors.response.use(
       } else {
         // Only clear auth data if this is a genuine auth failure.
         // If the backend was unreachable (no response / timeout), don't sign out.
-        const isNetworkError = !error.response || error.code === 'ECONNABORTED';
+        const isNetworkError = !error.response
+          || error.code === 'ECONNABORTED'
+          || error.code === 'ERR_NETWORK'
+          || error.code === 'NETWORK_ERROR';
         if (!isNetworkError) {
           clearAuthData();
         } else {
@@ -186,7 +189,7 @@ apiClient.interceptors.response.use(
     // Handle network errors
     else if (!error.response) {
       console.error('Network error - no response from server');
-      error.code = 'NETWORK_ERROR';
+      error.code = 'ERR_NETWORK'; // Use the correct axios error code
       error.message = 'Unable to connect to server. Please check your internet connection.';
     }
 

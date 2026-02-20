@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { googleAuthService } from '../services/googleAuth';
 import { useAuth } from '../context/AuthContext';
+import { normalizePlanName } from '../constants/planPolicy';
 import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
@@ -56,9 +57,11 @@ const AuthCallback: React.FC = () => {
             // Update auth context with the user data from backend
             const userData = {
               id: authResponse.user.id,
-              name: `${authResponse.user.firstName} ${authResponse.user.lastName} `,
+              name: `${authResponse.user.firstName} ${authResponse.user.lastName}`.trim(),
               email: authResponse.user.email,
-              plan: authResponse.user.subscriptionPlan || 'free',
+              plan: normalizePlanName(authResponse.user.subscriptionPlan || 'FREE'),
+              subscriptionPlan: authResponse.user.subscriptionPlan,
+              subscriptionExpiry: authResponse.user.subscriptionExpiry,
               avatar: authResponse.user.profilePicture,
               picture: authResponse.user.profilePicture,
               createdAt: authResponse.user.createdAt || new Date().toISOString(),

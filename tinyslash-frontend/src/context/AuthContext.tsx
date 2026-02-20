@@ -106,42 +106,62 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  // Single atomic state — prevents race conditions between isLoading and isAuthenticated
+  // If these were separate useState values, React could render a frame where
+  // isLoading=false AND isAuthenticated=false simultaneously, causing AuthRedirect
+  // to wrongly push the user to '/' right after a valid login.
+  const [authState, setAuthState] = useState<{
+    user: User | null;
+    token: string | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+  }>({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    isLoading: true,
+  });
 
-  // Custom setUser function that also updates isAuthenticated
+  // Convenience destructures
+  const { user, token, isAuthenticated, isLoading } = authState;
+
   const setUserWithAuth = (newUser: User | null, authToken?: string | null) => {
     console.log('=== setUserWithAuth called ===');
     console.log('New user:', newUser ? newUser.email : 'null');
-    console.log('Auth token:', authToken ? 'provided' : 'not provided');
-
-    setUser(newUser);
-    setIsAuthenticated(!!newUser);
 
     if (newUser) {
       try {
         localStorage.setItem('user', JSON.stringify(newUser));
-        console.log('User saved to localStorage');
-
         if (authToken) {
-          setToken(authToken);
-          // Save to localStorage as backup/legacy
           localStorage.setItem('token', authToken);
-          // Save to cookie for cross-subdomain support
-          setCookie('token', authToken, 7); // 7 days expiry
-          console.log('Token saved to localStorage and Cookie');
+          setCookie('token', authToken, 7);
+          // Always set tokenExpiry when we have a new token
+          localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
+          console.log('Token + expiry saved');
         }
       } catch (error) {
         console.error('Failed to save to localStorage:', error);
       }
+      // Single atomic update — no intermediate renders with inconsistent state
+      setAuthState({
+        user: newUser,
+        token: authToken ?? null,
+        isAuthenticated: true,
+        isLoading: false,
+      });
     } else {
       console.log('Clearing authentication data');
       localStorage.removeItem('user');
       localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiry');
       removeCookie('token');
-      setToken(null);
+      // Single atomic update
+      setAuthState({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
     }
   };
 
@@ -151,15 +171,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth events from API interceptor
     const handleAuthLogout = () => {
       console.log('Received auth-logout event, clearing user state');
-      setUser(null);
-      setToken(null);
-      setIsAuthenticated(false);
-      removeCookie('token'); // Ensure cookie is removed
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiry');
+      removeCookie('token');
       // Clear any intervals
       if (window.authIntervals) {
         window.authIntervals.forEach(clearInterval);
         window.authIntervals = [];
       }
+      // Single atomic state clear
+      setAuthState({ user: null, token: null, isAuthenticated: false, isLoading: false });
       // Redirect to home page
       if (window.location.pathname !== '/') {
         window.location.href = '/';
@@ -170,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Received auth-token-refreshed event, updating user state');
       const { token: newToken, user: userData } = event.detail;
 
-      const user: User = {
+      const refreshedUser: User = {
         id: userData.id,
         name: `${userData.firstName} ${userData.lastName}`.trim() || userData.email.split('@')[0],
         email: userData.email,
@@ -186,14 +208,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authProvider: userData.authProvider === 'GOOGLE' ? 'google' : 'email'
       };
 
-      setUser(user);
-      setToken(newToken);
-      setIsAuthenticated(true);
+      setAuthState(prev => ({ ...prev, user: refreshedUser, token: newToken, isAuthenticated: true }));
 
       // Update cookie and localStorage
       setCookie('token', newToken, 7);
       localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(refreshedUser));
+      localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
     };
 
     window.addEventListener('auth-logout', handleAuthLogout);
@@ -212,13 +233,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           subscriptionExpiry: updatedUser.subscriptionExpiry
         };
 
-        // Update localStorage with new user data
         localStorage.setItem('user', JSON.stringify(newUser));
-
-        setUser(newUser);
+        setAuthState(prev => ({ ...prev, user: newUser }));
         console.log('User context updated with new subscription:', newUser.plan);
-
-        // Force refresh of subscription context
         window.dispatchEvent(new CustomEvent('subscription-updated'));
       }
     };
@@ -242,12 +259,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const parsedUser: User = JSON.parse(savedUser);
         console.log('🔄 Restoring auth from cache (backend unreachable):', parsedUser.email);
-        setUser(parsedUser);
-        setToken(savedToken);
-        setIsAuthenticated(true);
+        // Single atomic update — isLoading goes false at same time as isAuthenticated goes true
+        setAuthState({ user: parsedUser, token: savedToken, isAuthenticated: true, isLoading: false });
         startSessionManagement();
       } catch (parseError) {
         console.error('Failed to parse cached user:', parseError);
+        // Even on parse error, stop loading
+        setAuthState(prev => ({ ...prev, isLoading: false }));
       }
     };
 
@@ -293,7 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
               if (data.success && data.user) {
                 console.log('Token validated successfully, restoring user:', data.user.email);
-                const user: User = {
+                const validatedUser: User = {
                   id: data.user.id,
                   name: `${data.user.firstName} ${data.user.lastName}`.trim() || data.user.email.split('@')[0],
                   email: data.user.email,
@@ -309,14 +327,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   authProvider: data.user.authProvider === 'GOOGLE' ? 'google' : 'email'
                 };
 
-                setUser(user);
-                setToken(savedToken);
-                setIsAuthenticated(true);
+                // Single atomic update — isLoading=false & isAuthenticated=true in one render
+                setAuthState({ user: validatedUser, token: savedToken, isAuthenticated: true, isLoading: false });
 
                 // Sync cookie and localstorage
                 setCookie('token', savedToken, 7);
                 localStorage.setItem('token', savedToken);
-                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('user', JSON.stringify(validatedUser));
                 // Reset local expiry
                 localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
 
@@ -356,7 +373,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   if (refreshData.success && refreshData.token && refreshData.user) {
                     console.log('Token refreshed successfully during initialization');
 
-                    const user: User = {
+                    const refreshedUser: User = {
                       id: refreshData.user.id,
                       name: `${refreshData.user.firstName} ${refreshData.user.lastName}`.trim() || refreshData.user.email.split('@')[0],
                       email: refreshData.user.email,
@@ -373,13 +390,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     };
 
                     localStorage.setItem('token', refreshData.token);
-                    localStorage.setItem('user', JSON.stringify(user));
+                    localStorage.setItem('user', JSON.stringify(refreshedUser));
                     localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
                     setCookie('token', refreshData.token, 7);
 
-                    setUser(user);
-                    setToken(refreshData.token);
-                    setIsAuthenticated(true);
+                    setAuthState({ user: refreshedUser, token: refreshData.token, isAuthenticated: true, isLoading: false });
                     console.log('Authentication restored via token refresh');
                   } else {
                     throw new Error('Token refresh failed');
@@ -395,9 +410,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     localStorage.removeItem('token');
                     localStorage.removeItem('tokenExpiry');
                     removeCookie('token');
-                    setUser(null);
-                    setToken(null);
-                    setIsAuthenticated(false);
+                    setAuthState({ user: null, token: null, isAuthenticated: false, isLoading: false });
                   }
                 }
               }
@@ -418,12 +431,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem('token');
           localStorage.removeItem('tokenExpiry');
           removeCookie('token');
-          setUser(null);
-          setToken(null);
-          setIsAuthenticated(false);
+          setAuthState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        } else {
+          // Had cached user — stop loading but preserve auth state
+          setAuthState(prev => ({ ...prev, isLoading: false }));
         }
       } finally {
-        setIsLoading(false); // Always set loading to false
+        // isLoading is set to false atomically within each branch above.
+        // This catch-all ensures we NEVER get stuck in loading if something
+        // unexpected happens mid-initialization.
+        setAuthState(prev => (prev.isLoading ? { ...prev, isLoading: false } : prev));
       }
     };
 

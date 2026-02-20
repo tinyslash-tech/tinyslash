@@ -71,12 +71,15 @@ const AuthCallback: React.FC = () => {
             console.log('Setting user data:', userData);
             console.log('Setting token:', authResponse.token ? 'provided' : 'missing');
 
-            // Store token first
+            // Store token first — must happen before setUser so AuthContext fast-path sees it
             if (authResponse.token) {
               localStorage.setItem('token', authResponse.token);
+              // Set tokenExpiry so the fast-path local check in AuthContext works on next load
+              // Without this, Google OAuth users always hit the slow backend validation path
+              localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
             }
 
-            // Set user with token
+            // Set user with token (atomic state update in AuthContext)
             setUser(userData, authResponse.token);
 
             setStatus('success');

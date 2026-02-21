@@ -20,7 +20,11 @@ public class TrustVerification {
   // Status
   private VerificationStatus status; // PENDING_REVIEW, APPROVED, REJECTED, SUSPENDED
 
-  private List<String> documents; // URLs to stored documents
+  private List<String> documents; // URLs to stored documents (legacy — kept for backward compat)
+  private String gstDocUrl;
+  private String panDocUrl;
+  private String domainReceiptUrl;
+  private String incorporationCertUrl;
   private String plan; // STARTER, BUSINESS
 
   private LocalDateTime createdAt;
@@ -138,6 +142,38 @@ public class TrustVerification {
 
   public void setExpiresAt(LocalDateTime expiresAt) {
     this.expiresAt = expiresAt;
+  }
+
+  public String getGstDocUrl() {
+    return gstDocUrl;
+  }
+
+  public void setGstDocUrl(String gstDocUrl) {
+    this.gstDocUrl = gstDocUrl;
+  }
+
+  public String getPanDocUrl() {
+    return panDocUrl;
+  }
+
+  public void setPanDocUrl(String panDocUrl) {
+    this.panDocUrl = panDocUrl;
+  }
+
+  public String getDomainReceiptUrl() {
+    return domainReceiptUrl;
+  }
+
+  public void setDomainReceiptUrl(String domainReceiptUrl) {
+    this.domainReceiptUrl = domainReceiptUrl;
+  }
+
+  public String getIncorporationCertUrl() {
+    return incorporationCertUrl;
+  }
+
+  public void setIncorporationCertUrl(String incorporationCertUrl) {
+    this.incorporationCertUrl = incorporationCertUrl;
   }
 
   public enum VerificationStatus {

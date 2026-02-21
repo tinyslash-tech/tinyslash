@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ThreeDotsLoader } from './ui/ThreeDotsLoader';
-
-import { X, Crown, Zap, Shield, BarChart3, Palette, Globe, Clock, Star } from 'lucide-react';
+import { X, Crown, Check, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { subscriptionService, PricingData } from '../services/subscriptionService';
+import { subscriptionService } from '../services/subscriptionService';
 import { useAuth } from '../context/AuthContext';
 import { useUpgradeModal } from '../context/ModalContext';
 import PortalModal from './PortalModal';
 import toast from 'react-hot-toast';
+import { normalizePlanName } from '../constants/planPolicy';
 
 interface UpgradeModalProps {
-  // Props are now optional since we get state from context
   isOpen?: boolean;
   onClose?: () => void;
   feature?: string;
@@ -18,293 +17,316 @@ interface UpgradeModalProps {
   showOnlyBusiness?: boolean;
 }
 
+// Plan tier ordering
+const PLAN_TIER: Record<string, number> = {
+  FREE: 0,
+  STARTER: 1,
+  PRO: 2,
+  BUSINESS: 3,
+  BUSINESS_TRIAL: 3,
+};
+
+interface PlanCard {
+  id: string;
+  label: string;
+  monthlyKey: string;
+  yearlyKey: string;
+  monthlyPrice: string;
+  yearlyPrice: string;
+  yearlySaving: string;
+  badge: string;
+  highlights: string[];
+  isPrimary: boolean; // true = black card (flagship), false = blue outline
+}
+
+const ALL_PLAN_CARDS: PlanCard[] = [
+  {
+    id: 'STARTER',
+    label: 'Starter',
+    monthlyKey: 'STARTER_MONTHLY',
+    yearlyKey: 'STARTER_YEARLY',
+    monthlyPrice: '299',
+    yearlyPrice: '2,990',
+    yearlySaving: 'Save 17%',
+    badge: 'Entry Plan',
+    isPrimary: false,
+    highlights: [
+      '1,000 links / month',
+      '25 dynamic QR codes',
+      'Custom slug, password & expiry',
+      'Rich link preview',
+      '30-day analytics',
+    ],
+  },
+  {
+    id: 'PRO',
+    label: 'Pro',
+    monthlyKey: 'PRO_MONTHLY',
+    yearlyKey: 'PRO_YEARLY',
+    monthlyPrice: '999',
+    yearlyPrice: '9,990',
+    yearlySaving: 'Save 17%',
+    badge: 'Most Popular',
+    isPrimary: true,
+    highlights: [
+      'Unlimited links',
+      '500 dynamic QR + full customisation',
+      '2 custom domains',
+      'Geo & deep-link routing',
+      'Lead lock, trust badge, pixel retargeting',
+      '90-day analytics',
+    ],
+  },
+  {
+    id: 'BUSINESS',
+    label: 'Business',
+    monthlyKey: 'BUSINESS_MONTHLY',
+    yearlyKey: 'BUSINESS_YEARLY',
+    monthlyPrice: '3,499',
+    yearlyPrice: '34,990',
+    yearlySaving: 'Save 17%',
+    badge: 'For Teams',
+    isPrimary: false,
+    highlights: [
+      'Everything in Pro',
+      'Unlimited QR + files (2 GB)',
+      '10 custom domains, 10 members',
+      'White-label, A/B testing, webhooks',
+      '1-year analytics + data export',
+    ],
+  },
+];
+
 const UpgradeModal: React.FC<UpgradeModalProps> = (props) => {
   const { user } = useAuth();
   const modal = useUpgradeModal();
 
-  // Use context state or fallback to props (for backward compatibility)
   const isOpen = props.isOpen ?? modal.isOpen;
   const onClose = props.onClose ?? modal.close;
-  const feature = props.feature ?? modal.feature;
   const message = props.message ?? modal.message;
   const showOnlyBusiness = props.showOnlyBusiness ?? modal.showOnlyBusiness;
 
-  const [pricing, setPricing] = useState<PricingData | null>(null);
-  const [isYearly, setIsYearly] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isYearly, setIsYearly] = useState(false);
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  const currentPlan = normalizePlanName(
+    (user as any)?.subscriptionPlan || (user as any)?.plan || 'FREE'
+  );
+  const currentTier = PLAN_TIER[currentPlan] ?? 0;
+
+  const visibleCards = showOnlyBusiness
+    ? ALL_PLAN_CARDS.filter((c) => c.id === 'BUSINESS')
+    : ALL_PLAN_CARDS.filter((c) => (PLAN_TIER[c.id] ?? 0) > currentTier);
+
+  const nextPlanLabel = visibleCards[0]?.label ?? 'a higher plan';
+  const headerSubtitle =
+    currentTier === 0
+      ? 'Choose a plan to unlock premium features'
+      : `You are on ${currentPlan.charAt(0) + currentPlan.slice(1).toLowerCase()} — upgrade to ${nextPlanLabel} for more`;
 
   useEffect(() => {
-    if (isOpen) {
-      console.log('🎭 UpgradeModal - Modal opening:', {
-        isOpen,
-        modalContextIsOpen: modal.isOpen,
-        feature,
-        message,
-      });
-      loadPricing();
+    if (isOpen && currentTier >= PLAN_TIER['BUSINESS']) {
+      onClose();
     }
-  }, [isOpen]);
+  }, [isOpen, currentTier]);
 
-  const loadPricing = async () => {
-    try {
-      const pricingData = await subscriptionService.getPricing();
-      setPricing(pricingData);
-    } catch (error) {
-      console.error('Failed to load pricing:', error);
-      toast.error('Failed to load pricing information');
-    }
-  };
-
-  const handleUpgrade = async (planType: string) => {
+  const handleUpgrade = async (planKey: string, planLabel: string) => {
     if (!user?.id) {
       toast.error('Please log in to upgrade');
       return;
     }
-
-    setIsLoading(true);
+    setIsLoading(planKey);
     try {
-      await subscriptionService.initializePayment(planType, user.id);
-      toast.success('Payment successful! Your plan has been upgraded.');
+      await subscriptionService.initializePayment(planKey, user.id);
+      toast.success(`You are now on ${planLabel}!`);
       onClose();
-      // Refresh the page to update the UI
       window.location.reload();
     } catch (error) {
       console.error('Payment failed:', error);
       toast.error('Payment failed. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsLoading(null);
     }
   };
 
-  const getFeatureIcon = (feature: string) => {
-    switch (feature) {
-      case 'custom-alias':
-        return <Globe className="w-5 h-5" />;
-      case 'password-protection':
-        return <Shield className="w-5 h-5" />;
-      case 'expiration':
-        return <Clock className="w-5 h-5" />;
-      case 'detailed-analytics':
-        return <BarChart3 className="w-5 h-5" />;
-      case 'customize-qr':
-        return <Palette className="w-5 h-5" />;
-      default:
-        return <Crown className="w-5 h-5" />;
-    }
-  };
+  if (!isOpen) return null;
+
+  const cols =
+    visibleCards.length === 1
+      ? 'max-w-sm mx-auto'
+      : visibleCards.length === 2
+        ? 'grid grid-cols-1 md:grid-cols-2'
+        : 'grid grid-cols-1 md:grid-cols-3';
 
   return (
     <PortalModal isOpen={isOpen} onClose={onClose} preventBodyScroll={true}>
       <motion.div
-        className="overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm h-full w-full"
+        className="overflow-y-auto bg-black bg-opacity-60 backdrop-blur-sm h-full w-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
       >
         <div className="flex items-center justify-center min-h-screen p-4">
-          {/* Background overlay */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50"
+            className="fixed inset-0"
             onClick={onClose}
           />
 
-          {/* Improved Modal */}
+          {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
             className="relative w-full max-w-4xl bg-white shadow-2xl rounded-2xl mx-4"
           >
-            <div className="p-4 sm:p-6 lg:p-8">
-              {/* Enhanced Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white">
-                    <Crown className="w-6 h-6" />
+            <div className="p-5 sm:p-7">
+
+              {/* Header */}
+              <div className="flex items-start justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-black rounded-xl text-white">
+                    <Crown className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Upgrade Required</h3>
-                    <p className="text-sm text-gray-600">Unlock Pro features</p>
+                    <h3 className="text-lg font-bold text-gray-900">Upgrade Required</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">{headerSubtitle}</p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Enhanced message */}
-              <div className="mb-8 text-center">
-                <p className="text-lg text-gray-600 mb-2">
-                  {message || 'This feature requires a Pro subscription.'}
+              {/* Context message */}
+              {message && (
+                <p className="text-sm text-gray-600 mb-5 bg-blue-50 border border-blue-100 rounded-lg px-4 py-2.5">
+                  {message}
                 </p>
-                <p className="text-sm text-gray-500">
-                  Choose a plan that works best for you
-                </p>
+              )}
+
+              {/* Monthly / Yearly toggle */}
+              <div className="flex items-center justify-center mb-6">
+                <div className="bg-gray-100 p-1 rounded-lg flex text-sm">
+                  <button
+                    onClick={() => setIsYearly(false)}
+                    className={`px-5 py-1.5 rounded-md font-medium transition-all ${!isYearly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => setIsYearly(true)}
+                    className={`px-5 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 ${isYearly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                  >
+                    Yearly
+                    <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded font-semibold">
+                      Save 17%
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              {/* Pricing Loader */}
-              {!pricing ? (
-                <div className="flex flex-col justify-center items-center py-16 gap-4">
-                  <ThreeDotsLoader size="lg" color="bg-black" />
-                  <span className="text-gray-600 text-sm">Loading pricing...</span>
+              {/* Cards */}
+              {visibleCards.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <Crown className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                  <p className="font-semibold text-gray-800">You are on the highest plan.</p>
                 </div>
               ) : (
-                <>
-                  {/* Plan Toggle */}
-                  <div className="flex items-center justify-center mb-8">
-                    <div className="bg-gray-100 p-1 rounded-xl flex items-center">
-                      <button
-                        onClick={() => setIsYearly(false)}
-                        className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${!isYearly
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                <div className={`${cols} gap-4 mb-6`}>
+                  {visibleCards.map((card) => {
+                    const planKey = isYearly ? card.yearlyKey : card.monthlyKey;
+                    const price = isYearly ? card.yearlyPrice : card.monthlyPrice;
+                    const period = isYearly ? 'year' : 'month';
+                    const loading = isLoading === planKey;
+
+                    return (
+                      <div
+                        key={card.id}
+                        className={`relative flex flex-col rounded-xl border-2 p-5 transition-all ${card.isPrimary
+                            ? 'border-black bg-black text-white'
+                            : 'border-blue-600 bg-white text-gray-900'
                           }`}
                       >
-                        Monthly
-                      </button>
-                      <button
-                        onClick={() => setIsYearly(true)}
-                        className={`px-6 py-2 rounded-lg text-sm font-medium transition-all relative ${isYearly
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                      >
-                        Yearly
-                        {isYearly && (
-                          <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-                            Save 20%
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Pricing cards */}
-                  <div className={`grid grid-cols-1 ${showOnlyBusiness ? '' : 'md:grid-cols-2'} gap-6 lg:gap-8 mb-8`}>
-                    {/* Pro Plan - Only show if not showOnlyBusiness */}
-                    {!showOnlyBusiness && (
-                      <div className="relative p-8 border-2 border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl transition-all hover:shadow-xl">
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                          <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                            {isYearly ? 'Best Value 💎' : 'Most Popular 🔥'}
-                          </span>
-                        </div>
-                        <div className="text-center pt-2">
-                          <h4 className="text-xl font-bold text-gray-900 mb-4">
-                            Pro {isYearly ? 'Yearly' : 'Monthly'}
-                          </h4>
-                          <div className="mb-2">
-                            <span className="text-4xl font-bold text-gray-900">
-                              ₹{isYearly ? '5,999' : '599'}
-                            </span>
-                            <span className="text-lg text-gray-600">
-                              /{isYearly ? 'year' : 'month'}
-                            </span>
-                          </div>
-                          {isYearly && (
-                            <div className="mb-6">
-                              <span className="text-sm text-green-600 font-medium bg-green-100 px-3 py-1 rounded-full">
-                                Save ₹1,189 per year
-                              </span>
-                            </div>
-                          )}
-                          {!isYearly && <div className="mb-6"></div>}
-                          <button
-                            onClick={() => handleUpgrade(isYearly ? 'PRO_YEARLY' : 'PRO_MONTHLY')}
-                            disabled={isLoading}
-                            className="w-full py-4 px-6 rounded-xl text-lg font-bold transition-all bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 shadow-lg hover:shadow-xl"
-                          >
-                            {isLoading ? 'Processing Payment...' : `Upgrade to Pro - ₹${isYearly ? '5,999' : '599'}`}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Business Plan */}
-                    <div className="relative p-8 border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl transition-all hover:shadow-xl">
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                          For Teams 🚀
-                        </span>
-                      </div>
-                      <div className="text-center pt-2">
-                        <h4 className="text-xl font-bold text-gray-900 mb-4">
-                          Business {isYearly ? 'Yearly' : 'Monthly'}
-                        </h4>
-                        <div className="mb-2">
-                          <span className="text-4xl font-bold text-gray-900">
-                            ₹{isYearly ? '14,999' : '1,499'}
-                          </span>
-                          <span className="text-lg text-gray-600">
-                            /{isYearly ? 'year' : 'month'}
-                          </span>
-                        </div>
-                        {isYearly && (
-                          <div className="mb-6">
-                            <span className="text-sm text-green-600 font-medium bg-green-100 px-3 py-1 rounded-full">
-                              Save ₹2,989 per year
-                            </span>
-                          </div>
-                        )}
-                        {!isYearly && <div className="mb-6"></div>}
-                        <button
-                          onClick={() => handleUpgrade(isYearly ? 'BUSINESS_YEARLY' : 'BUSINESS_MONTHLY')}
-                          disabled={isLoading}
-                          className="w-full py-4 px-6 rounded-xl text-lg font-bold transition-all bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 shadow-lg hover:shadow-xl"
+                        {/* Badge */}
+                        <span
+                          className={`self-start text-xs font-semibold px-2.5 py-1 rounded-full mb-3 ${card.isPrimary
+                              ? 'bg-white text-black'
+                              : 'bg-blue-600 text-white'
+                            }`}
                         >
-                          {isLoading ? 'Processing Payment...' : `Upgrade to Business - ₹${isYearly ? '14,999' : '1,499'}`}
+                          {card.badge}
+                        </span>
+
+                        {/* Plan name + price */}
+                        <h4 className="text-base font-bold mb-1">{card.label}</h4>
+                        <div className="flex items-baseline gap-1 mb-1">
+                          <span className="text-3xl font-extrabold">₹{price}</span>
+                          <span className={`text-sm ${card.isPrimary ? 'text-gray-300' : 'text-gray-500'}`}>
+                            / {period}
+                          </span>
+                        </div>
+                        {isYearly && (
+                          <span
+                            className={`text-xs font-medium mb-3 ${card.isPrimary ? 'text-blue-300' : 'text-blue-600'
+                              }`}
+                          >
+                            {card.yearlySaving} vs monthly
+                          </span>
+                        )}
+
+                        {/* Highlights */}
+                        <ul className="flex-1 space-y-1.5 mt-3 mb-4">
+                          {card.highlights.map((h, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <Check
+                                className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${card.isPrimary ? 'text-blue-400' : 'text-blue-600'
+                                  }`}
+                              />
+                              <span className={card.isPrimary ? 'text-gray-200' : 'text-gray-700'}>
+                                {h}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        {/* CTA Button */}
+                        <button
+                          onClick={() => handleUpgrade(planKey, `${card.label} ${isYearly ? 'Yearly' : 'Monthly'}`)}
+                          disabled={!!isLoading}
+                          className={`w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 ${card.isPrimary
+                              ? 'bg-white text-black hover:bg-gray-100'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                        >
+                          {loading ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <ThreeDotsLoader size="xs" color={card.isPrimary ? 'bg-black' : 'bg-white'} />
+                              Processing...
+                            </span>
+                          ) : (
+                            `Upgrade to ${card.label}`
+                          )}
                         </button>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Features comparison */}
-                  <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-6 text-center">
-                      What you get with Pro & Business Plans
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-                        <Zap className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">Unlimited URLs & QR codes</span>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-                        <Palette className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">Advanced analytics</span>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-                        <Globe className="w-5 h-5 text-purple-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">Custom domains</span>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-                        <Shield className="w-5 h-5 text-red-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">Team collaboration</span>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-                        <Clock className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">Team collaboration</span>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-                        <Crown className="w-5 h-5 text-pink-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">Priority support</span>
-                      </div>
-                    </div>
-                  </div>
-
-                </>
+                    );
+                  })}
+                </div>
               )}
 
               {/* Footer */}
-              <div className="mt-6 text-center text-sm text-gray-500">
-                <p>Secure payment powered by Razorpay • Cancel anytime • 30-day money-back guarantee</p>
-              </div>
+              <p className="text-center text-xs text-gray-400">
+                Secure payment via Razorpay &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp; 7-day refund policy
+              </p>
             </div>
           </motion.div>
         </div>

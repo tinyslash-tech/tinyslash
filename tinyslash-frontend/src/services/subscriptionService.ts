@@ -170,20 +170,28 @@ class SubscriptionService {
     let planName = '';
 
     switch (planType) {
+      case 'STARTER_MONTHLY':
+        amount = 299 * 100;
+        planName = 'Starter Monthly';
+        break;
+      case 'STARTER_YEARLY':
+        amount = 2990 * 100;
+        planName = 'Starter Yearly';
+        break;
       case 'PRO_MONTHLY':
-        amount = 349 * 100; // Convert to paise
+        amount = 999 * 100;
         planName = 'Pro Monthly';
         break;
       case 'PRO_YEARLY':
-        amount = 2999 * 100;
+        amount = 9990 * 100;
         planName = 'Pro Yearly';
         break;
       case 'BUSINESS_MONTHLY':
-        amount = 699 * 100;
+        amount = 3499 * 100;
         planName = 'Business Monthly';
         break;
       case 'BUSINESS_YEARLY':
-        amount = 5999 * 100;
+        amount = 34990 * 100;
         planName = 'Business Yearly';
         break;
       default:

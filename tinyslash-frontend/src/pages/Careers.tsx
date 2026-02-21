@@ -113,7 +113,7 @@ const Careers: React.FC = () => {
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <ThreeDotsLoader size="lg" color="bg-gray-800" />
+              <ThreeDotsLoader size="lg" color="bg-black" />
               <p className="text-gray-500">Loading open roles...</p>
             </div>
           ) : (

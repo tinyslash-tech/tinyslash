@@ -86,7 +86,7 @@ const TeamInvite: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-4" />
+          <ThreeDotsLoader size="lg" color="bg-black" className="mb-4" />
           <p className="text-gray-600">Redirecting to sign in...</p>
         </div>
       </div>
@@ -97,7 +97,7 @@ const TeamInvite: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-4" />
+          <ThreeDotsLoader size="lg" color="bg-black" className="mb-4" />
           <p className="text-gray-600">Loading invitation...</p>
         </div>
       </div>

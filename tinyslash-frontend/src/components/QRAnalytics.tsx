@@ -155,7 +155,7 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
           <div className="flex flex-col items-center justify-center text-center">
-            <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-5" />
+            <ThreeDotsLoader size="lg" color="bg-black" className="mb-5" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Analytics</h3>
             <p className="text-gray-600">Fetching real-time QR code performance...</p>
           </div>

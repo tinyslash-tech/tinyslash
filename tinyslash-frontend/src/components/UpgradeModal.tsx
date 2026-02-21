@@ -152,7 +152,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = (props) => {
               {/* Pricing Loader */}
               {!pricing ? (
                 <div className="flex flex-col justify-center items-center py-16 gap-4">
-                  <ThreeDotsLoader size="lg" color="bg-blue-600" />
+                  <ThreeDotsLoader size="lg" color="bg-black" />
                   <span className="text-gray-600 text-sm">Loading pricing...</span>
                 </div>
               ) : (

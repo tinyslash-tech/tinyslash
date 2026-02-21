@@ -144,7 +144,7 @@ const FileViewer: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <ThreeDotsLoader size="lg" color="bg-gray-800" />
+        <ThreeDotsLoader size="lg" color="bg-black" />
       </div>
     );
   }

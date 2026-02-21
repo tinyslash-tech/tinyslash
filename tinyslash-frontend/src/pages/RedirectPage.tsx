@@ -419,7 +419,7 @@ const RedirectPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-5" />
+          <ThreeDotsLoader size="lg" color="bg-black" className="mb-5" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Redirecting...</h2>
           <p className="text-gray-600">Please wait while we redirect you to your destination</p>
         </div>

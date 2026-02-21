@@ -93,8 +93,8 @@ const PagesDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <ThreeDotsLoader size="md" color="bg-blue-600" />
+      <div className="flex items-center justify-center min-h-[50vh] w-full">
+        <ThreeDotsLoader size="lg" color="bg-black" />
       </div>
     );
   }

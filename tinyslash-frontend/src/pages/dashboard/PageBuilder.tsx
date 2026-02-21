@@ -175,8 +175,8 @@ const PageBuilder = () => {
   };
 
   if (isLoading || !page) return (
-    <div className="h-screen flex items-center justify-center bg-gray-50">
-      <ThreeDotsLoader size="md" color="bg-blue-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <ThreeDotsLoader size="lg" color="bg-black" />
     </div>
   );
 

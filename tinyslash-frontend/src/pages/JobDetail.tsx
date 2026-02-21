@@ -41,7 +41,7 @@ const JobDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-white pt-20 flex justify-center items-center">
         <div className="flex flex-col items-center gap-4">
-          <ThreeDotsLoader size="lg" color="bg-gray-800" />
+          <ThreeDotsLoader size="lg" color="bg-black" />
           <p className="text-gray-500">Loading job details...</p>
         </div>
       </div>

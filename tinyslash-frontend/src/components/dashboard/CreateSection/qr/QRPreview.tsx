@@ -113,7 +113,7 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
             <p className="text-gray-500 text-sm">Enter text or URL above</p>
             {qrText && (
               <div className="mt-3 flex flex-col items-center gap-2">
-                <ThreeDotsLoader size="sm" color="bg-blue-600" />
+                <ThreeDotsLoader size="sm" color="bg-black" />
                 <p className="text-xs text-gray-500">Generating...</p>
               </div>
             )}

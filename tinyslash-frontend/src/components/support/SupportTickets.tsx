@@ -193,8 +193,8 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
             <div
               key={response.id}
               className={`p-4 rounded-lg ${response.sender === 'user'
-                  ? 'bg-blue-50 ml-8'
-                  : 'bg-green-50 mr-8'
+                ? 'bg-blue-50 ml-8'
+                : 'bg-green-50 mr-8'
                 }`}
             >
               <div className="flex items-center space-x-2 mb-2">
@@ -293,7 +293,7 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
       <div className="divide-y divide-gray-200">
         {isLoading ? (
           <div className="p-8 flex flex-col items-center justify-center">
-            <ThreeDotsLoader size="md" color="bg-blue-600" className="mb-3" />
+            <ThreeDotsLoader size="md" color="bg-black" className="mb-3" />
             <p className="text-gray-600 text-sm">Loading tickets...</p>
           </div>
         ) : filteredTickets.length === 0 ? (

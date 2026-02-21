@@ -61,10 +61,10 @@ export const ThreeDotsLoader: React.FC<ThreeDotsLoaderProps> = ({
 /** Full-screen centered loader wrapper — use this for page-level loaders */
 export const PageDotsLoader: React.FC<{ text?: string; minHeight?: string }> = ({
   text,
-  minHeight = 'min-h-[60vh]',
+  minHeight = 'min-h-screen',
 }) => (
-  <div className={`flex flex-col items-center justify-center ${minHeight}`}>
-    <ThreeDotsLoader size="lg" color="bg-blue-600" />
+  <div className={`flex flex-col items-center justify-center w-full ${minHeight}`}>
+    <ThreeDotsLoader size="lg" color="bg-black" />
     {text && <p className="mt-4 text-sm text-gray-500 font-medium">{text}</p>}
   </div>
 );
@@ -75,7 +75,8 @@ export const CardDotsLoader: React.FC<{ text?: string; className?: string }> = (
   className = 'h-48',
 }) => (
   <div className={`flex flex-col items-center justify-center w-full ${className}`}>
-    <ThreeDotsLoader size="md" color="bg-blue-600" />
+    <ThreeDotsLoader size="md" color="bg-black" />
     {text && <p className="mt-3 text-sm text-gray-500">{text}</p>}
   </div>
 );
+

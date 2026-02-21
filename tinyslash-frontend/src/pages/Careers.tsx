@@ -4,6 +4,7 @@ import { ArrowRight, Globe, Zap, Users, Code, ChevronDown, ChevronRight, Briefca
 import { careerApi, Job } from '../api/careerApi';
 import PublicHeader from '../components/PublicHeader';
 import Footer from '../components/Footer';
+import { ThreeDotsLoader } from '../components/ui/ThreeDotsLoader';
 
 const Careers: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -111,8 +112,8 @@ const Careers: React.FC = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <ThreeDotsLoader size="lg" color="bg-gray-800" />
               <p className="text-gray-500">Loading open roles...</p>
             </div>
           ) : (

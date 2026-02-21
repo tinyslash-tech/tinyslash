@@ -8,6 +8,7 @@ import {
   User, Palette, Layers, Settings,
   Monitor, Smartphone, BarChart3, LayoutTemplate
 } from 'lucide-react';
+import { ThreeDotsLoader } from '../../components/ui/ThreeDotsLoader';
 import { TemplatesTab } from '../../components/page-builder/tabs/TemplatesTab';
 import { TEMPLATES, Template } from '../../config/templates/index';
 import toast from 'react-hot-toast';
@@ -175,7 +176,7 @@ const PageBuilder = () => {
 
   if (isLoading || !page) return (
     <div className="h-screen flex items-center justify-center bg-gray-50">
-      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <ThreeDotsLoader size="md" color="bg-blue-600" />
     </div>
   );
 

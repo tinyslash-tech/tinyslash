@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ThreeDotsLoader } from './ui/ThreeDotsLoader';
+
 import { X, Crown, Zap, Shield, BarChart3, Palette, Globe, Clock, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { subscriptionService, PricingData } from '../services/subscriptionService';
@@ -149,9 +151,9 @@ const UpgradeModal: React.FC<UpgradeModalProps> = (props) => {
 
               {/* Pricing Loader */}
               {!pricing ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-3 text-gray-600">Loading pricing...</span>
+                <div className="flex flex-col justify-center items-center py-16 gap-4">
+                  <ThreeDotsLoader size="lg" color="bg-blue-600" />
+                  <span className="text-gray-600 text-sm">Loading pricing...</span>
                 </div>
               ) : (
                 <>

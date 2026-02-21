@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Loader2, Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
+import { ThreeDotsLoader } from '../components/ui/ThreeDotsLoader';
 
 import { SmartLinkPreview } from '../components/dashboard/CreateSection/types';
 import { SEO } from '../components/SEO';
@@ -243,9 +244,24 @@ const RedirectPage: React.FC = () => {
             window.location.href = finalUrl;
           }, 1000);
         } else if (data.data.fileUrl || data.data.downloadUrl) {
+          // Check for Trust Badge on file links
+          const fileTrustBadge = data.data.trustBadge;
+          if (fileTrustBadge && fileTrustBadge.enabled) {
+            console.log('🛡️ Trust Badge enabled for file, redirecting to verified page');
+            window.location.replace(`/verified/${shortCode}`);
+            return;
+          }
           // Navigate to File Preview Page
           window.location.replace(`/file/${data.data.fileCode || shortCode}`);
         } else if (data.data.content) {
+          // Check for Trust Badge on QR code scans
+          const qrTrustBadge = data.data.trustBadge;
+          if (qrTrustBadge && qrTrustBadge.enabled) {
+            console.log('🛡️ Trust Badge enabled for QR, redirecting to verified page');
+            const code = data.data.shortCode || shortCode;
+            window.location.replace(`/verified/${code}`);
+            return;
+          }
           // QR code content redirect
           setTimeout(() => {
             let finalContent = data.data.content;
@@ -381,7 +397,7 @@ const RedirectPage: React.FC = () => {
               >
                 {isSubmittingLead ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <ThreeDotsLoader size="sm" color="bg-white" />
                     Unlocking...
                   </>
                 ) : (
@@ -403,7 +419,7 @@ const RedirectPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-5" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Redirecting...</h2>
           <p className="text-gray-600">Please wait while we redirect you to your destination</p>
         </div>

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
 import { useUpgradeModal } from '../context/ModalContext';
-import { Loader2 } from 'lucide-react';
+import { CardDotsLoader } from '../components/ui/ThreeDotsLoader';
 
 // Lazy load dashboard sections to split bundles
 const DashboardOverview = lazy(() => import('./dashboard/DashboardOverview'));
@@ -21,11 +21,7 @@ const TrustBadge = lazy(() => import('../pages/dashboard/TrustBadge'));
 type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
 type CreateMode = 'url' | 'qr' | 'file';
 
-const DashboardLoader = () => (
-  <div className="flex items-center justify-center h-64">
-    <Loader2 className="w-8 h-8 animate-spin text-blue-600 opacity-50" />
-  </div>
-);
+const DashboardLoader = () => <CardDotsLoader className="h-64" />;
 
 const UnifiedDashboard: React.FC = () => {
   const { user } = useAuth();

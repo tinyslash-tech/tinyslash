@@ -625,6 +625,26 @@ public class FileController {
             fileData.put("fileType", file.getFileType());
             fileData.put("fileSize", file.getFileSize());
 
+            // Trust Badge support for file links
+            try {
+                if (file.getUserId() != null) {
+                    java.util.Optional<com.urlshortener.model.TrustVerification> trustOpt = trustService
+                            .getApprovedVerification(file.getUserId());
+                    if (trustOpt.isPresent()) {
+                        com.urlshortener.model.TrustVerification trust = trustOpt.get();
+                        boolean trustActive = trust.getExpiresAt() == null ||
+                                trust.getExpiresAt().isAfter(java.time.LocalDateTime.now());
+                        if (trustActive) {
+                            Map<String, Object> trustData = new HashMap<>();
+                            trustData.put("enabled", true);
+                            fileData.put("trustBadge", trustData);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // Don't block file redirect on trust badge errors
+            }
+
             response.put("success", true);
             response.put("data", fileData);
             return ResponseEntity.ok(response);

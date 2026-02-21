@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Download, FileText, Image, File, Music, Video, ExternalLink, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ThreeDotsLoader } from '../components/ui/ThreeDotsLoader';
 
 interface FilePreviewData {
   fileCode: string;
@@ -143,7 +144,7 @@ const FileViewer: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        <ThreeDotsLoader size="lg" color="bg-gray-800" />
       </div>
     );
   }

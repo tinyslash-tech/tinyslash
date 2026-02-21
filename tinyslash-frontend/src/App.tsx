@@ -8,7 +8,7 @@ import { SupportProvider } from './context/SupportContext';
 import { TeamProvider } from './context/TeamContext';
 import { ModalProvider } from './context/ModalContext';
 import { QueryProvider } from './providers/QueryProvider';
-import { Loader2 } from 'lucide-react';
+import { PageDotsLoader } from './components/ui/ThreeDotsLoader';
 
 // Eagerly loaded components (Critical for initial render)
 import Header from './components/Header';
@@ -74,11 +74,7 @@ import './App.css';
 console.log('MODULE LOADED: App.tsx');
 
 // Loading Fallback
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-[60vh]">
-    <Loader2 className="w-10 h-10 animate-spin text-blue-600 opacity-50" />
-  </div>
-);
+const PageLoader = () => <PageDotsLoader minHeight="min-h-[60vh]" />;
 
 const AppContent: React.FC = () => {
   console.log('RENDERING: AppContent');

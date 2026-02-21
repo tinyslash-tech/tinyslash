@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pageService } from '../../services/pageService';
 import { Page } from '../../types/page';
 import toast from 'react-hot-toast';
-import { Loader2, ExternalLink, Edit, Trash2, Layout, Plus, Wand2, Globe, BarChart3, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { ExternalLink, Edit, Trash2, Layout, Plus, Wand2, Globe, BarChart3, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { ThreeDotsLoader } from '../../components/ui/ThreeDotsLoader';
 import React, { useEffect } from 'react';
 import { LivePreviewCard } from '../../components/page-builder/LivePreviewCard';
 import { useSlugCheck } from '../../hooks/useSlugCheck';
@@ -93,7 +94,7 @@ const PagesDashboard = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <ThreeDotsLoader size="md" color="bg-blue-600" />
       </div>
     );
   }

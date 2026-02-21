@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Ticket, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
-  MessageSquare, 
+import {
+  Ticket,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  MessageSquare,
   Search,
   Filter,
   Calendar,
@@ -17,6 +17,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSupportContext } from '../../context/SupportContext';
 import { useAuth } from '../../context/AuthContext';
+import { ThreeDotsLoader } from '../ui/ThreeDotsLoader';
 
 interface SupportTicketsProps {
   className?: string;
@@ -24,24 +25,24 @@ interface SupportTicketsProps {
 
 const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
   const { user } = useAuth();
-  const { 
-    tickets, 
-    isLoading, 
-    searchTickets, 
-    getTicketsByStatus, 
+  const {
+    tickets,
+    isLoading,
+    searchTickets,
+    getTicketsByStatus,
     addResponse,
-    updateTicketStatus 
+    updateTicketStatus
   } = useSupportContext();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in-progress' | 'resolved' | 'closed'>('all');
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
 
-  const filteredTickets = searchQuery 
+  const filteredTickets = searchQuery
     ? searchTickets(searchQuery)
-    : statusFilter === 'all' 
-      ? tickets 
+    : statusFilter === 'all'
+      ? tickets
       : getTicketsByStatus(statusFilter);
 
   const getStatusIcon = (status: string) => {
@@ -142,7 +143,7 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
               <ArrowLeft className="w-4 h-4" />
               <span>Back to Tickets</span>
             </button>
-            
+
             <div className="flex items-center space-x-2">
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
                 {ticket.status.replace('-', ' ').toUpperCase()}
@@ -191,11 +192,10 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
           {ticket.responses.map((response) => (
             <div
               key={response.id}
-              className={`p-4 rounded-lg ${
-                response.sender === 'user' 
-                  ? 'bg-blue-50 ml-8' 
+              className={`p-4 rounded-lg ${response.sender === 'user'
+                  ? 'bg-blue-50 ml-8'
                   : 'bg-green-50 mr-8'
-              }`}
+                }`}
             >
               <div className="flex items-center space-x-2 mb-2">
                 <User className="w-4 h-4 text-gray-600" />
@@ -271,7 +271,7 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          
+
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <select
@@ -292,16 +292,16 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
       {/* Tickets List */}
       <div className="divide-y divide-gray-200">
         {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 mt-2">Loading tickets...</p>
+          <div className="p-8 flex flex-col items-center justify-center">
+            <ThreeDotsLoader size="md" color="bg-blue-600" className="mb-3" />
+            <p className="text-gray-600 text-sm">Loading tickets...</p>
           </div>
         ) : filteredTickets.length === 0 ? (
           <div className="p-8 text-center">
             <Ticket className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No tickets found</h3>
             <p className="text-gray-600">
-              {searchQuery || statusFilter !== 'all' 
+              {searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your search or filter criteria.'
                 : 'You haven\'t created any support tickets yet.'
               }
@@ -318,7 +318,7 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
             >
               <div className="flex items-start space-x-4">
                 <div className="text-2xl">{getCategoryIcon(ticket.category)}</div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-2">
                     <h3 className="text-lg font-semibold text-gray-900 truncate">
@@ -331,11 +331,11 @@ const SupportTickets: React.FC<SupportTicketsProps> = ({ className = '' }) => {
                       {ticket.priority}
                     </span>
                   </div>
-                  
+
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {ticket.message}
                   </p>
-                  
+
                   <div className="flex items-center space-x-4 text-xs text-gray-500">
                     <span className="flex items-center space-x-1">
                       {getStatusIcon(ticket.status)}

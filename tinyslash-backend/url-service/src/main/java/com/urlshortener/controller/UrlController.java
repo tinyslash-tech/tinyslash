@@ -225,18 +225,9 @@ public class UrlController {
             urlData.put("title", url.getTitle());
 
             // Check for Trust Badge / Verified Page
-            if (url.getTrustBadgeConfig() != null && url.getTrustBadgeConfig().isRequested()) {
-                // Return verified status if the user is verified
-                // ideally check against TrustVerificationService, but for now we trust the
-                // config status if it was set
-                // or we just pass the config to frontend and let frontend decide (frontend
-                // checks /trust/public anyway)
+            if (url.getTrustBadgeConfig() != null && url.getTrustBadgeConfig().isEnabled()) {
                 Map<String, Object> trustData = new HashMap<>();
                 trustData.put("enabled", true);
-
-                // If status is not in config, we might want to default to pending/unchecked
-                // But typically this means we should show the Verified Page which will verify
-                // the trust
                 urlData.put("trustBadge", trustData);
             }
 

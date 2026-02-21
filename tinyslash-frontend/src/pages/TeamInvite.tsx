@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Check, X, Loader2, Crown } from 'lucide-react';
+import { Users, Check, X, Crown } from 'lucide-react';
+import { ThreeDotsLoader } from '../components/ui/ThreeDotsLoader';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
 import * as api from '../services/api';
@@ -12,7 +13,7 @@ const TeamInvite: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { refreshTeams, switchToTeam } = useTeam();
   const navigate = useNavigate();
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
   const [inviteData, setInviteData] = useState<any>(null);
@@ -50,16 +51,16 @@ const TeamInvite: React.FC = () => {
     if (!inviteToken) return;
 
     setIsAccepting(true);
-    
+
     try {
       const response = await api.acceptTeamInvite(inviteToken);
-      
+
       if (response.success) {
         toast.success('Successfully joined the team!');
-        
+
         // Refresh teams and switch to the new team
         await refreshTeams();
-        
+
         if (response.team) {
           switchToTeam(response.team.id);
           navigate('/dashboard');
@@ -85,7 +86,7 @@ const TeamInvite: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-4" />
           <p className="text-gray-600">Redirecting to sign in...</p>
         </div>
       </div>
@@ -96,7 +97,7 @@ const TeamInvite: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-4" />
           <p className="text-gray-600">Loading invitation...</p>
         </div>
       </div>
@@ -189,7 +190,7 @@ const TeamInvite: React.FC = () => {
           >
             {isAccepting ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <ThreeDotsLoader size="xs" color="bg-white" />
                 <span>Accepting...</span>
               </>
             ) : (
@@ -199,7 +200,7 @@ const TeamInvite: React.FC = () => {
               </>
             )}
           </button>
-          
+
           <button
             onClick={handleDecline}
             disabled={isAccepting}

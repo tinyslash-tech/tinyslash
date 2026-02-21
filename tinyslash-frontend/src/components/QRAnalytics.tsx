@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
+import { ThreeDotsLoader } from './ui/ThreeDotsLoader';
 
 interface QRAnalyticsProps {
   qrCodeId: string;
@@ -153,8 +154,8 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="flex flex-col items-center justify-center text-center">
+            <ThreeDotsLoader size="lg" color="bg-blue-600" className="mb-5" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Analytics</h3>
             <p className="text-gray-600">Fetching real-time QR code performance...</p>
           </div>

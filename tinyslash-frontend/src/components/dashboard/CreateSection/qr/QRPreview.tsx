@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Eye, Download, Copy, QrCode } from 'lucide-react';
 import QRCodeGenerator from '../../../QRCodeGenerator'; // Adjust import path
 import { QRCustomization } from '../types';
+import { ThreeDotsLoader } from '../../../ui/ThreeDotsLoader';
 
 interface QRPreviewProps {
   qrText: string;
@@ -111,8 +112,8 @@ export const QRPreview: React.FC<QRPreviewProps> = ({
             <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">Enter text or URL above</p>
             {qrText && (
-              <div className="mt-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <div className="mt-3 flex flex-col items-center gap-2">
+                <ThreeDotsLoader size="sm" color="bg-blue-600" />
                 <p className="text-xs text-gray-500">Generating...</p>
               </div>
             )}

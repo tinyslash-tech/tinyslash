@@ -319,8 +319,17 @@ public class ShortenedUrl {
     }
 
     public static class TrustBadgeConfig {
-        private boolean requested;
+        private boolean enabled; // user toggled the badge on
+        private boolean requested; // user requested admin verification
         private String status; // pending, approved, rejected
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
 
         public boolean isRequested() {
             return requested;

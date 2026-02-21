@@ -714,6 +714,14 @@ public class QrCodeController {
             qrData.put("contentType", qrCode.getContentType());
             qrData.put("qrCode", qrCode.getQrCode());
             qrData.put("title", qrCode.getTitle());
+            qrData.put("shortCode", qrCode.getShortCode());
+
+            // Trust Badge support for QR scans
+            if (qrCode.isTrustBadge()) {
+                Map<String, Object> trustData = new HashMap<>();
+                trustData.put("enabled", true);
+                qrData.put("trustBadge", trustData);
+            }
 
             response.put("success", true);
             response.put("data", qrData);

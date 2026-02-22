@@ -171,6 +171,12 @@ public class PageService {
     existing.setBlocks(updates.getBlocks());
     existing.setPublished(updates.isPublished());
 
+    // WhatsApp Features
+    existing.setWaNumber(updates.getWaNumber());
+    existing.setWaDisplayType(updates.getWaDisplayType());
+    existing.setWaDefaultMessage(updates.getWaDefaultMessage());
+    existing.setWaSmartTemplate(updates.getWaSmartTemplate());
+
     // Pro Features
     existing.setVerified(updates.isVerified());
     existing.setRemoveBranding(updates.isRemoveBranding());

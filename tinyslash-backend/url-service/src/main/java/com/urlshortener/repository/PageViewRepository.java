@@ -14,5 +14,7 @@ public interface PageViewRepository extends MongoRepository<PageView, String> {
 
   List<PageView> findByPageIdAndViewedAtBetween(String pageId, LocalDateTime start, LocalDateTime end);
 
+  List<PageView> findByViewedAtBetween(LocalDateTime start, LocalDateTime end);
+
   List<PageView> findByPageId(String pageId);
 }

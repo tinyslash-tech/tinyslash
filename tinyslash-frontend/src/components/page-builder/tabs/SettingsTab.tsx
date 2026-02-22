@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Page } from '../../../types/page';
 import {
   Globe, Shield, Trash2, Eye, Copy, ExternalLink,
-  Share2, Image as ImageIcon, BarChart3, Puzzle, AlertTriangle, Plus, Loader2, CheckCircle2, XCircle
+  Share2, Image as ImageIcon, BarChart3, Puzzle, AlertTriangle, Plus, Loader2, CheckCircle2, XCircle, MessageCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { pageService } from '../../../services/pageService';
@@ -12,6 +12,7 @@ import { useCustomDomains } from '../../../components/dashboard/CreateSection/ho
 import { useSlugCheck } from '../../../hooks/useSlugCheck';
 import { sanitizeSlug } from '../../../utils/sanitizeSlug';
 import { useSubscription } from '../../../context/SubscriptionContext';
+import { useAuth } from '../../../context/AuthContext';
 import { Lock } from 'lucide-react';
 
 interface SettingsTabProps {
@@ -89,10 +90,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
   const queryClient = useQueryClient();
   const { planInfo, showUpgradeModal } = useSubscription();
   const { customDomains } = useCustomDomains();
+  const { user } = useAuth();
   const [copySuccess, setCopySuccess] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingSlug, setEditingSlug] = useState(false);
+  const [isWaEnabled, setIsWaEnabled] = useState(!!page.waNumber);
+  const [waCursorPos, setWaCursorPos] = useState({ field: 'smart', pos: 0 });
 
   const deleteMutation = useMutation({
     mutationFn: pageService.delete,
@@ -375,6 +379,239 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
           <button className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1">
             View Full Analytics <ExternalLink className="w-3 h-3" />
           </button>
+        </div>
+      </section>
+
+      {/* SMART WHATSAPP ZONE */}
+      <section>
+        <div className="mb-4 border-b border-[#25D366]/20 pb-2">
+          <h3 className="text-sm font-bold text-[#25D366] uppercase tracking-wider flex items-center gap-2">
+            WhatsApp Integration <span className="text-[10px] bg-[#25D366] text-white px-1.5 py-0.5 rounded font-bold">PRO</span>
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">Turn WhatsApp into a smart lead qualifier.</p>
+        </div>
+
+        {!planInfo?.canAccessDetailedAnalytics && (
+          <div className="bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl p-4 mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#25D366]/20 text-[#25D366] rounded-lg">
+                <MessageCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-green-900">Upgrade to Smart WhatsApp</p>
+                <p className="text-xs text-green-700">Add a floating WhatsApp button with context-aware smart templates.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => showUpgradeModal('whatsapp')}
+              className="text-xs font-bold bg-[#25D366] text-white px-3 py-1.5 rounded-lg hover:bg-[#1EBE5D]"
+            >
+              Upgrade
+            </button>
+          </div>
+        )}
+
+        <div className={`space-y-6 ${!planInfo?.canAccessDetailedAnalytics ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+
+          {/* Toggle */}
+          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div>
+              <p className="font-bold text-gray-900 text-sm">Enable Smart WhatsApp Floating Button</p>
+              <p className="text-xs text-gray-500">Show a chat button to visitors.</p>
+            </div>
+            <button
+              onClick={() => {
+                const newState = !isWaEnabled;
+                setIsWaEnabled(newState);
+                if (!newState) {
+                  onChange({ waNumber: '', waDefaultMessage: '', waSmartTemplate: '' });
+                }
+              }}
+              className={`
+                 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ring-offset-2
+                 ${isWaEnabled ? 'bg-[#25D366]' : 'bg-gray-200'}
+              `}
+            >
+              <span className={`
+                 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                 ${isWaEnabled ? 'translate-x-5' : 'translate-x-0'}
+              `} />
+            </button>
+          </div>
+
+          {isWaEnabled && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+
+              {/* WhatsApp Number */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp Number</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-400">
+                    <MessageCircle className="w-5 h-5" />
+                  </span>
+                  <input
+                    type="text"
+                    value={page.waNumber || ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      onChange({ waNumber: val });
+                    }}
+                    className={`
+                      w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 outline-none transition-all font-mono
+                      ${page.waNumber && page.waNumber.length >= 10 && page.waNumber.length <= 15 ? 'border-green-300 focus:ring-green-200' : page.waNumber ? 'border-red-300 focus:ring-red-200' : 'border-gray-300 focus:ring-[#25D366]'}
+                    `}
+                    placeholder="e.g. 919876543210"
+                    disabled={!planInfo?.canAccessDetailedAnalytics}
+                  />
+                  {page.waNumber && page.waNumber.length >= 10 && page.waNumber.length <= 15 && (
+                    <CheckCircle2 className="w-5 h-5 text-green-500 absolute right-3 top-2.5" />
+                  )}
+                  {page.waNumber && (page.waNumber.length < 10 || page.waNumber.length > 15) && (
+                    <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-2.5" />
+                  )}
+                </div>
+                <div className="flex items-center gap-4 mt-2">
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" /> Include country code
+                  </p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" /> No +, spaces, or dashes
+                  </p>
+                </div>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* Display Type */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Display Style</label>
+                <select
+                  value={page.waDisplayType || 'FLOATING'}
+                  onChange={(e) => onChange({ waDisplayType: e.target.value as 'FLOATING' | 'BUTTON' | 'BOTH' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25D366] outline-none transition-all text-sm"
+                  disabled={!planInfo?.canAccessDetailedAnalytics}
+                >
+                  <option value="FLOATING">Floating Icon (Bottom Right)</option>
+                  <option value="BUTTON">Full Width Button (At Bottom)</option>
+                  <option value="BOTH">Both</option>
+                </select>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* Default Message */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-bold text-gray-700">Default Message</label>
+                  <span className="text-[10px] text-gray-400">Used when no link is clicked</span>
+                </div>
+                <textarea
+                  value={page.waDefaultMessage || ''}
+                  onChange={(e) => onChange({ waDefaultMessage: e.target.value })}
+                  onFocus={() => setWaCursorPos({ field: 'default', pos: (page.waDefaultMessage || '').length })}
+                  onClick={(e) => setWaCursorPos({ field: 'default', pos: e.currentTarget.selectionStart })}
+                  onKeyUp={(e) => setWaCursorPos({ field: 'default', pos: e.currentTarget.selectionStart })}
+                  rows={2}
+                  maxLength={500}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-[#25D366] outline-none transition-all resize-none"
+                  placeholder="Hi! I want to know more about your page."
+                  disabled={!planInfo?.canAccessDetailedAnalytics}
+                />
+                <div className="flex justify-end mt-1">
+                  <span className="text-xs text-gray-400">{(page.waDefaultMessage || '').length} / 500 characters</span>
+                </div>
+              </div>
+
+              {/* Smart Template */}
+              <div>
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                      Smart Pre-filled Template <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">PRO Feature</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-0.5">Used when a visitor taps WhatsApp after clicking a link</p>
+                  </div>
+                </div>
+
+                <textarea
+                  value={page.waSmartTemplate || ''}
+                  onChange={(e) => onChange({ waSmartTemplate: e.target.value })}
+                  onFocus={() => setWaCursorPos({ field: 'smart', pos: (page.waSmartTemplate || '').length })}
+                  onClick={(e) => setWaCursorPos({ field: 'smart', pos: e.currentTarget.selectionStart })}
+                  onKeyUp={(e) => setWaCursorPos({ field: 'smart', pos: e.currentTarget.selectionStart })}
+                  rows={3}
+                  maxLength={500}
+                  className="w-full mt-2 px-3 py-2 border border-blue-200 bg-blue-50 focus:bg-white rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                  placeholder="Hi {owner_name}, I saw {link_name} on your page and I am interested!"
+                  disabled={!planInfo?.canAccessDetailedAnalytics}
+                />
+                <div className="flex justify-end mt-1 mb-3">
+                  <span className="text-xs text-gray-400">{(page.waSmartTemplate || '').length} / 500 characters</span>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                  <p className="text-xs font-bold text-gray-700 mb-2">Available Variables (Click to insert):</p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {['owner_name', 'link_name', 'page_name', 'page_url', 'city'].map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => {
+                          const toInsert = `{${v}}`;
+                          if (waCursorPos.field === 'smart') {
+                            const current = page.waSmartTemplate || '';
+                            const p = waCursorPos.pos;
+                            const next = current.slice(0, p) + toInsert + current.slice(p);
+                            onChange({ waSmartTemplate: next });
+                            setWaCursorPos({ field: 'smart', pos: p + toInsert.length });
+                          } else {
+                            const current = page.waDefaultMessage || '';
+                            const p = waCursorPos.pos;
+                            const next = current.slice(0, p) + toInsert + current.slice(p);
+                            onChange({ waDefaultMessage: next });
+                            setWaCursorPos({ field: 'default', pos: p + toInsert.length });
+                          }
+                        }}
+                        className="px-2 py-1 bg-white border border-gray-200 rounded text-[11px] font-mono text-gray-600 hover:bg-gray-100 hover:text-black transition-colors"
+                      >
+                        {`{${v}}`}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* UI Up-sell Persuasion */}
+                  <div className="space-y-1 mt-3">
+                    <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3 h-3 text-blue-500" /> Automatically personalizes message
+                    </p>
+                    <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3 h-3 text-blue-500" /> Increases response rate
+                    </p>
+                    <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3 h-3 text-blue-500" /> Shows which services generate inquiries
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Preview */}
+                {(page.waSmartTemplate || page.waDefaultMessage) && (
+                  <div className="mt-4 p-4 bg-[#E1FDD7] rounded-lg border border-[#25D366]/30 relative">
+                    <span className="absolute -top-2.5 left-4 bg-[#25D366] text-white text-[10px] font-bold px-2 py-0.5 rounded">Preview</span>
+                    <p className="text-sm text-gray-800 break-words whitespace-pre-wrap">
+                      {(page.waSmartTemplate || page.waDefaultMessage || '')
+                        .replace(/{owner_name}/g, user?.name || 'Owner')
+                        .replace(/{link_name}/g, 'Wedding Photography')
+                        .replace(/{page_name}/g, page.title || 'My Page')
+                        .replace(/{page_url}/g, 'tinyslash.com/p/preview')
+                        .replace(/{city}/g, 'Mumbai')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
         </div>
       </section>
 

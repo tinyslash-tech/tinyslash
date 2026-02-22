@@ -964,11 +964,11 @@ export const GrowthMarketing: React.FC<GrowthMarketingProps> = ({
       {/* Smart Action is ONLY for QR Mode - Priority #1 */}
       {mode === 'qr' && renderSmartAction()}
 
-      {mode !== 'qr' && renderRichLinkPreview()}
-      {renderOpenInApp()}
-      {renderLocationLanguageRedirect()}
+      {mode !== 'qr' && mode !== 'file' && renderRichLinkPreview()}
+      {mode !== 'file' && renderOpenInApp()}
+      {mode !== 'file' && renderLocationLanguageRedirect()}
       {renderUnlockAfterSignup()}
-      {renderRetargetingPixels()}
+      {mode !== 'file' && renderRetargetingPixels()}
     </div>
   );
 };

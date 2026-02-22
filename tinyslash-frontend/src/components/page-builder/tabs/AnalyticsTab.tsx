@@ -2,7 +2,10 @@ import React from 'react';
 import { Page } from '../../../types/page';
 import { useQuery } from '@tanstack/react-query';
 import { pageService } from '../../../services/pageService';
-import { BarChart3, Users, Mail, Calendar, Download, RefreshCw, Globe, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { BarChart3, Users, Mail, Calendar, Download, RefreshCw, Globe, TrendingUp, TrendingDown, Minus, MousePointerClick, Smartphone, Laptop, ExternalLink, Lightbulb, Lock } from 'lucide-react';
+import { getPlanPolicy } from '../../../constants/planPolicy';
+import { useAuth } from '../../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface AnalyticsTabProps {
   page: Page;
@@ -10,7 +13,14 @@ interface AnalyticsTabProps {
 }
 
 export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ page }) => {
-  const [view, setView] = React.useState<'OVERVIEW' | 'LEADS'>('OVERVIEW');
+  const [view, setView] = React.useState<'OVERVIEW' | 'ADVANCED' | 'LEADS'>('OVERVIEW');
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Enforce Advanced Analytics Paywall
+  const userPlan = user?.plan || 'FREE';
+  const planLimits = getPlanPolicy(userPlan);
+  const hasAdvancedAnalytics = planLimits.name === 'Pro' || planLimits.name === 'Business' || planLimits.name === 'Business Trial';
 
   const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = useQuery({
     queryKey: ['page-analytics', page.id],
@@ -62,13 +72,18 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ page }) => {
   return (
     <div className="space-y-6 h-full flex flex-col">
 
-      {/* Tab Switcher */}
       <div className="flex p-1 bg-gray-100 rounded-lg self-start">
         <button
           onClick={() => setView('OVERVIEW')}
           className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wide rounded-md transition-all ${view === 'OVERVIEW' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
         >
           Overview
+        </button>
+        <button
+          onClick={() => setView('ADVANCED')}
+          className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wide rounded-md transition-all ${view === 'ADVANCED' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+        >
+          Advanced & Insights
         </button>
         <button
           onClick={() => setView('LEADS')}
@@ -201,6 +216,158 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ page }) => {
                 )}
               </div>
             </>
+          )}
+        </div>
+      )}
+
+      {view === 'ADVANCED' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 relative">
+
+          {/* Paywall Overlay */}
+          {!hasAdvancedAnalytics && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[6px] rounded-xl border border-gray-100">
+              <div className="bg-white p-8 rounded-2xl shadow-xl max-w-sm text-center border border-gray-100 animate-in fade-in zoom-in-95 duration-300">
+                <div className="w-16 h-16 bg-gradient-to-tr from-purple-100 to-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Advanced Analytics</h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                  Unlock deep insights including returning visitor tracking, detailed scroll heatmaps, traffic sources, and AI-powered recommendations.
+                </p>
+                <button
+                  onClick={() => navigate('/billing')}
+                  className="w-full py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-900 transition-colors shadow-md"
+                >
+                  Upgrade Note
+                </button>
+                <p className="text-xs text-gray-400 mt-4 uppercase font-bold tracking-wider">Available on Pro & Business</p>
+              </div>
+            </div>
+          )}
+
+          {analyticsLoading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Loading analytics...</div>
+          ) : (
+            <div className={!hasAdvancedAnalytics ? 'opacity-30 pointer-events-none select-none blur-[2px] transition-all' : ''}>
+              {/* Actionable Insights Panel */}
+              {analytics?.actionableInsights && analytics.actionableInsights.length > 0 && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lightbulb className="w-5 h-5 text-yellow-500" />
+                    <h4 className="text-sm font-bold text-gray-900">AI Actionable Insights</h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {analytics.actionableInsights.map((insight: string, idx: number) => (
+                      <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                        <span className="text-blue-500 mt-0.5">•</span>
+                        <span>{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Returning Visitors */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                  <h4 className="text-sm font-bold text-gray-900 mb-2">Returning Visitor Rate</h4>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {Math.round((analytics?.returningRate || 0) * 100)}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Visitors who came back</p>
+                </div>
+
+                {/* Scroll Depth Summary */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                  <h4 className="text-sm font-bold text-gray-900 mb-2">Scrolled to Bottom</h4>
+                  <p className="text-3xl font-bold text-green-600">
+                    {analytics?.totalViews ? Math.round(((analytics?.scroll100 || 0) / (analytics?.totalViews)) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Reached 100% depth</p>
+                </div>
+              </div>
+
+              {/* Traffic Sources & Devices */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                  <h4 className="text-sm font-bold text-gray-900 mb-4">Traffic Sources (UTM)</h4>
+                  {analytics?.trafficSources && Object.keys(analytics.trafficSources).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(analytics.trafficSources as Record<string, number>).map(([source, count]) => {
+                        const total = analytics.totalViews || 1;
+                        const pct = Math.round(((count as number) / total) * 100);
+                        return (
+                          <div key={source}>
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="font-medium text-gray-700">{source}</span>
+                              <span className="text-gray-500 text-xs">{count as number} ({pct}%)</span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-1.5">
+                              <div className="bg-purple-500 h-1.5 rounded-full transition-all" style={{ width: `${Math.max(pct, 2)}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">Share your link to generate traffic source data.</p>
+                  )}
+                </div>
+
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                  <h4 className="text-sm font-bold text-gray-900 mb-4">Device Split</h4>
+                  {analytics?.deviceSplit && Object.keys(analytics.deviceSplit).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(analytics.deviceSplit as Record<string, number>).map(([device, count]) => {
+                        const total = analytics.totalViews || 1;
+                        const pct = Math.round(((count as number) / total) * 100);
+                        return (
+                          <div key={device}>
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <div className="flex items-center gap-1.5">
+                                {device === 'MOBILE' ? <Smartphone className="w-3.5 h-3.5 text-gray-500" /> : <Laptop className="w-3.5 h-3.5 text-gray-500" />}
+                                <span className="font-medium text-gray-700">{device}</span>
+                              </div>
+                              <span className="text-gray-500 text-xs">{count as number} ({pct}%)</span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-1.5">
+                              <div className="bg-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${Math.max(pct, 2)}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">No device data yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Top Links */}
+              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                <h4 className="text-sm font-bold text-gray-900 mb-4">Top Links Clicked</h4>
+                {analytics?.topLinks && Object.keys(analytics.topLinks).length > 0 ? (
+                  <div className="space-y-3">
+                    {Object.entries(analytics.topLinks as Record<string, number>).map(([url, count]) => {
+                      return (
+                        <div key={url} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg border border-transparent hover:border-gray-100">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 truncate">{url}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-900">{count} clicks</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">No links clicked yet.</p>
+                )}
+              </div>
+
+            </div>
           )}
         </div>
       )}

@@ -5,13 +5,20 @@ import { pageService } from '../../services/pageService';
 import { Page, PageBlock } from '../../types/page';
 import {
   Share2, Layout, Link2, BadgeCheck,
-  Instagram, Twitter, Linkedin, Youtube, Facebook, Github, Globe, Video
+  Instagram, Twitter, Linkedin, Youtube, Facebook, Github, Globe, Video, MessageCircle
 } from 'lucide-react';
 import { SocialLinks } from '../../components/page-builder/blocks/SocialLinks';
 import { PageBranding } from '../../components/page-builder/PageBranding';
 import { Helmet } from 'react-helmet-async';
 import { ThreeDotsLoader } from '../../components/ui/ThreeDotsLoader';
 import toast from 'react-hot-toast';
+import { v4 as uuidv4 } from 'uuid';
+
+// Type for pending interaction batch
+interface PendingInteraction {
+  type: string;
+  meta: Record<string, any>;
+}
 
 // Deep Link Utility: converts web URLs to app deep links for mobile
 const getDeepLink = (url: string): string => {
@@ -67,6 +74,26 @@ const getDeepLink = (url: string): string => {
 const PublicPage = () => {
   const { slug } = useParams<{ slug: string }>();
 
+  // Analytics State
+  const [visitorId, setVisitorId] = useState<string>('');
+  const [sessionId] = useState<string>(() => uuidv4());
+
+  // Refs for tracking
+  const pendingInteractions = React.useRef<PendingInteraction[]>([]);
+  const scrollDepthsHit = React.useRef<Set<number>>(new Set());
+
+  // Initialize Visitor ID
+  useEffect(() => {
+    let vid: string | null = localStorage.getItem('ts_anonymous_id');
+    if (!vid) {
+      vid = uuidv4();
+      localStorage.setItem('ts_anonymous_id', vid);
+      localStorage.setItem('ts_first_seen', new Date().toISOString());
+    }
+    localStorage.setItem('ts_last_seen', new Date().toISOString());
+    setVisitorId(vid as string);
+  }, []);
+
   const { data: page, isLoading, error } = useQuery({
     queryKey: ['public-page', slug],
     queryFn: () => pageService.getBySlug(slug!), // We need to add getBySlug to service
@@ -75,10 +102,105 @@ const PublicPage = () => {
   });
 
   useEffect(() => {
-    if (page?.id) {
-      pageService.recordView(page.id);
+    if (page?.id && visitorId) {
+
+      // Parse UTMs from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const utmSource = urlParams.get('utm_source');
+      const utmMedium = urlParams.get('utm_medium');
+      const utmCampaign = urlParams.get('utm_campaign');
+
+      pageService.recordView(page.id, {
+        visitorId,
+        sessionId,
+        utmSource,
+        utmMedium,
+        utmCampaign
+      });
+
+      // Record initial PAGE_VIEW interaction
+      pendingInteractions.current.push({
+        type: 'PAGE_VIEW',
+        meta: {}
+      });
     }
-  }, [page?.id]);
+  }, [page?.id, visitorId, sessionId]);
+
+  // Scroll Tracking
+  useEffect(() => {
+    if (!page?.id) return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      // Throttle scroll events
+      if (timeoutId) clearTimeout(timeoutId);
+
+      timeoutId = setTimeout(() => {
+        // Calculate Scroll Depth %
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+
+        let percentage = 0;
+        if (documentHeight > windowHeight) {
+          percentage = Math.min(100, Math.round((scrollTop / (documentHeight - windowHeight)) * 100));
+        } else {
+          percentage = 100; // Page is shorter than screen
+        }
+
+        const milestones = [25, 50, 75, 100];
+
+        milestones.forEach(m => {
+          if (percentage >= m && !scrollDepthsHit.current.has(m)) {
+            scrollDepthsHit.current.add(m);
+            pendingInteractions.current.push({
+              type: 'SCROLL',
+              meta: { depth: m }
+            });
+          }
+        });
+      }, 500); // 500ms debounce
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Cleanup and send batch on unmount
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (timeoutId) clearTimeout(timeoutId);
+
+      if (pendingInteractions.current.length > 0) {
+        pageService.recordInteractionsBatch(page.id, {
+          visitorId,
+          sessionId,
+          interactions: pendingInteractions.current
+        });
+        // Clear array
+        pendingInteractions.current = [];
+      }
+    };
+  }, [page?.id, visitorId, sessionId]);
+
+  const handleWhatsAppClick = async (pageId: string) => {
+    const linkId = sessionStorage.getItem('ts_last_link');
+    try {
+      const res = await fetch(`/api/public/pages/${pageId}/wa-init`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkId: linkId || null, visitorId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        sessionStorage.removeItem('ts_last_link');
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        }
+      }
+    } catch (error) {
+      console.error('Failed WA tap', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -268,6 +390,13 @@ const PublicPage = () => {
                         href={getDeepLink(block.content.url)}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => {
+                          sessionStorage.setItem('ts_last_link', block.id);
+                          pendingInteractions.current.push({
+                            type: 'CLICK',
+                            meta: { linkUrl: block.content.url, title: block.content.title }
+                          });
+                        }}
                         className={`
                                 block w-full text-center transition-all hover:scale-[1.02] active:scale-[0.98]
                                 shadow-md hover:shadow-xl backdrop-blur-sm
@@ -461,6 +590,7 @@ const PublicPage = () => {
                                 target="_blank"
                                 rel="noreferrer"
                                 className="block w-full text-center py-3 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-900 shadow-sm transition-all hover:scale-[1.01]"
+                                onClick={() => sessionStorage.setItem('ts_last_link', block.id)}
                               >
                                 {block.content.buttonText || 'Learn More'}
                               </a>
@@ -481,6 +611,29 @@ const PublicPage = () => {
           </div>
 
         </div>
+
+        {/* Full-width WhatsApp Button Output */}
+        {(page.waDisplayType === 'BUTTON' || page.waDisplayType === 'BOTH') && page.waNumber && (
+          <div className="w-full max-w-[680px] mx-auto mt-6 px-4">
+            <button
+              onClick={() => handleWhatsAppClick(page.id)}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white text-[16px] font-bold rounded-xl hover:bg-[#1EBE5D] shadow-sm transition-all focus:outline-none"
+            >
+              <MessageCircle className="w-5 h-5" /> Chat on WhatsApp
+            </button>
+          </div>
+        )}
+
+        {/* Floating WhatsApp Button */}
+        {(!page.waDisplayType || page.waDisplayType === 'FLOATING' || page.waDisplayType === 'BOTH') && page.waNumber && (
+          <button
+            onClick={() => handleWhatsAppClick(page.id)}
+            className="fixed bottom-6 right-6 z-50 p-4 bg-[#25D366] text-white rounded-full shadow-lg hover:bg-[#1EBE5D] hover:scale-105 transition-all"
+            aria-label="Chat on WhatsApp"
+          >
+            <MessageCircle className="w-8 h-8 fill-current" />
+          </button>
+        )}
 
         {/* Footer Branding */}
         {theme.showBranding && <PageBranding />}

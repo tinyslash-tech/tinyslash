@@ -26,11 +26,28 @@ export const pageService = {
     return response.data;
   },
 
-  recordView: async (pageId: string) => {
+  recordView: async (pageId: string, payload?: any) => {
     try {
-      await api.post(`/public/pages/${pageId}/view`);
+      await api.post(`/public/pages/${pageId}/view`, payload || {});
     } catch (error) {
       console.error('Failed to record view', error);
+    }
+  },
+
+  recordInteractionsBatch: async (pageId: string, batchData: any) => {
+    try {
+      // Using Navigator.sendBeacon if supported to ensure it fires even if the user closes the page
+      if (navigator.sendBeacon) {
+        // Build the full URL
+        const url = `${api.defaults.baseURL || ''}/public/pages/${pageId}/interactions-batch`;
+        // sendBeacon requires FormData or Blob/String
+        const blob = new Blob([JSON.stringify(batchData)], { type: 'application/json' });
+        navigator.sendBeacon(url, blob);
+      } else {
+        await api.post(`/public/pages/${pageId}/interactions-batch`, batchData);
+      }
+    } catch (error) {
+      console.error('Failed to record interactions batch', error);
     }
   },
 

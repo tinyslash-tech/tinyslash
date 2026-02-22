@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TEMPLATES, Template, TemplateCategory } from '../../../config/templates/index';
 import { LivePreviewCard } from '../LivePreviewCard';
-import { Check, ArrowRight, Grid, User, Briefcase, Palette, Layout, Sparkles } from 'lucide-react';
+import { Check, ArrowRight, Grid, User, Briefcase, Palette, Layout, Sparkles, Store, Wrench, Lightbulb, Building } from 'lucide-react';
 
 interface TemplatesTabProps {
   onSelect: (template: Template) => void;
@@ -12,8 +12,12 @@ const CATEGORIES: { id: TemplateCategory | 'ALL'; label: string; icon: React.Ele
   { id: 'ALL', label: 'All Templates', icon: Grid },
   { id: 'INFLUENCER', label: 'Influencer', icon: Sparkles },
   { id: 'BUSINESS', label: 'Business', icon: Briefcase },
+  { id: 'AGENCY', label: 'Agency', icon: Building },
   { id: 'PORTFOLIO', label: 'Portfolio', icon: Palette },
   { id: 'PERSONAL', label: 'Personal', icon: User },
+  { id: 'SERVICE_PROVIDER', label: 'Service Providers', icon: Wrench },
+  { id: 'COACH', label: 'Coaches / Consultants', icon: Lightbulb },
+  { id: 'LOCAL_STORE', label: 'Local Stores', icon: Store },
   { id: 'BLANK', label: 'Blank', icon: Layout },
 ];
 

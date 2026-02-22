@@ -40,6 +40,12 @@ public class Page {
   private boolean removeBranding = false;
   private boolean verified = false; // Added verified status
 
+  // WhatsApp Integration
+  private String waNumber;
+  private String waDefaultMessage;
+  private String waSmartTemplate;
+  private String waDisplayType; // FLOATING, BUTTON, BOTH
+
   // SEO
   private String metaTitle;
   private String metaDescription;
@@ -192,6 +198,38 @@ public class Page {
 
   public void setMetaDescription(String metaDescription) {
     this.metaDescription = metaDescription;
+  }
+
+  public String getWaNumber() {
+    return waNumber;
+  }
+
+  public void setWaNumber(String waNumber) {
+    this.waNumber = waNumber;
+  }
+
+  public String getWaDefaultMessage() {
+    return waDefaultMessage;
+  }
+
+  public void setWaDefaultMessage(String waDefaultMessage) {
+    this.waDefaultMessage = waDefaultMessage;
+  }
+
+  public String getWaSmartTemplate() {
+    return waSmartTemplate;
+  }
+
+  public void setWaSmartTemplate(String waSmartTemplate) {
+    this.waSmartTemplate = waSmartTemplate;
+  }
+
+  public String getWaDisplayType() {
+    return waDisplayType;
+  }
+
+  public void setWaDisplayType(String waDisplayType) {
+    this.waDisplayType = waDisplayType;
   }
 
   public LocalDateTime getCreatedAt() {

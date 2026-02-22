@@ -76,6 +76,13 @@ export interface Page {
   customDomain?: string;
   removeBranding?: boolean;
 
+  // WhatsApp Integration
+  waNumber?: string;
+  waDefaultMessage?: string;
+  waSmartTemplate?: string;
+  waDisplayType?: 'FLOATING' | 'BUTTON' | 'BOTH';
+
+  // SEO
   metaTitle?: string;
   metaDescription?: string;
   socialImage?: string; // OG Image

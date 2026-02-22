@@ -5,7 +5,7 @@ import {
   Link2, Type, Image as ImageIcon,
   Share2, Mail, Video, Layout,
   Instagram, Twitter, Linkedin, Youtube, Facebook, Github, Globe,
-  Lock, RotateCcw, BadgeCheck
+  Lock, RotateCcw, BadgeCheck, MessageCircle
 } from 'lucide-react';
 import { SocialLinks } from './blocks/SocialLinks';
 
@@ -363,11 +363,27 @@ const PreviewContent: React.FC<any> = ({ page, theme, getBackgroundStyle, getBut
           })()}
         </div>
 
+        {/* Full Width WhatsApp Button Output */}
+        {(page.waDisplayType === 'BUTTON' || page.waDisplayType === 'BOTH') && page.waNumber && (
+          <div className="w-full max-w-[680px] mt-6 px-2">
+            <button className="w-full flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white text-sm font-bold rounded-xl hover:bg-[#1EBE5D] shadow-sm transition-all focus:outline-none">
+              <MessageCircle className="w-5 h-5" /> Chat on WhatsApp
+            </button>
+          </div>
+        )}
+
         {theme.showBranding && (
           <PageBranding />
         )}
 
       </div>
+
+      {/* Floating WhatsApp Button Output */}
+      {(!page.waDisplayType || page.waDisplayType === 'FLOATING' || page.waDisplayType === 'BOTH') && page.waNumber && (
+        <div className="absolute bottom-6 right-6 z-50 p-4 bg-[#25D366] text-white rounded-full shadow-lg hover:bg-[#1EBE5D] transition-all cursor-pointer">
+          <MessageCircle className="w-8 h-8 fill-current" />
+        </div>
+      )}
     </div>
   );
 };

@@ -256,35 +256,33 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
       </AccordionSection>
 
       {/* 2. Growth & Marketing */}
-      {mode !== 'file' && (
-        <AccordionSection
-          title="Growth & Marketing"
-          icon={Sparkles}
-          isOpen={isGrowthOpen}
-          setIsOpen={setIsGrowthOpen}
-          headerColorClass="text-purple-600"
-        >
-          <div className="space-y-6">
-            <GrowthMarketing
-              smartLinkPreview={smartLinkPreview}
-              setSmartLinkPreview={setSmartLinkPreview}
-              geoConfig={geoConfig}
-              setGeoConfig={setGeoConfig}
-              deepLinkConfig={deepLinkConfig}
-              setDeepLinkConfig={setDeepLinkConfig}
-              leadLockConfig={leadLockConfig}
-              setLeadLockConfig={setLeadLockConfig}
-              smartActionConfig={smartActionConfig}
-              setSmartActionConfig={setSmartActionConfig}
-              featureAccess={featureAccess}
-              upgradeModal={upgradeModal}
-              mode={mode}
-              selectedPixelIds={selectedPixelIds}
-              setSelectedPixelIds={setSelectedPixelIds}
-            />
-          </div>
-        </AccordionSection>
-      )}
+      <AccordionSection
+        title="Growth & Marketing"
+        icon={Sparkles}
+        isOpen={isGrowthOpen}
+        setIsOpen={setIsGrowthOpen}
+        headerColorClass="text-purple-600"
+      >
+        <div className="space-y-6">
+          <GrowthMarketing
+            smartLinkPreview={smartLinkPreview}
+            setSmartLinkPreview={setSmartLinkPreview}
+            geoConfig={geoConfig}
+            setGeoConfig={setGeoConfig}
+            deepLinkConfig={deepLinkConfig}
+            setDeepLinkConfig={setDeepLinkConfig}
+            leadLockConfig={leadLockConfig}
+            setLeadLockConfig={setLeadLockConfig}
+            smartActionConfig={smartActionConfig}
+            setSmartActionConfig={setSmartActionConfig}
+            featureAccess={featureAccess}
+            upgradeModal={upgradeModal}
+            mode={mode}
+            selectedPixelIds={selectedPixelIds}
+            setSelectedPixelIds={setSelectedPixelIds}
+          />
+        </div>
+      </AccordionSection>
 
       {/* 3. Security & Trust */}
       <AccordionSection

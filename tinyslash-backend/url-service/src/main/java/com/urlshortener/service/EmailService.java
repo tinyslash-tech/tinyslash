@@ -448,6 +448,53 @@ public class EmailService {
     }
 
     /**
+     * Send One-Time Password (OTP)
+     */
+    public void sendOtpEmail(String userEmail, String otpCode) {
+        try {
+            String emailSubject = "Your Login Code: " + otpCode;
+
+            String plainTextBody = "Hello,\n\n" +
+                    "Your secure login code is: " + otpCode + "\n\n" +
+                    "This code will expire in 5 minutes.\n\n" +
+                    "If you did not request this code, you can safely ignore this email.";
+
+            String htmlBody = "<div style=\"font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;\">"
+                    +
+                    "<div style=\"text-align: center; margin-bottom: 30px;\">" +
+                    "<h1 style=\"color: #111827; font-size: 24px; font-weight: 700; margin: 0;\">Login securely to Tinyslash</h1>"
+                    +
+                    "</div>" +
+                    "<div style=\"background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 30px;\">"
+                    +
+                    "<p style=\"color: #4b5563; font-size: 16px; margin-top: 0; margin-bottom: 24px;\">Use the following code to sign in to your account. This code is valid for <strong>5 minutes</strong>.</p>"
+                    +
+                    "<div style=\"background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 16px; display: inline-block;\">"
+                    +
+                    "<span style=\"font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #111827;\">" + otpCode
+                    + "</span>" +
+                    "</div>" +
+                    "</div>" +
+                    "<div style=\"text-align: center;\">" +
+                    "<p style=\"color: #6b7280; font-size: 14px; margin: 0;\">If you didn't attempt to log in, you can safely ignore this email.</p>"
+                    +
+                    "<p style=\"color: #9ca3af; font-size: 12px; margin-top: 20px;\">© "
+                    + java.time.Year.now().getValue() + " Tinyslash. All rights reserved.</p>" +
+                    "</div>" +
+                    "</div>";
+
+            logger.info("Sending OTP email to {}", userEmail);
+
+            // Call existing unified HTML sender
+            sendHtmlEmail(userEmail, emailSubject, plainTextBody, htmlBody);
+
+        } catch (Exception e) {
+            logger.error("Failed to send OTP email to {}", userEmail, e);
+            throw new RuntimeException("Failed to send login code");
+        }
+    }
+
+    /**
      * Send domain verification success email
      */
     public void sendDomainVerificationSuccess(String userEmail, String domainName) {

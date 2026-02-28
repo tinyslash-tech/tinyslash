@@ -276,8 +276,11 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
 
           {/* Scans Over Time */}
           {analyticsData.scansOverTime.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Scans Over Time</h3>
+            <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                Scans Over Time
+              </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={analyticsData.scansOverTime}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -311,9 +314,9 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Device Breakdown */}
             {analyticsData.deviceBreakdown.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Smartphone className="w-5 h-5 mr-2" />
+              <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2 mb-6">
+                  <Smartphone className="w-5 h-5 text-purple-600" />
                   Device Breakdown
                 </h3>
                 <ResponsiveContainer width="100%" height={250}>
@@ -340,8 +343,11 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
 
             {/* Browser Data */}
             {analyticsData.browserData.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Browser Usage</h3>
+              <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2 mb-6">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                  Browser Usage
+                </h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={analyticsData.browserData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -357,9 +363,9 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
 
           {/* Hourly Activity */}
           {analyticsData.hourlyData.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Clock className="w-5 h-5 mr-2" />
+            <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] mt-2">
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2 mb-6">
+                <Clock className="w-5 h-5 text-orange-600" />
                 Hourly Activity Pattern
               </h3>
               <ResponsiveContainer width="100%" height={250}>
@@ -387,11 +393,11 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
           )}
 
           {/* Geographic Data */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-2">
             {analyticsData.locationData.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <MapPin className="w-5 h-5 mr-2" />
+              <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2 mb-6">
+                  <MapPin className="w-5 h-5 text-red-500" />
                   Top Locations
                 </h3>
                 <div className="space-y-3">
@@ -422,9 +428,9 @@ const QRAnalytics: React.FC<QRAnalyticsProps> = ({
 
             {/* Referrer Sources */}
             {analyticsData.referrerData.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Share2 className="w-5 h-5 mr-2" />
+              <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2 mb-6">
+                  <Share2 className="w-5 h-5 text-green-600" />
                   Traffic Sources
                 </h3>
                 <div className="space-y-3">

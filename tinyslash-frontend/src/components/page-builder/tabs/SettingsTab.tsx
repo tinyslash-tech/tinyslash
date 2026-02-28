@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Page } from '../../../types/page';
 import {
   Globe, Shield, Trash2, Eye, Copy, ExternalLink,
-  Share2, Image as ImageIcon, BarChart3, Puzzle, AlertTriangle, Plus, Loader2, CheckCircle2, XCircle, MessageCircle
+  Share2, Image as ImageIcon, BarChart3, Puzzle, AlertTriangle, Plus, Loader2, CheckCircle2, XCircle, MessageCircle, Wand2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { pageService } from '../../../services/pageService';
@@ -14,6 +14,7 @@ import { sanitizeSlug } from '../../../utils/sanitizeSlug';
 import { useSubscription } from '../../../context/SubscriptionContext';
 import { useAuth } from '../../../context/AuthContext';
 import { Lock } from 'lucide-react';
+import { generateAIField } from '../../../services/api';
 
 interface SettingsTabProps {
   page: Page;
@@ -97,6 +98,41 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
   const [editingSlug, setEditingSlug] = useState(false);
   const [isWaEnabled, setIsWaEnabled] = useState(!!page.waNumber);
   const [waCursorPos, setWaCursorPos] = useState({ field: 'smart', pos: 0 });
+  const [generatingField, setGeneratingField] = useState<string | null>(null);
+
+  const handleGenerateField = async (fieldName: string, promptType: string, isTextArea = false) => {
+
+    try {
+      setGeneratingField(fieldName);
+      let promptContext = `Generate ${promptType} for "${page.title}" (${page.bio?.slice(0, 50) || 'Profile'}).`;
+
+      if (fieldName === 'waSmartTemplate') {
+        promptContext += ` Pre-filled WA msg visitor sends owner. MUST use vars: {owner_name}, {link_name}, {page_name}, {page_url}, {city}. Short & conversational.`;
+      } else if (fieldName === 'waDefaultMessage') {
+        promptContext += ` Default WA msg visitor sends owner directly. Short, friendly greeting expressing interest.`;
+      }
+
+      const response = await generateAIField({
+        category: "General",
+        prompt: promptContext,
+        fieldName: fieldName
+      });
+
+      if (response) {
+        onChange({ [fieldName]: response });
+        toast.success(`Generated ${promptType}`);
+      }
+    } catch (error: any) {
+      console.error(`Failed to generate ${fieldName}:`, error);
+      if (error.response?.status === 402 || error.response?.status === 403) {
+        toast.error(error.response?.data || 'Check plan limits.');
+      } else {
+        toast.error(`Failed to generate ${promptType}. Please try again.`);
+      }
+    } finally {
+      setGeneratingField(null);
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: pageService.delete,
@@ -300,37 +336,71 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
 
         <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Page Title</label>
-            <div className="relative">
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-gray-700">Page Title</label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleGenerateField('metaTitle', 'SEO Meta Title')}
+                  disabled={generatingField === 'metaTitle'}
+                  className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                  title="Generate with AI"
+                >
+                  {generatingField === 'metaTitle' ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                <span className="text-xs text-gray-400">
+                  {(page.metaTitle?.length || 0)}/60
+                </span>
+              </div>
+            </div>
+            <div className="relative group">
               <input
                 type="text"
                 value={page.metaTitle || ''}
                 onChange={(e) => onChange({ metaTitle: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg pr-12"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none transition-all"
                 placeholder={page.title}
                 maxLength={60}
               />
-              <span className="absolute right-3 top-2.5 text-xs text-gray-400">
-                {(page.metaTitle?.length || 0)}/60
-              </span>
             </div>
             <p className="text-xs text-gray-500 mt-1">Appears in browser tabs and Google search results.</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
-            <div className="relative">
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-gray-700">Meta Description</label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleGenerateField('metaDescription', 'SEO Meta Description', true)}
+                  disabled={generatingField === 'metaDescription'}
+                  className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                  title="Generate with AI"
+                >
+                  {generatingField === 'metaDescription' ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                <span className="text-xs text-gray-400">
+                  {(page.metaDescription?.length || 0)}/160
+                </span>
+              </div>
+            </div>
+            <div className="relative group">
               <textarea
                 value={page.metaDescription || ''}
                 onChange={(e) => onChange({ metaDescription: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-black outline-none transition-all"
                 placeholder="Briefly describe your page..."
                 maxLength={160}
               />
-              <span className="absolute right-3 bottom-2 text-xs text-gray-400">
-                {(page.metaDescription?.length || 0)}/160
-              </span>
             </div>
             <p className="text-xs text-gray-500 mt-1">Appears below the title in search results.</p>
           </div>
@@ -502,51 +572,83 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ page, onChange }) => {
               {/* Default Message */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-bold text-gray-700">Default Message</label>
-                  <span className="text-[10px] text-gray-400">Used when no link is clicked</span>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700">Default Message</label>
+                    <span className="block text-[10px] text-gray-400 mt-0.5">Used when no link is clicked</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateField('waDefaultMessage', 'WhatsApp Default Message', true)}
+                      disabled={generatingField === 'waDefaultMessage'}
+                      className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                      title="Generate with AI"
+                    >
+                      {generatingField === 'waDefaultMessage' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Wand2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <span className="text-xs text-gray-400">{(page.waDefaultMessage || '').length} / 500</span>
+                  </div>
                 </div>
-                <textarea
-                  value={page.waDefaultMessage || ''}
-                  onChange={(e) => onChange({ waDefaultMessage: e.target.value })}
-                  onFocus={() => setWaCursorPos({ field: 'default', pos: (page.waDefaultMessage || '').length })}
-                  onClick={(e) => setWaCursorPos({ field: 'default', pos: e.currentTarget.selectionStart })}
-                  onKeyUp={(e) => setWaCursorPos({ field: 'default', pos: e.currentTarget.selectionStart })}
-                  rows={2}
-                  maxLength={500}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-[#25D366] outline-none transition-all resize-none"
-                  placeholder="Hi! I want to know more about your page."
-                  disabled={!planInfo?.canAccessDetailedAnalytics}
-                />
-                <div className="flex justify-end mt-1">
-                  <span className="text-xs text-gray-400">{(page.waDefaultMessage || '').length} / 500 characters</span>
+                <div className="relative group mt-1">
+                  <textarea
+                    value={page.waDefaultMessage || ''}
+                    onChange={(e) => onChange({ waDefaultMessage: e.target.value })}
+                    onFocus={() => setWaCursorPos({ field: 'default', pos: (page.waDefaultMessage || '').length })}
+                    onClick={(e) => setWaCursorPos({ field: 'default', pos: e.currentTarget.selectionStart })}
+                    onKeyUp={(e) => setWaCursorPos({ field: 'default', pos: e.currentTarget.selectionStart })}
+                    rows={2}
+                    maxLength={500}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-[#25D366] outline-none transition-all resize-none"
+                    placeholder="Hi! I want to know more about your page."
+                    disabled={!planInfo?.canAccessDetailedAnalytics}
+                  />
                 </div>
               </div>
 
               {/* Smart Template */}
               <div>
-                <div className="flex justify-between items-start mb-1">
+                <div className="flex justify-between items-center mb-1">
                   <div>
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
                       Smart Pre-filled Template <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">PRO Feature</span>
                     </label>
                     <p className="text-xs text-gray-500 mt-0.5">Used when a visitor taps WhatsApp after clicking a link</p>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateField('waSmartTemplate', 'WhatsApp Smart Template', true)}
+                      disabled={generatingField === 'waSmartTemplate'}
+                      className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                      title="Generate with AI"
+                    >
+                      {generatingField === 'waSmartTemplate' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Wand2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <span className="text-xs text-gray-400">{(page.waSmartTemplate || '').length} / 500</span>
+                  </div>
                 </div>
 
-                <textarea
-                  value={page.waSmartTemplate || ''}
-                  onChange={(e) => onChange({ waSmartTemplate: e.target.value })}
-                  onFocus={() => setWaCursorPos({ field: 'smart', pos: (page.waSmartTemplate || '').length })}
-                  onClick={(e) => setWaCursorPos({ field: 'smart', pos: e.currentTarget.selectionStart })}
-                  onKeyUp={(e) => setWaCursorPos({ field: 'smart', pos: e.currentTarget.selectionStart })}
-                  rows={3}
-                  maxLength={500}
-                  className="w-full mt-2 px-3 py-2 border border-blue-200 bg-blue-50 focus:bg-white rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
-                  placeholder="Hi {owner_name}, I saw {link_name} on your page and I am interested!"
-                  disabled={!planInfo?.canAccessDetailedAnalytics}
-                />
-                <div className="flex justify-end mt-1 mb-3">
-                  <span className="text-xs text-gray-400">{(page.waSmartTemplate || '').length} / 500 characters</span>
+                <div className="relative group mt-1 mb-3">
+                  <textarea
+                    value={page.waSmartTemplate || ''}
+                    onChange={(e) => onChange({ waSmartTemplate: e.target.value })}
+                    onFocus={() => setWaCursorPos({ field: 'smart', pos: (page.waSmartTemplate || '').length })}
+                    onClick={(e) => setWaCursorPos({ field: 'smart', pos: e.currentTarget.selectionStart })}
+                    onKeyUp={(e) => setWaCursorPos({ field: 'smart', pos: e.currentTarget.selectionStart })}
+                    rows={3}
+                    maxLength={500}
+                    className="w-full px-3 py-2 border border-blue-200 bg-blue-50 focus:bg-white rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                    placeholder="Hi {owner_name}, I saw {link_name} on your page and I am interested!"
+                    disabled={!planInfo?.canAccessDetailedAnalytics}
+                  />
                 </div>
 
                 <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">

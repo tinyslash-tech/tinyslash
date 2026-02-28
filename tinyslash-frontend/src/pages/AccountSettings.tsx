@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Shield, 
-  Key, 
+import {
+  ArrowLeft,
+  Shield,
+  Key,
   Trash2,
   Download,
   Upload,
@@ -16,11 +16,17 @@ import {
   Globe,
   Database,
   Clock,
-  Lock
+  Lock,
+  Briefcase,
+  ExternalLink,
+  CreditCard
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
+import { CalendarSettings } from '../components/dashboard/CalendarSettings';
+import * as api from '../services/api';
+import toast from 'react-hot-toast';
 
 const AccountSettings: React.FC = () => {
   const { user, logout } = useAuth();
@@ -31,7 +37,7 @@ const AccountSettings: React.FC = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -44,6 +50,9 @@ const AccountSettings: React.FC = () => {
     sessionTimeout: '24h',
     ipWhitelist: false
   });
+
+  const [razorpayAccountId, setRazorpayAccountId] = useState(user?.razorpayAccountId || '');
+  const [isConnectingRazorpay, setIsConnectingRazorpay] = useState(false);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordForm(prev => ({
@@ -95,10 +104,28 @@ const AccountSettings: React.FC = () => {
     console.log('2FA disabled');
   };
 
+  const handleConnectRazorpay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!razorpayAccountId.trim() || !user) return;
+
+    setIsConnectingRazorpay(true);
+    const toastId = toast.loading('Connecting Razorpay Account...');
+    try {
+      await api.connectRazorpay({ userId: user.id, razorpayAccountId: razorpayAccountId.trim() });
+      toast.success('Razorpay Account connected successfully!', { id: toastId });
+      // Minor hack to reload user data
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to connect', { id: toastId });
+    } finally {
+      setIsConnectingRazorpay(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-8">
@@ -116,7 +143,7 @@ const AccountSettings: React.FC = () => {
 
         <div className="space-y-6">
           {/* Security Overview */}
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -126,7 +153,7 @@ const AccountSettings: React.FC = () => {
               <Shield className="w-5 h-5 mr-2" />
               Security Overview
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
@@ -135,7 +162,7 @@ const AccountSettings: React.FC = () => {
                 </div>
                 <p className="text-sm text-green-700">Strong password set</p>
               </div>
-              
+
               <div className={`${twoFactorEnabled ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'} border rounded-lg p-4`}>
                 <div className="flex items-center space-x-2 mb-2">
                   <Smartphone className={`w-5 h-5 ${twoFactorEnabled ? 'text-green-600' : 'text-yellow-600'}`} />
@@ -145,7 +172,7 @@ const AccountSettings: React.FC = () => {
                   {twoFactorEnabled ? 'Enabled' : 'Not enabled'}
                 </p>
               </div>
-              
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <Mail className="w-5 h-5 text-blue-600" />
@@ -157,7 +184,7 @@ const AccountSettings: React.FC = () => {
           </motion.div>
 
           {/* Change Password */}
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -167,7 +194,7 @@ const AccountSettings: React.FC = () => {
               <Key className="w-5 h-5 mr-2" />
               Change Password
             </h2>
-            
+
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
@@ -189,7 +216,7 @@ const AccountSettings: React.FC = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
@@ -211,7 +238,7 @@ const AccountSettings: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
                   <div className="relative">
@@ -233,7 +260,7 @@ const AccountSettings: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <button
                 type="submit"
                 className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
@@ -244,7 +271,7 @@ const AccountSettings: React.FC = () => {
           </motion.div>
 
           {/* Two-Factor Authentication */}
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -254,12 +281,12 @@ const AccountSettings: React.FC = () => {
               <Smartphone className="w-5 h-5 mr-2" />
               Two-Factor Authentication
             </h2>
-            
+
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <h3 className="font-medium text-gray-900">Authenticator App</h3>
                 <p className="text-sm text-gray-600">
-                  {twoFactorEnabled 
+                  {twoFactorEnabled
                     ? 'Two-factor authentication is enabled for your account'
                     : 'Add an extra layer of security to your account'
                   }
@@ -283,8 +310,11 @@ const AccountSettings: React.FC = () => {
             </div>
           </motion.div>
 
+          {/* Calendar & Availability */}
+          <CalendarSettings />
+
           {/* Security Settings */}
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -294,7 +324,7 @@ const AccountSettings: React.FC = () => {
               <Lock className="w-5 h-5 mr-2" />
               Security Preferences
             </h2>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -312,7 +342,7 @@ const AccountSettings: React.FC = () => {
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                 </label>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-gray-900">Device Tracking</h3>
@@ -329,7 +359,7 @@ const AccountSettings: React.FC = () => {
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                 </label>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-gray-900">Session Timeout</h3>
@@ -351,7 +381,7 @@ const AccountSettings: React.FC = () => {
           </motion.div>
 
           {/* Data Management */}
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -361,7 +391,7 @@ const AccountSettings: React.FC = () => {
               <Database className="w-5 h-5 mr-2" />
               Data Management
             </h2>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div>
@@ -376,7 +406,7 @@ const AccountSettings: React.FC = () => {
                   <span>Export</span>
                 </button>
               </div>
-              
+
               <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <div>
                   <h3 className="font-medium text-gray-900">Data Retention</h3>
@@ -387,8 +417,72 @@ const AccountSettings: React.FC = () => {
             </div>
           </motion.div>
 
+          {/* Monetization & Payouts */}
+          <motion.div
+            className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.45 }}
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+              <Briefcase className="w-5 h-5 mr-2" />
+              Monetization & Payouts
+            </h2>
+
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600 shrink-0">
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-blue-900 text-base">Razorpay Route Integration</h3>
+                    <p className="text-sm text-blue-800 mt-1 mb-4 leading-relaxed">
+                      Connect your Razorpay Merchant account to get paid directly for your digital products and services. TinySlash takes a flat 5% platform fee per transaction, and the rest is deposited directly into your bank account.
+                    </p>
+
+                    <form onSubmit={handleConnectRazorpay} className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-blue-900 mb-1">
+                          Razorpay Account ID <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            value={razorpayAccountId}
+                            onChange={(e) => setRazorpayAccountId(e.target.value)}
+                            placeholder="e.g. acc_P6A1... "
+                            disabled={user?.razorpayConnected}
+                            className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-blue-100 disabled:text-blue-800"
+                            required
+                          />
+                          {!user?.razorpayConnected ? (
+                            <button
+                              type="submit"
+                              disabled={isConnectingRazorpay || !razorpayAccountId.trim()}
+                              className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                            >
+                              Connect
+                            </button>
+                          ) : (
+                            <div className="px-5 py-2 bg-green-100 text-green-700 border border-green-200 rounded-lg font-medium flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4" /> Connected
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-blue-700 mt-2">
+                          You can find this in your Razorpay Dashboard under Account Settings.
+                        </p>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Danger Zone */}
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl shadow-sm border border-red-200 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -398,7 +492,7 @@ const AccountSettings: React.FC = () => {
               <AlertTriangle className="w-5 h-5 mr-2" />
               Danger Zone
             </h2>
-            
+
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h3 className="font-medium text-red-900 mb-2">Delete Account</h3>
               <p className="text-sm text-red-700 mb-4">
@@ -419,7 +513,7 @@ const AccountSettings: React.FC = () => {
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div 
+          <motion.div
             className="bg-white rounded-2xl p-6 max-w-md w-full"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -434,10 +528,10 @@ const AccountSettings: React.FC = () => {
                 <p className="text-sm text-gray-600">This action cannot be undone</p>
               </div>
             </div>
-            
+
             <div className="mb-4">
               <p className="text-sm text-gray-700 mb-3">
-                This will permanently delete your account and all associated data. 
+                This will permanently delete your account and all associated data.
                 Type <strong>DELETE</strong> to confirm:
               </p>
               <input
@@ -448,7 +542,7 @@ const AccountSettings: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
-            
+
             <div className="flex space-x-3">
               <button
                 onClick={() => {

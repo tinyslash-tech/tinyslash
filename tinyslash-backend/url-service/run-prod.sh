@@ -18,6 +18,7 @@ export JWT_SECRET=$(grep "^JWT_SECRET=" ../../.env | cut -d '=' -f2-)
 export BACKEND_URL=$(grep "^BACKEND_URL=" ../../.env | cut -d '=' -f2-)
 export FRONTEND_URL=$(grep "^FRONTEND_URL=" ../../.env | cut -d '=' -f2-)
 export SHORT_URL_DOMAIN=$(grep "^SHORT_URL_DOMAIN=" ../../.env | cut -d '=' -f2-)
+export OPENAI_API_KEY=$(grep "^OPENAI_API_KEY=" ../../.env | cut -d '=' -f2-)
 
 # Redis Configuration
 export REDIS_HOST=$(grep "^REDIS_HOST=" ../../.env | cut -d '=' -f2-)

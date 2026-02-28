@@ -532,6 +532,39 @@ public enum PlanPolicy {
         return maxPixelsPerLink;
     }
 
+    // AI Generation Limits
+    public int getAiPagesPerMonth() {
+        switch (this) {
+            case STARTER:
+                return 10;
+            case PRO:
+                return -1;
+            case BUSINESS:
+                return -1;
+            case BUSINESS_TRIAL:
+                return -1;
+            case FREE:
+            default:
+                return 0;
+        }
+    }
+
+    public int getAiFieldsPerMonth() {
+        switch (this) {
+            case STARTER:
+                return 50;
+            case PRO:
+                return -1;
+            case BUSINESS:
+                return -1;
+            case BUSINESS_TRIAL:
+                return -1;
+            case FREE:
+            default:
+                return 0;
+        }
+    }
+
     // Short Link
     public boolean hasCustomAlias() {
         return customAlias;
@@ -797,6 +830,16 @@ public enum PlanPolicy {
 
     public boolean canAddTeamMember(int current) {
         return current < teamMembers;
+    }
+
+    public boolean canGenerateAiPage(int current) {
+        int limit = getAiPagesPerMonth();
+        return limit == -1 || (limit > 0 && current < limit);
+    }
+
+    public boolean canGenerateAiField(int current) {
+        int limit = getAiFieldsPerMonth();
+        return limit == -1 || (limit > 0 && current < limit);
     }
 
     // ─────────────── hasFeature dispatcher ───────────────

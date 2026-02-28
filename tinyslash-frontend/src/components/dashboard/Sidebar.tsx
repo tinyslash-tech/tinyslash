@@ -20,7 +20,11 @@ import {
   LogOut,
   HelpCircle,
   Shield,
-  Target // Added Target icon for Pixels
+  Target, // Added Target icon for Pixels
+  Tag,
+  ShoppingBag,
+  CalendarDays,
+  CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -34,7 +38,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
-type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'pages' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings' | 'pixels';
+type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'pages' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings' | 'pixels' | 'business-orders' | 'business-bookings' | 'business-payouts' | 'clients';
 type CreateMode = 'url' | 'qr' | 'file';
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
@@ -66,6 +70,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
     else if (path.includes('/dashboard/pixels')) setActiveSection('pixels');
     else if (path.includes('/dashboard/analytics')) setActiveSection('analytics');
     else if (path.includes('/dashboard/domains')) setActiveSection('domains');
+    else if (path.includes('/dashboard/business/orders')) setActiveSection('business-orders');
+    else if (path.includes('/dashboard/business/bookings')) setActiveSection('business-bookings');
+    else if (path.includes('/dashboard/business/payouts')) setActiveSection('business-payouts');
+    else if (path.includes('/dashboard/clients')) setActiveSection('clients');
   }, [location.pathname, location.state]);
 
   const handleUpgradeClick = () => {
@@ -82,18 +90,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
   // Navigation Group Definitions
   const navigationGroups = [
     {
-      title: 'Overview',
+      title: 'Create',
       items: [
         {
           id: 'dashboard' as SidebarSection,
-          label: 'Dashboard',
+          label: 'Overview',
           icon: LayoutDashboard,
-        }
-      ]
-    },
-    {
-      title: 'Management',
-      items: [
+        },
+        {
+          id: 'pages' as SidebarSection,
+          label: 'Pages',
+          icon: LayoutDashboard,
+          badge: 'NEW'
+        },
         {
           id: 'links' as SidebarSection,
           label: 'Links',
@@ -108,17 +117,55 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           id: 'file-to-url' as SidebarSection,
           label: 'Files',
           icon: Upload,
+        }
+      ]
+    },
+    {
+      title: 'Business',
+      items: [
+        {
+          id: 'business-orders' as SidebarSection,
+          label: 'Orders',
+          icon: ShoppingBag,
+        },
+        {
+          id: 'business-bookings' as SidebarSection,
+          label: 'Bookings',
+          icon: CalendarDays,
+        },
+        {
+          id: 'business-payouts' as SidebarSection,
+          label: 'Payouts',
+          icon: CreditCard,
+        },
+        ...(user?.plan === 'BUSINESS' || user?.roles?.includes('ROLE_AGENCY') ? [
+          {
+            id: 'clients' as SidebarSection,
+            label: 'Clients',
+            icon: Users,
+          },
+          {
+            id: 'agency-settings' as SidebarSection,
+            label: 'Workspace',
+            icon: Settings,
+          }
+        ] : []),
+      ]
+    },
+    {
+      title: 'Grow',
+      items: [
+        {
+          id: 'analytics' as SidebarSection,
+          label: 'Analytics',
+          icon: BarChart3,
+          isPro: true,
+          badge: !isPro ? 'PRO' : undefined
         },
         {
           id: 'pixels' as SidebarSection,
           label: 'Pixels',
           icon: Target,
-        },
-        {
-          id: 'pages' as SidebarSection,
-          label: 'Pages',
-          icon: LayoutDashboard,
-          badge: 'NEW'
         },
         {
           id: 'leads' as SidebarSection,
@@ -130,25 +177,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
       ]
     },
     {
-      title: 'Intelligence',
-      items: [
-        {
-          id: 'analytics' as SidebarSection,
-          label: 'Analytics',
-          icon: BarChart3,
-          isPro: true,
-          badge: !isPro ? 'PRO' : undefined
-        }
-      ]
-    },
-    {
-      title: 'Workspace',
+      title: 'Settings',
       items: [
         {
           id: 'domains' as SidebarSection,
           label: 'Domains',
           icon: Globe,
-          isPro: false, // Available to verify but limited functionality
+          isPro: false,
+          badge: !isPro ? 'PRO' : undefined
+        },
+        {
+          id: 'utm-templates' as SidebarSection,
+          label: 'UTM Templates',
+          icon: Tag,
+          isPro: true,
           badge: !isPro ? 'PRO' : undefined
         },
         ...(currentScope.type === 'TEAM' ? [
@@ -162,7 +204,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
             label: 'Settings',
             icon: Settings,
           }
-        ] : [])
+        ] : []),
+        {
+          id: 'trust-badge' as SidebarSection,
+          label: 'Trust Badge',
+          icon: Shield,
+        }
       ]
     }
   ];
@@ -170,6 +217,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
   const handleItemClick = (item: any) => {
     if (item.id === 'analytics' && !isPro) {
       upgradeModal.open('Analytics', 'Unlock detailed analytics', false);
+      return;
+    } else if (item.id === 'utm-templates' && !isPro) {
+      upgradeModal.open('UTM Templates', 'Upgrade to PRO or BUSINESS to unlock templates', false);
       return;
     }
 
@@ -187,6 +237,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
       case 'domains': navigate('/dashboard/domains'); break;
       case 'team-members': navigate('/dashboard/team/members'); break;
       case 'team-settings': navigate('/dashboard/team/settings'); break;
+      case 'utm-templates':
+        if (currentScope.type === 'TEAM') {
+          navigate('/dashboard/team/utm-templates');
+        } else {
+          navigate('/dashboard/utm-templates');
+        }
+        break;
+      case 'business-orders': navigate('/dashboard/business/orders'); break;
+      case 'business-bookings': navigate('/dashboard/business/bookings'); break;
+      case 'business-payouts': navigate('/dashboard/business/payouts'); break;
+      case 'clients': navigate('/dashboard/clients'); break;
+      case 'agency-settings': navigate('/dashboard/business/settings'); break;
       default: break;
     }
   };
@@ -216,8 +278,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={`
           fixed lg:relative inset-y-0 left-0 z-50
-          bg-white border-r border-gray-200 text-gray-900
-          flex flex-col h-full shadow-xl lg:shadow-none
+          bg-[#ffffff] border-r-2 border-gray-900 text-gray-900
+          flex flex-col h-full shadow-[4px_0px_0px_rgba(0,0,0,1)] lg:shadow-[4px_0px_0px_rgba(0,0,0,1)]
         `}
       >
         {/* Toggle Button - Hanging on the right edge */}
@@ -226,9 +288,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           className={`
             hidden lg:flex absolute -right-3 top-9 z-50
             items-center justify-center w-6 h-6
-            bg-white border border-gray-200 rounded-full shadow-sm
-            text-gray-500 hover:text-gray-900 hover:bg-gray-50
-            transition-colors
+            bg-white border-2 border-gray-900 rounded-full shadow-[2px_2px_0px_rgba(0,0,0,1)]
+            text-gray-900 hover:bg-gray-100 transition-all font-bold hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_rgba(0,0,0,1)]
           `}
           title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
@@ -252,9 +313,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
             onClick={handleCreateClick}
             className={`
                w-full flex items-center justify-center
-               bg-gray-900 text-white
-               hover:bg-black hover:shadow-lg
-               transition-all duration-200 rounded-xl font-medium
+               bg-gray-900 border-2 border-gray-900 text-white
+               hover:bg-black hover:shadow-[4px_4px_0px_#2563eb] hover:-translate-y-0.5
+               transition-all duration-200 rounded-xl font-bold
                ${collapsed ? 'h-12 w-12 p-0' : 'h-12 px-4 space-x-2'}
              `}
           >
@@ -268,7 +329,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
           {navigationGroups.map((group, groupIndex) => (
             <div key={group.title} className="mb-6 px-4">
               {!collapsed && (
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">
+                <div className="text-xs font-black text-gray-900 uppercase tracking-widest mb-2 px-2">
                   {group.title}
                 </div>
               )}
@@ -285,10 +346,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
                         className={`
                           w-full flex items-center
                           ${collapsed ? 'justify-center h-10 w-10 mx-auto rounded-lg' : 'px-3 py-2.5 rounded-lg space-x-3'}
-                          transition-all duration-200
+                          transition-all duration-200 border-2
                           ${isActive
-                            ? 'bg-blue-50 text-blue-600 font-medium'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-blue-50 border-gray-900 text-gray-900 font-bold shadow-[2px_2px_0px_rgba(0,0,0,1)] -translate-y-0.5'
+                            : 'border-transparent text-gray-600 font-bold hover:bg-gray-50 hover:border-gray-900 hover:text-gray-900 hover:shadow-[2px_2px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5'
                           }
                         `}
                       >
@@ -298,7 +359,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
                           <div className="flex-1 flex items-center justify-between">
                             <span>{item.label}</span>
                             {item.badge && (
-                              <span className="text-[10px] bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200 font-medium">
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded border-2 font-bold ${isActive ? 'bg-white border-gray-900 text-gray-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]' : 'bg-green-100 border-green-300 text-green-800'}`}>
                                 {item.badge}
                               </span>
                             )}
@@ -306,7 +367,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
                         )}
 
                         {collapsed && (
-                          <div className="absolute left-full ml-4 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                          <div className="absolute left-full ml-4 px-2 py-1 bg-[#ffffff] border-2 border-gray-900 shadow-[2px_2px_0px_rgba(0,0,0,1)] font-bold text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
                             {item.label}
                           </div>
                         )}
@@ -320,26 +381,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
         </div>
 
         {/* Footer / Upgrade / Copyright */}
-        <div className="flex-shrink-0 border-t border-gray-100 p-3 mt-auto">
+        <div className="flex-shrink-0 border-t-2 border-gray-900 p-4 mt-auto">
           {!isPro && !collapsed && (
-            <div className="mb-2 bg-gradient-to-br from-gray-900 to-black rounded-xl p-3 text-white shadow-lg">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="p-1 bg-white/15 rounded-lg">
-                  <Crown className="w-4 h-4 text-yellow-400" />
+            <div className="mb-3 bg-[#ffffff] rounded-xl p-4 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all text-gray-900">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 bg-yellow-100 border-2 border-yellow-300 rounded-lg">
+                  <Crown className="w-5 h-5 text-yellow-600" />
                 </div>
-                <button onClick={() => navigate('/pricing')} className="text-xs bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors font-medium">
+                <button onClick={() => navigate('/pricing')} className="text-xs font-bold bg-gray-900 text-white hover:bg-black px-3 py-1.5 rounded-lg transition-colors shadow-sm">
                   Upgrade
                 </button>
               </div>
-              <h4 className="font-bold text-sm">Upgrade to Pro</h4>
-              <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+              <h4 className="font-black tracking-widest uppercase text-sm mt-1">Upgrade to Pro</h4>
+              <p className="text-xs font-medium text-gray-600 leading-snug mt-1">
                 Analytics, custom domains & more.
               </p>
             </div>
           )}
 
-          <div className="flex items-center justify-center py-1">
-            <span className="text-xs text-gray-400">© 2025 TinySlash</span>
+          <div className="flex items-center justify-center py-2">
+            <span className="text-xs font-bold tracking-widest uppercase text-gray-500">© 2025 TinySlash</span>
           </div>
         </div>
       </motion.aside>

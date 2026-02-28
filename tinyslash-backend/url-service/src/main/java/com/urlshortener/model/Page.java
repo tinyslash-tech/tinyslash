@@ -50,6 +50,11 @@ public class Page {
   private String metaTitle;
   private String metaDescription;
 
+  // Integrations
+  private String fbPixelId;
+  private String googleAnalyticsId;
+  private String customScripts;
+
   @CreatedDate
   private LocalDateTime createdAt;
 
@@ -59,9 +64,11 @@ public class Page {
   public Page() {
   }
 
-  public Page(String id, String userId, String slug, String title, String bio, String avatarUrl, PageTheme theme,
-      List<PageBlock> blocks, boolean published, long views, String customDomain, boolean removeBranding,
-      String metaTitle, String metaDescription, LocalDateTime createdAt, LocalDateTime updatedAt) {
+  public Page(String id, String userId, String slug, String title, String bio, String avatarUrl,
+      PageTheme theme, List<PageBlock> blocks, boolean published, long views,
+      String customDomain, boolean removeBranding, String metaTitle, String metaDescription,
+      String fbPixelId, String googleAnalyticsId, String customScripts,
+      LocalDateTime createdAt, LocalDateTime updatedAt) {
     this.id = id;
     this.userId = userId;
     this.slug = slug;
@@ -76,6 +83,9 @@ public class Page {
     this.removeBranding = removeBranding;
     this.metaTitle = metaTitle;
     this.metaDescription = metaDescription;
+    this.fbPixelId = fbPixelId;
+    this.googleAnalyticsId = googleAnalyticsId;
+    this.customScripts = customScripts;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -198,6 +208,30 @@ public class Page {
 
   public void setMetaDescription(String metaDescription) {
     this.metaDescription = metaDescription;
+  }
+
+  public String getFbPixelId() {
+    return fbPixelId;
+  }
+
+  public void setFbPixelId(String fbPixelId) {
+    this.fbPixelId = fbPixelId;
+  }
+
+  public String getGoogleAnalyticsId() {
+    return googleAnalyticsId;
+  }
+
+  public void setGoogleAnalyticsId(String googleAnalyticsId) {
+    this.googleAnalyticsId = googleAnalyticsId;
+  }
+
+  public String getCustomScripts() {
+    return customScripts;
+  }
+
+  public void setCustomScripts(String customScripts) {
+    this.customScripts = customScripts;
   }
 
   public String getWaNumber() {

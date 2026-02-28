@@ -2,7 +2,9 @@ package com.urlshortener.service;
 
 import com.urlshortener.model.User;
 import com.urlshortener.repository.UserRepository;
+import com.urlshortener.event.UserRegisteredEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,11 +20,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+            ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     public User registerUser(String email, String password, String firstName, String lastName) {
@@ -45,7 +50,9 @@ public class UserService {
         // Default role
         user.getRoles().add("ROLE_USER");
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        eventPublisher.publishEvent(new UserRegisteredEvent(this, savedUser));
+        return savedUser;
     }
 
     public User loginUser(String email, String password) {
@@ -102,7 +109,9 @@ public class UserService {
         // Default role
         user.getRoles().add("ROLE_USER");
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        eventPublisher.publishEvent(new UserRegisteredEvent(this, savedUser));
+        return savedUser;
     }
 
     public Optional<User> findById(String id) {
@@ -123,6 +132,10 @@ public class UserService {
 
     public User updateUser(User user) {
         user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    public User saveUser(User user) {
         return userRepository.save(user);
     }
 

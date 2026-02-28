@@ -6,7 +6,9 @@ import com.urlshortener.model.Lead;
 import com.urlshortener.model.ShortenedUrl;
 import com.urlshortener.repository.LeadRepository;
 import com.urlshortener.repository.ShortenedUrlRepository;
+import com.urlshortener.event.LeadCapturedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,6 +28,9 @@ public class LeadService {
 
     @Autowired
     private com.urlshortener.repository.QrCodeRepository qrCodeRepository;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     // In-memory OTP store for Demo (Production should use Redis)
     private final Map<String, String> otpStore = new ConcurrentHashMap<>();
@@ -197,6 +202,9 @@ public class LeadService {
         lead.setCreatedAt(LocalDateTime.now());
         lead.setCountry("IN");
         lead.setSource("PAGE");
-        leadRepository.save(lead);
+        Lead savedLead = leadRepository.save(lead);
+
+        eventPublisher.publishEvent(new LeadCapturedEvent(this, savedLead.getId(), pageId,
+                data.get("name"), savedLead.getEmail(), ownerUserId));
     }
 }

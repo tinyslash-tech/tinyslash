@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Link,
   QrCode,
@@ -16,7 +15,8 @@ import {
   MousePointer,
   MapPin,
   Users,
-  Crown
+  Crown,
+  FileText
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
@@ -26,6 +26,7 @@ import { useTeam } from '../../context/TeamContext';
 import LiveActivityFeed from './LiveActivityFeed';
 import LocationWidget from './LocationWidget';
 import WorldMapWidget from './WorldMapWidget';
+import AiInsightsPanel from './AiInsightsPanel';
 
 interface DashboardOverviewProps {
   onCreateClick: (mode: 'url' | 'qr' | 'file') => void;
@@ -163,13 +164,16 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
   }
 
   // "No dashboard data available" block removed
-  // "Loading dashboard data..." block removed
-
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-xl sm:rounded-2xl p-6 sm:p-8 border-2 border-gray-900 shadow-[6px_6px_0px_rgba(0,0,0,1)] relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-[0.03] rounded-bl-full pointer-events-none mix-blend-overlay"></div>
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-500 opacity-20 blur-2xl rounded-full pointer-events-none"></div>
+        <div className="absolute top-1/2 right-1/4 w-4 bg-white/10 h-32 rotate-45 pointer-events-none"></div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0 relative z-10">
           <div className="min-w-0">
             <div className="flex items-center space-x-3 mb-2">
               <h2 className="text-xl sm:text-2xl font-bold">
@@ -216,169 +220,222 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
         </div>
 
         {/* Mobile-First Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           <button
             onClick={() => onCreateClick('url')}
-            className="bg-white text-blue-600 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
+            className="bg-white text-gray-900 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-lg font-bold border-2 border-transparent hover:border-gray-900 hover:shadow-[4px_4px_0px_rgba(255,255,255,0.2)] transition-all flex items-center justify-center space-x-2 text-sm sm:text-base transform hover:-translate-y-0.5"
           >
-            <Link className="w-4 h-4" />
+            <Link className="w-5 h-5 text-blue-600" />
             <span className="hidden xs:inline">Create Short Link</span>
             <span className="xs:hidden">Short Link</span>
           </button>
           <button
             onClick={() => onCreateClick('qr')}
-            className="bg-white/10 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold hover:bg-white/20 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
+            className="bg-gray-800 border-2 border-gray-700 text-white px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-lg font-bold hover:bg-gray-700 hover:border-gray-600 transition-all flex items-center justify-center space-x-2 text-sm sm:text-base transform hover:-translate-y-0.5 shadow-sm"
           >
-            <QrCode className="w-4 h-4" />
+            <QrCode className="w-5 h-5 text-purple-400" />
             <span className="hidden xs:inline">Create QR</span>
             <span className="xs:hidden">QR Code</span>
           </button>
           <button
             onClick={() => onCreateClick('file')}
-            className="bg-white/10 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold hover:bg-white/20 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
+            className="bg-gray-800 border-2 border-gray-700 text-white px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-lg font-bold hover:bg-gray-700 hover:border-gray-600 transition-all flex items-center justify-center space-x-2 text-sm sm:text-base transform hover:-translate-y-0.5 shadow-sm"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-5 h-5 text-orange-400" />
             <span className="hidden xs:inline">Upload File</span>
             <span className="xs:hidden">File</span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/dashboard/pages'}
+            className="bg-gray-800 border-2 border-gray-700 text-white px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-lg font-bold hover:bg-gray-700 hover:border-gray-600 transition-all flex items-center justify-center space-x-2 text-sm sm:text-base transform hover:-translate-y-0.5 shadow-sm"
+          >
+            <FileText className="w-5 h-5 text-green-400" />
+            <span className="hidden xs:inline">Pages</span>
+            <span className="xs:hidden">Pages</span>
           </button>
         </div>
       </div>
 
-      {/* Enhanced Stats Cards - Mobile Optimized */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
+      {/* AI Actionable Insights */}
+      <AiInsightsPanel stats={stats} isLoading={isLoading} />
+
+      {/* Enhanced Stats Cards - Retro Modern */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="bg-[#ffffff] rounded-xl p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all group">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="text-gray-600 text-sm">Short Links</p>
-              <p className="text-3xl font-bold text-blue-600">{stats.shortLinks}</p>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Short Links</p>
+              <p className="text-3xl font-bold font-mono text-gray-900">{stats.shortLinks}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-50 border-2 border-blue-200 rounded-lg flex items-center justify-center group-hover:rotate-6 transition-transform">
               <Link className="w-6 h-6 text-blue-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-4 flex items-center text-sm pt-4 border-t-2 border-dashed border-gray-200">
             <button
               onClick={() => onCreateClick('url')}
-              className="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1"
+              className="text-gray-900 font-bold flex items-center space-x-1 hover:text-blue-600 transition-colors"
             >
-              <Plus className="w-3 h-3" />
-              <span>Create Short Link</span>
+              <Plus className="w-4 h-4" />
+              <span>Create Link</span>
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#ffffff] rounded-xl p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all group">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="text-gray-600 text-sm">QR Code Count</p>
-              <p className="text-3xl font-bold text-purple-600">{stats.qrCodeCount}</p>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">QR Codes</p>
+              <p className="text-3xl font-bold font-mono text-gray-900">{stats.qrCodeCount}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-50 border-2 border-purple-200 rounded-lg flex items-center justify-center group-hover:rotate-6 transition-transform">
               <QrCode className="w-6 h-6 text-purple-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-4 flex items-center text-sm pt-4 border-t-2 border-dashed border-gray-200">
             <button
               onClick={() => onCreateClick('qr')}
-              className="text-purple-600 hover:text-purple-800 font-medium flex items-center space-x-1"
+              className="text-gray-900 font-bold flex items-center space-x-1 hover:text-purple-600 transition-colors"
             >
-              <Plus className="w-3 h-3" />
-              <span>Create QR Code</span>
+              <Plus className="w-4 h-4" />
+              <span>Create QR</span>
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#ffffff] rounded-xl p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all group">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="text-gray-600 text-sm">File Links Count</p>
-              <p className="text-3xl font-bold text-orange-600">{stats.fileLinksCount}</p>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">File Links</p>
+              <p className="text-3xl font-bold font-mono text-gray-900">{stats.fileLinksCount}</p>
             </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-orange-50 border-2 border-orange-200 rounded-lg flex items-center justify-center group-hover:rotate-6 transition-transform">
               <Upload className="w-6 h-6 text-orange-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-4 flex items-center text-sm pt-4 border-t-2 border-dashed border-gray-200">
             <button
               onClick={() => onCreateClick('file')}
-              className="text-orange-600 hover:text-orange-800 font-medium flex items-center space-x-1"
+              className="text-gray-900 font-bold flex items-center space-x-1 hover:text-orange-600 transition-colors"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-4 h-4" />
               <span>Upload File</span>
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#ffffff] rounded-xl p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all group">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="text-gray-600 text-sm">Total Clicks</p>
-              <p className="text-3xl font-bold text-green-600">{stats.totalClicks.toLocaleString()}</p>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Total Clicks</p>
+              <p className="text-3xl font-bold font-mono text-gray-900">{stats.totalClicks.toLocaleString()}</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-green-50 border-2 border-green-200 rounded-lg flex items-center justify-center group-hover:-rotate-6 transition-transform">
               <MousePointer className="w-6 h-6 text-green-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <Clock className="w-3 h-3 text-gray-400 mr-1" />
-            <span className="text-gray-600">{stats.clicksToday} today</span>
+          <div className="mt-4 flex items-center text-sm pt-4 border-t-2 border-dashed border-gray-200 text-gray-600 font-medium">
+            <Clock className="w-4 h-4 text-green-500 mr-1.5" />
+            <span><strong className="text-green-600">{stats.clicksToday}</strong> today</span>
           </div>
         </div>
       </div>
 
       {/* Total Links and Total Clicks Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6">
+        <div className="bg-white border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] rounded-xl p-6 relative overflow-hidden group hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm">Total Links (All Types)</p>
-              <p className="text-4xl font-bold">{stats.totalLinks}</p>
-              <p className="text-blue-100 text-sm mt-2">
-                {stats.shortLinks} Short • {stats.qrCodeCount} QR • {stats.fileLinksCount} Files
-              </p>
+              <p className="text-gray-900 font-black text-sm uppercase tracking-wider mb-2">Total Links Database</p>
+              <p className="text-5xl font-bold font-mono text-gray-900 tracking-tighter">{stats.totalLinks}</p>
+              <div className="flex flex-wrap items-center gap-2 mt-4">
+                <span className="bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-md">{stats.shortLinks} Short</span>
+                <span className="bg-purple-50 border border-purple-200 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-md">{stats.qrCodeCount} QR</span>
+                <span className="bg-orange-50 border border-orange-200 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-md">{stats.fileLinksCount} Files</span>
+              </div>
             </div>
-            <div className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">
-              <Globe className="w-8 h-8 text-white" />
+            <div className="hidden sm:flex w-20 h-20 bg-blue-50 border-2 border-blue-200 rounded-xl items-center justify-center transform rotate-6 group-hover:rotate-12 transition-all">
+              <Globe className="w-10 h-10 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl p-6">
+        <div className="bg-gray-900 text-white border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,0.2)] rounded-xl p-6 relative overflow-hidden group hover:shadow-[6px_6px_0px_rgba(0,0,0,0.3)] transition-all">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/20 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm">Total Clicks & Interactions</p>
-              <p className="text-4xl font-bold">{stats.totalClicks.toLocaleString()}</p>
-              <p className="text-green-100 text-sm mt-2">
-                {stats.clicksToday} today • {stats.clicksThisWeek} this week
-              </p>
+              <p className="text-gray-300 font-bold text-sm uppercase tracking-wider mb-2">Total Interactions</p>
+              <p className="text-5xl font-bold font-mono text-white tracking-tighter">{stats.totalClicks.toLocaleString()}</p>
+              <div className="flex items-center gap-4 mt-4 text-sm font-medium">
+                <div className="flex items-center space-x-1.5 text-green-400">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>{stats.clicksToday} Today</span>
+                </div>
+                <div className="text-gray-400">
+                  {stats.clicksThisWeek} This Week
+                </div>
+              </div>
             </div>
-            <div className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">
-              <Activity className="w-8 h-8 text-white" />
+            <div className="hidden sm:flex w-20 h-20 bg-gray-800 border-2 border-gray-700 rounded-xl items-center justify-center transform -rotate-3 group-hover:-rotate-6 transition-all">
+              <Activity className="w-10 h-10 text-green-400" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Clicks Over Time Chart */}
-        <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Clicks Over Time</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={stats.clicksOverTime}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Area
-                type="monotone"
-                dataKey="clicks"
-                stroke="#3b82f6"
-                fill="#3b82f6"
-                fillOpacity={0.1}
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div className="lg:col-span-2 bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              Traffic Trend
+            </h3>
+            <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1.5 rounded-md border-2 border-green-200 shadow-sm">
+              Live Data
+            </span>
+          </div>
+          <div className="flex-grow">
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={stats.clicksOverTime} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorClicksNeo" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#111827" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#111827" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 600 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 600 }}
+                  dx={-10}
+                  tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: '2px solid #111827', boxShadow: '4px 4px 0px rgba(0,0,0,1)', padding: '12px' }}
+                  itemStyle={{ fontWeight: 'bold', color: '#111827' }}
+                  labelStyle={{ color: '#6B7280', fontWeight: 'bold', marginBottom: '8px' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="clicks"
+                  stroke="#111827"
+                  fill="url(#colorClicksNeo)"
+                  strokeWidth={3}
+                  activeDot={{ r: 6, fill: '#3b82f6', stroke: '#111827', strokeWidth: 3 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Live Activity Feed */}
@@ -387,292 +444,123 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onCreateClick }) 
         </div>
       </div>
 
-      {/* Location Analytics and World Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         {/* Location Widget */}
-        <LocationWidget maxItems={5} />
+        <div className="border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] rounded-xl overflow-hidden bg-white">
+          <LocationWidget maxItems={5} />
+        </div>
 
         {/* Performance Metrics */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Performance</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <Globe className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-blue-600">
+        <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+          <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">Geo Performance</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gray-50 border-2 border-gray-200 rounded-lg hover:border-blue-400 transition-colors">
+              <Globe className="w-6 h-6 text-blue-600 mx-auto mb-3" />
+              <p className="text-3xl font-bold font-mono text-gray-900">
                 {stats.totalClicks > 0 ? Math.min(15, Math.floor(stats.totalClicks / 10) + 3) : 0}
               </p>
-              <p className="text-sm text-gray-600">Countries Reached</p>
+              <p className="text-xs font-bold text-gray-500 uppercase mt-1">Countries</p>
             </div>
 
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <MapPin className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-green-600">
+            <div className="text-center p-4 bg-gray-50 border-2 border-gray-200 rounded-lg hover:border-green-400 transition-colors">
+              <MapPin className="w-6 h-6 text-green-600 mx-auto mb-3" />
+              <p className="text-3xl font-bold font-mono text-gray-900">
                 {stats.totalClicks > 0 ? Math.min(50, Math.floor(stats.totalClicks / 5) + 8) : 0}
               </p>
-              <p className="text-sm text-gray-600">Cities Reached</p>
+              <p className="text-xs font-bold text-gray-500 uppercase mt-1">Cities</p>
             </div>
 
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <TrendingUp className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-purple-600">
+            <div className="text-center p-4 bg-gray-50 border-2 border-gray-200 rounded-lg hover:border-purple-400 transition-colors">
+              <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-3" />
+              <p className="text-3xl font-bold font-mono text-gray-900">
                 {stats.totalClicks > 0 ? Math.floor((stats.totalClicks * 0.65) / Math.max(stats.totalClicks, 1) * 100) : 0}%
               </p>
-              <p className="text-sm text-gray-600">Mobile Traffic</p>
+              <p className="text-xs font-bold text-gray-500 uppercase mt-1">Mobile Share</p>
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-            <div className="flex items-center justify-between">
+          <div className="mt-8 p-5 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-lg relative overflow-hidden group hover:shadow-[4px_4px_0px_rgba(59,130,246,0.3)] transition-all">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/20 rounded-bl-full group-hover:bg-blue-500/30 transition-colors"></div>
+            <div className="flex items-center justify-between relative z-10">
               <div>
-                <h4 className="font-medium text-gray-900">Top Traffic Source</h4>
-                <p className="text-sm text-gray-600">India • Mumbai</p>
+                <h4 className="font-bold text-sm text-gray-300 uppercase tracking-widest mb-1">Top Source</h4>
+                <p className="text-lg font-bold">India • Mumbai</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-blue-600">
+                <p className="text-2xl font-bold font-mono text-blue-400">
                   {Math.floor(stats.totalClicks * 0.25).toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-600">clicks (25%)</p>
+                <p className="text-xs font-medium text-gray-400 mt-1">Clicks (25%)</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* World Map Visualization */}
-      <WorldMapWidget />
+        {/* World Map Visualization */}
+        <WorldMapWidget />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Performing Link */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Link</h3>
-          {stats.topPerformingLink ? (
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">Short URL</span>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => copyToClipboard(stats.topPerformingLink.shortUrl)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => window.open(stats.topPerformingLink.shortUrl, '_blank')}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <p className="font-mono text-blue-600 text-sm mb-2">{stats.topPerformingLink.shortUrl}</p>
-                <p className="text-xs text-gray-500 truncate">{stats.topPerformingLink.originalUrl}</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{stats.topPerformingLink.clicks || 0}</p>
-                  <p className="text-sm text-gray-600">Total Clicks</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">
-                    {((stats.topPerformingLink.clicks || 0) / Math.max(stats.totalClicks, 1) * 100).toFixed(1)}%
-                  </p>
-                  <p className="text-sm text-gray-600">of Total Traffic</p>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 gap-6 lg:gap-8">
+          {/* Top Performing Link */}
+          <div className="bg-[#ffffff] rounded-xl p-6 sm:p-8 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                <Crown className="w-5 h-5 text-yellow-500" />
+                Top Link
+              </h3>
+              <span className="text-xs font-bold text-gray-500 uppercase">By Conversion</span>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No links created yet</p>
-              <button
-                onClick={() => onCreateClick('url')}
-                className="mt-3 text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Create your first link
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Stats Summary */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Summary</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Link className="w-5 h-5 text-blue-600" />
-                <span className="font-medium text-gray-900">Short Links</span>
-              </div>
-              <span className="text-xl font-bold text-blue-600">{stats.shortLinks}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <QrCode className="w-5 h-5 text-purple-600" />
-                <span className="font-medium text-gray-900">QR Codes</span>
-              </div>
-              <span className="text-xl font-bold text-purple-600">{stats.qrCodeCount}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Upload className="w-5 h-5 text-orange-600" />
-                <span className="font-medium text-gray-900">File Links</span>
-              </div>
-              <span className="text-xl font-bold text-orange-600">{stats.fileLinksCount}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <MousePointer className="w-5 h-5 text-green-600" />
-                <span className="font-medium text-gray-900">Total Clicks</span>
-              </div>
-              <span className="text-xl font-bold text-green-600">{stats.totalClicks.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Real-time Recent Activity */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-            <Activity className="w-5 h-5 text-blue-600" />
-            <span>Recent Activity</span>
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Live</span>
-          </h3>
-          <button
-            onClick={handleRefresh}
-            className="text-gray-400 hover:text-gray-600 p-1 rounded"
-            title="Refresh activity"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-
-        {stats.recentActivity.length > 0 ? (
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {stats.recentActivity.map((activity, index) => (
-              <div key={`${activity.type}-${activity.id || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'qr' ? 'bg-purple-100' :
-                      activity.type === 'file' ? 'bg-orange-100' : 'bg-blue-100'
-                    }`}>
-                    {activity.type === 'qr' ? (
-                      <QrCode className={`w-4 h-4 ${activity.type === 'qr' ? 'text-purple-600' : 'text-blue-600'}`} />
-                    ) : activity.type === 'file' ? (
-                      <Upload className="w-4 h-4 text-orange-600" />
-                    ) : (
-                      <Link className="w-4 h-4 text-blue-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm">
-                      {activity.title || (activity.type === 'qr' ? 'QR Code' : activity.type === 'file' ? 'File Link' : 'Short Link')} {activity.action}
-                    </p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <p className="text-xs text-blue-600 font-mono truncate max-w-xs">
-                        {activity.shortUrl || activity.fileUrl}
-                      </p>
-                      {activity.shortUrl && (
-                        <button
-                          onClick={() => copyToClipboard(activity.shortUrl)}
-                          className="text-gray-400 hover:text-gray-600 p-1"
-                          title="Copy link"
-                        >
-                          <Copy className="w-3 h-3" />
-                        </button>
-                      )}
+            {stats.topPerformingLink ? (
+              <div className="space-y-6">
+                <div className="p-5 bg-gray-50 border-2 border-gray-200 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-yellow-100/50 rounded-bl-full pointer-events-none"></div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-gray-500 uppercase bg-white px-2 py-1 rounded border border-gray-200">Short URL</span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => copyToClipboard(stats.topPerformingLink.shortUrl)}
+                        className="text-gray-400 hover:text-gray-900 bg-white p-1.5 rounded border border-gray-200 hover:border-gray-900 transition-colors"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => window.open(stats.topPerformingLink.shortUrl, '_blank')}
+                        className="text-gray-400 hover:text-gray-900 bg-white p-1.5 rounded border border-gray-200 hover:border-gray-900 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
+                  <p className="font-mono font-bold text-blue-600 text-sm mb-2 break-all">{stats.topPerformingLink.shortUrl}</p>
+                  <p className="text-xs text-gray-500 truncate font-medium">{stats.topPerformingLink.originalUrl}</p>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="text-xs text-gray-400 flex items-center space-x-1">
-                      <Eye className="w-3 h-3" />
-                      <span>{activity.clicks || activity.scans || activity.totalDownloads || 0}</span>
-                    </span>
-                    {activity.type === 'file' && (
-                      <span className="text-xs bg-orange-100 text-orange-800 px-1 py-0.5 rounded">
-                        {(activity.fileSize && (activity.fileSize / 1024 / 1024).toFixed(1)) || '0'} MB
-                      </span>
-                    )}
+
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 bg-white border-2 border-gray-200 p-4 rounded-lg text-center">
+                    <p className="text-3xl font-black font-mono text-gray-900 mb-1">{stats.topPerformingLink.clicks || 0}</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Clicks</p>
+                  </div>
+                  <div className="flex-1 bg-green-50 border-2 border-green-200 p-4 rounded-lg text-center">
+                    <p className="text-3xl font-black font-mono text-green-600 mb-1">
+                      {((stats.topPerformingLink.clicks || 0) / Math.max(stats.totalClicks, 1) * 100).toFixed(1)}%
+                    </p>
+                    <p className="text-xs font-bold text-green-800 uppercase tracking-wider">Traffic Share</p>
                   </div>
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-12 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl">
+                <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No links created yet</p>
+                <button
+                  onClick={() => onCreateClick('url')}
+                  className="mt-3 text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Create your first link
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Activity className="w-6 h-6 text-gray-400" />
-            </div>
-            <p className="text-gray-500 mb-3">No recent activity</p>
-            <div className="flex justify-center space-x-2">
-              <button
-                onClick={() => onCreateClick('url')}
-                className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-              >
-                Create Link
-              </button>
-              <span className="text-gray-300">•</span>
-              <button
-                onClick={() => onCreateClick('qr')}
-                className="text-purple-600 hover:text-purple-800 font-medium text-sm"
-              >
-                Create QR
-              </button>
-              <span className="text-gray-300">•</span>
-              <button
-                onClick={() => onCreateClick('file')}
-                className="text-orange-600 hover:text-orange-800 font-medium text-sm"
-              >
-                Upload File
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => onCreateClick('url')}
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors group"
-          >
-            <Link className="w-8 h-8 text-gray-400 group-hover:text-blue-600 mx-auto mb-2" />
-            <p className="font-medium text-gray-900 group-hover:text-blue-900">Create Short Link</p>
-            <p className="text-sm text-gray-600">Shorten any URL instantly</p>
-          </button>
-
-          <button
-            onClick={() => onCreateClick('qr')}
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors group"
-          >
-            <QrCode className="w-8 h-8 text-gray-400 group-hover:text-purple-600 mx-auto mb-2" />
-            <p className="font-medium text-gray-900 group-hover:text-purple-900">Generate QR Code</p>
-            <p className="text-sm text-gray-600">Create customizable QR codes</p>
-          </button>
-
-          <button
-            onClick={() => onCreateClick('file')}
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors group"
-          >
-            <Upload className="w-8 h-8 text-gray-400 group-hover:text-orange-600 mx-auto mb-2" />
-            <p className="font-medium text-gray-900 group-hover:text-orange-900">Upload File</p>
-            <p className="text-sm text-gray-600">Share files with short links</p>
-          </button>
         </div>
       </div>
     </div>

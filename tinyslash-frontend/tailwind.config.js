@@ -17,6 +17,7 @@ module.exports = {
         blob: "blob 7s infinite",
         scroll: "scroll 30s linear infinite",
         "bounce-high": "bounce-high 1s infinite",
+        wiggle: "wiggle 1s ease-in-out infinite",
       },
       keyframes: {
         blob: {
@@ -36,6 +37,10 @@ module.exports = {
         scroll: {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
+        },
+        wiggle: {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
         },
         "bounce-high": {
           "0%, 100%": {

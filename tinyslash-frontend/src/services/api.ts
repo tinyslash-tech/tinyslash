@@ -346,6 +346,8 @@ export interface AuthResponse {
     createdAt: string;
     lastLoginAt?: string;
     profilePicture?: string;
+    razorpayAccountId?: string;
+    razorpayConnected?: boolean;
   };
 }
 
@@ -414,6 +416,21 @@ export const validateToken = async (token: string): Promise<AuthResponse> => {
 
 export const getProfile = async (email: string): Promise<AuthResponse> => {
   const response = await apiClient.get(`/v1/auth/profile/${email}`);
+  return response.data;
+};
+
+export const sendOtp = async (email: string): Promise<AuthResponse> => {
+  const response = await apiClient.post('/v1/auth/otp/send', { email });
+  return response.data;
+};
+
+export const verifyOtp = async (email: string, otpCode: string): Promise<AuthResponse> => {
+  const response = await apiClient.post('/v1/auth/otp/verify', { email, otpCode });
+  return response.data;
+};
+
+export const connectRazorpay = async (data: { userId: string; razorpayAccountId: string }): Promise<any> => {
+  const response = await apiClient.post('/v1/monetization/connect-razorpay', data);
   return response.data;
 };
 
@@ -959,4 +976,220 @@ export default {
   getTeamQrCodes,
   uploadTeamFile,
   getTeamFiles,
+};
+// AI Generation API Functions
+export interface AIGenerateRequest {
+  category: string;
+  prompt: string;
+}
+
+export interface AIGenerateResponse {
+  headline: string;
+  bio: string;
+  primaryCta: string;
+  secondaryCta: string;
+  linkSuggestions: string[]; // Legacy
+  socialLinks?: Array<{ platform: string; url: string }>;
+  blocks?: any[]; // Complex PageBlock array from AI
+  metaTitle?: string;
+  metaDescription?: string;
+  waDefaultMessage?: string;
+  theme?: string;
+}
+
+export interface AIFieldGenerateRequest {
+  category: string;
+  prompt: string;
+  fieldName: string;
+}
+
+export const generateAIPage = async (data: AIGenerateRequest): Promise<AIGenerateResponse> => {
+  const requestId = Math.random().toString(36).substring(2, 15);
+  const response = await apiClient.post('/ai/pages/generate', data, {
+    headers: { 'X-Request-Id': requestId }
+  });
+  return response.data;
+};
+
+export const generateAIField = async (data: AIFieldGenerateRequest): Promise<string> => {
+  const requestId = Math.random().toString(36).substring(2, 15);
+  const response = await apiClient.post('/ai/pages/generate-field', data, {
+    headers: { 'X-Request-Id': requestId }
+  });
+  return response.data;
+};
+
+// ==========================================
+// Booking & Scheduling API
+// ==========================================
+
+export interface TimeWindow {
+  start: string;
+  end: string;
+}
+
+export interface CreatorSchedule {
+  userId?: string;
+  timezone: string;
+  weeklyHours: Record<string, TimeWindow[]>;
+  blockedDates?: string[];
+}
+
+export const getMySchedule = async (): Promise<CreatorSchedule> => {
+  const response = await apiClient.get('/v1/booking/schedule');
+  return response.data.schedule;
+};
+
+export const updateSchedule = async (schedule: CreatorSchedule): Promise<CreatorSchedule> => {
+  const response = await apiClient.post('/v1/booking/schedule', schedule);
+  return response.data.schedule;
+};
+
+export const getPublicSlots = async (creatorId: string, date: string, duration: number): Promise<string[]> => {
+  const response = await apiClient.get('/v1/booking/public/slots', {
+    params: { creatorId, date, duration }
+  });
+  return response.data.slots;
+};
+
+// ==========================================
+// Business Hub API
+// ==========================================
+
+export const getBusinessOrders = async (pageId?: string | null) => {
+  const params = pageId ? { pageId } : {};
+  const response = await apiClient.get('/v1/business/orders', { params });
+  return response.data.data;
+};
+
+export const getBusinessBookings = async (pageId?: string | null) => {
+  const params = pageId ? { pageId } : {};
+  const response = await apiClient.get('/v1/business/bookings', { params });
+  return response.data.data;
+};
+
+export const getBusinessPayouts = async () => {
+  const response = await apiClient.get('/v1/business/payouts');
+  return response.data.data;
+};
+
+// ==========================================
+// Client Management API
+// ==========================================
+
+export interface InviteClientRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  pageIds: string[];
+}
+
+export interface ClientAccess {
+  id: string;
+  clientId: string;
+  agencyUserId: string;
+  allowedPageIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const inviteClient = async (data: InviteClientRequest) => {
+  const response = await apiClient.post('/v1/clients/invite', data);
+  return response.data;
+};
+
+export const getAgencyClients = async (): Promise<ClientAccess[]> => {
+  const response = await apiClient.get('/v1/clients/agency');
+  return response.data;
+};
+
+export const getMyClientAccess = async (): Promise<ClientAccess> => {
+  const response = await apiClient.get('/v1/clients/me');
+  return response.data;
+};
+
+// ==========================================
+// Page Draft & Approval API
+// ==========================================
+
+import { Page } from '../types/page';
+
+export interface PageDraft extends Page {
+  pageId: string;
+  agencyUserId: string;
+  status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+}
+
+export const savePageDraft = async (id: string, draft: Partial<PageDraft>): Promise<PageDraft> => {
+  const response = await apiClient.post(`/pages/${id}/draft`, draft);
+  return response.data;
+};
+
+export const submitPageDraft = async (id: string): Promise<PageDraft> => {
+  const response = await apiClient.post(`/pages/${id}/draft/submit`);
+  return response.data;
+};
+
+export const getActivePageDraft = async (id: string): Promise<PageDraft> => {
+  const response = await apiClient.get(`/pages/${id}/draft`);
+  return response.data;
+};
+
+export const getPageDraftForReview = async (id: string): Promise<PageDraft> => {
+  const response = await apiClient.get(`/pages/${id}/draft/review`);
+  return response.data;
+};
+
+export const approvePageDraft = async (id: string): Promise<PageDraft> => {
+  const response = await apiClient.post(`/pages/${id}/draft/approve`);
+  return response.data;
+};
+
+export const rejectPageDraft = async (id: string): Promise<PageDraft> => {
+  const response = await apiClient.post(`/pages/${id}/draft/reject`);
+  return response.data;
+};
+
+// =============== AGENCY WHITE LABEL API ===============
+
+export interface AgencySettings {
+  agencyLogoUrl?: string;
+  agencyBrandColor?: string;
+  agencyCustomDomain?: string;
+  agencySupportEmail?: string;
+}
+
+export const getAgencySettings = async (userId: string) => {
+  const response = await apiClient.get<{ success: boolean; data: AgencySettings; message?: string }>(
+    `/agency/settings/${userId}`
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to fetch agency settings');
+  }
+  return response.data;
+};
+
+export const getPublicAgencySettingsByDomain = async (domain: string) => {
+  try {
+    const response = await apiClient.get<{ success: boolean; data: AgencySettings; message?: string }>(
+      `/agency/settings/public/domain/${encodeURIComponent(domain)}`
+    );
+    if (response.data.success) {
+      return response.data.data;
+    }
+  } catch (error) {
+    console.log('No agency settings found for domain:', domain);
+  }
+  return null;
+};
+
+export const updateAgencySettings = async (userId: string, settings: AgencySettings) => {
+  const response = await apiClient.put<{ success: boolean; data: AgencySettings; message?: string }>(
+    `/agency/settings/${userId}`,
+    settings
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to update agency settings');
+  }
+  return response.data;
 };

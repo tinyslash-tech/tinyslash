@@ -3,7 +3,8 @@ import { Page, PageBlock } from '../../../types/page';
 import {
   GripVertical, Trash2, Eye, EyeOff, X, Plus,
   Link2, Type, Image as ImageIcon, Video, Share2, Mail, Layout, CreditCard, Minus,
-  ShoppingBag, LayoutGrid, Lock
+  ShoppingBag, LayoutGrid, Lock, Timer, Mic,
+  ShoppingCart, QrCode, Download, Star, PlayCircle, Calendar, MessageSquare, MapPin, Briefcase
 } from 'lucide-react';
 import {
   DragDropContext, Droppable, Draggable,
@@ -29,9 +30,15 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
       return;
     }
 
-    // Using Smart Links permission for other advanced blocks as a proxy for now
-    if ((type === 'PAYMENT' || type === 'AFFILIATE' || type === 'CARD') && !planInfo?.canUseSmartLinks) {
-      showUpgradeModal('smart-links', 'Upgrade to the Pro plan to use Advanced Blocks.');
+    // Tier 2: Advanced Blocks (Monetized/Interactive - Gated to Pro)
+    if (['PAYMENT', 'AFFILIATE', 'CARD', 'DIGITAL_PRODUCT', 'REVIEW_CAROUSEL', 'STORY_HIGHLIGHT', 'NATIVE_BOOKING', 'COMMUNITY_JOIN', 'MONETIZATION'].includes(type) && !planInfo?.canUseSmartLinks) {
+      showUpgradeModal('smart-links', 'Upgrade to the Pro plan to use Advanced Blocks like Payments, Booking, and Reviews.');
+      return;
+    }
+
+    // Tier 3: Experimental Blocks (Beta - Time-boxed - Gated to Pro)
+    if (['COUNTDOWN', 'VOICE'].includes(type) && !planInfo?.canUseSmartLinks) {
+      showUpgradeModal('smart-links', 'Upgrade to the Pro plan to access Experimental Beta blocks.');
       return;
     }
 
@@ -59,8 +66,19 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
       case 'EMAIL': return { title: 'Join my mailing list', buttonText: 'Sign Up' };
       case 'DIVIDER': return { style: 'solid', spacing: 'medium' };
       case 'PAYMENT': return { label: 'Support Me', url: '' };
-      case 'AFFILIATE': return { title: '', imageUrl: '', url: '', price: '', buttonText: 'Buy Now' };
+      case 'AFFILIATE': return { mainTitle: 'My Favorite Custom Gear', links: [{ title: 'Product 1', url: '' }] };
       case 'CARD': return { title: '', description: '', imageUrl: '', buttonText: 'Learn More', url: '' };
+      case 'COUNTDOWN': return { endDateUTC: 0, endMessage: 'Offer Ended', title: 'Limited Time Offer!', description: 'Grab this deal before it expires.', hideAfterExpiry: false };
+      case 'VOICE': return { audioUrl: '', title: 'Listen to my message' };
+      case 'WA_CATALOG': return { phoneNumber: '', items: [{ name: 'Product 1', price: '100', inStock: true }] };
+      case 'UPI_PAY': return { upiId: '', payeeName: '', amountMode: 'OPEN', fixedAmount: '' };
+      case 'DIGITAL_PRODUCT': return { title: 'Download Data', price: '10', fileKey: '' };
+      case 'REVIEW_CAROUSEL': return { verificationTier: 'TIER_1', reviews: [{ author: 'John D.', text: 'Great service!', rating: 5 }] };
+      case 'STORY_HIGHLIGHT': return { stories: [{ url: '', title: 'Highlight' }] };
+      case 'NATIVE_BOOKING': return { price: '500', duration: '30' };
+      case 'COMMUNITY_JOIN': return { platform: 'TELEGRAM', link: '', memberCount: '1k+' };
+      case 'MAPS_HUB': return { locationUrl: '', title: 'Find Us Here', deliveryLinks: [] };
+      case 'MONETIZATION': return { title: '1:1 Consulting Call', description: '', price: '999', currency: 'INR', monetizationType: 'SERVICE_LIVE', asyncRequirementText: '', fileKey: '' };
       default: return {};
     }
   };
@@ -109,8 +127,19 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
       case 'EMAIL': return block.content.title || 'Email Signup';
       case 'DIVIDER': return 'Divider';
       case 'PAYMENT': return block.content.label || 'Payment Link';
-      case 'AFFILIATE': return block.content.title || 'Affiliate Product';
+      case 'AFFILIATE': return block.content.mainTitle || 'Affiliate Links';
       case 'CARD': return block.content.title || 'Card';
+      case 'COUNTDOWN': return 'Countdown Timer';
+      case 'VOICE': return block.content.title || 'Voice Message';
+      case 'WA_CATALOG': return 'WhatsApp Catalog';
+      case 'UPI_PAY': return 'UPI Quick-Pay';
+      case 'DIGITAL_PRODUCT': return block.content.title || 'Digital Product';
+      case 'REVIEW_CAROUSEL': return 'Review Carousel';
+      case 'STORY_HIGHLIGHT': return 'Story Highlights';
+      case 'NATIVE_BOOKING': return 'Booking Engine';
+      case 'COMMUNITY_JOIN': return 'Community Link';
+      case 'MAPS_HUB': return block.content.title || 'Map & Delivery Hub';
+      case 'MONETIZATION': return block.content.title || 'Service / Product';
       default: return block.type;
     }
   };
@@ -129,6 +158,17 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
       case 'PAYMENT': return CreditCard;
       case 'AFFILIATE': return ShoppingBag;
       case 'CARD': return LayoutGrid;
+      case 'COUNTDOWN': return Timer;
+      case 'VOICE': return Mic;
+      case 'WA_CATALOG': return ShoppingCart;
+      case 'UPI_PAY': return QrCode;
+      case 'DIGITAL_PRODUCT': return Download;
+      case 'REVIEW_CAROUSEL': return Star;
+      case 'STORY_HIGHLIGHT': return PlayCircle;
+      case 'NATIVE_BOOKING': return Calendar;
+      case 'COMMUNITY_JOIN': return MessageSquare;
+      case 'MAPS_HUB': return MapPin;
+      case 'MONETIZATION': return Briefcase;
       default: return Layout;
     }
   };
@@ -246,24 +286,48 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
                 <PickButton icon={Link2} label="Link" onClick={() => addBlock('LINK')} />
                 <PickButton icon={Type} label="Header" onClick={() => addBlock('HEADER')} />
                 <PickButton icon={Type} label="Text" onClick={() => addBlock('TEXT')} />
+                <PickButton icon={Minus} label="Divider" onClick={() => addBlock('DIVIDER')} />
               </div>
             </div>
 
             <div>
-              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Media</h5>
+              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Commerce & Payments</h5>
               <div className="grid grid-cols-2 gap-2">
-                <PickButton icon={ImageIcon} label="Image" onClick={() => addBlock('IMAGE')} />
-                <PickButton icon={Video} label="Video" onClick={() => addBlock('VIDEO')} />
+                <PickButton icon={ShoppingCart} label="WhatsApp Catalog" onClick={() => addBlock('WA_CATALOG')} />
+                <PickButton icon={QrCode} label="UPI Quick-Pay" onClick={() => addBlock('UPI_PAY')} />
+                <PickButton
+                  icon={Briefcase}
+                  label="Services & Products"
+                  onClick={() => addBlock('MONETIZATION')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
               </div>
             </div>
 
             <div>
-              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Engagement</h5>
+              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Trust & Attention</h5>
               <div className="grid grid-cols-2 gap-2">
-                <PickButton icon={Share2} label="Socials" onClick={() => addBlock('SOCIAL')} />
+                <PickButton
+                  icon={Star}
+                  label="Review Carousel"
+                  onClick={() => addBlock('REVIEW_CAROUSEL')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
+                <PickButton
+                  icon={PlayCircle}
+                  label="Story Highlights"
+                  onClick={() => addBlock('STORY_HIGHLIGHT')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
+              </div>
+            </div>
+
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bookings & Leads</h5>
+              <div className="grid grid-cols-2 gap-2">
                 <PickButton
                   icon={Layout}
-                  label="Form"
+                  label="Lead Form"
                   onClick={() => addBlock('FORM')}
                   locked={!planInfo?.canUseLeadForms}
                 />
@@ -277,25 +341,52 @@ export const ContentTab: React.FC<ContentTabProps> = ({ page, onChange }) => {
             </div>
 
             <div>
-              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Advanced</h5>
+              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Media & Community</h5>
               <div className="grid grid-cols-2 gap-2">
-                <PickButton icon={Minus} label="Divider" onClick={() => addBlock('DIVIDER')} />
+                <PickButton icon={ImageIcon} label="Image" onClick={() => addBlock('IMAGE')} />
+                <PickButton icon={Video} label="Video Embed" onClick={() => addBlock('VIDEO')} />
+                <PickButton icon={Share2} label="Social Icons" onClick={() => addBlock('SOCIAL')} />
                 <PickButton
-                  icon={CreditCard}
-                  label="Payment"
-                  onClick={() => addBlock('PAYMENT')}
+                  icon={MessageSquare}
+                  label="Community Join"
+                  onClick={() => addBlock('COMMUNITY_JOIN')}
                   locked={!planInfo?.canUseSmartLinks}
                 />
+              </div>
+            </div>
+
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Local & Affiliate</h5>
+              <div className="grid grid-cols-2 gap-2">
+                <PickButton icon={MapPin} label="Maps & Delivery" onClick={() => addBlock('MAPS_HUB')} />
                 <PickButton
                   icon={ShoppingBag}
-                  label="Affiliate"
+                  label="Affiliate Link"
                   onClick={() => addBlock('AFFILIATE')}
                   locked={!planInfo?.canUseSmartLinks}
                 />
                 <PickButton
                   icon={LayoutGrid}
-                  label="Card"
+                  label="Feature Card"
                   onClick={() => addBlock('CARD')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
+              </div>
+            </div>
+
+            <div>
+              <h5 className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-2 flex items-center gap-1">Experimental <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded ml-1">BETA</span></h5>
+              <div className="grid grid-cols-2 gap-2">
+                <PickButton
+                  icon={Timer}
+                  label="Countdown"
+                  onClick={() => addBlock('COUNTDOWN')}
+                  locked={!planInfo?.canUseSmartLinks}
+                />
+                <PickButton
+                  icon={Mic}
+                  label="Voice Note"
+                  onClick={() => addBlock('VOICE')}
                   locked={!planInfo?.canUseSmartLinks}
                 />
               </div>

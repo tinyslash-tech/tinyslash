@@ -2,6 +2,8 @@ package com.urlshortener.controller;
 
 import com.urlshortener.model.User;
 import com.urlshortener.service.UserService;
+import com.urlshortener.service.OtpService;
+import com.urlshortener.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Date;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,6 +30,12 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private OtpService otpService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationAndValidationThatIsLongEnoughForHS512AlgorithmAndMeetsSecurityRequirements}")
     private String jwtSecret;
@@ -51,6 +60,120 @@ public class AuthController {
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
+    }
+
+    @PostMapping("/otp/send")
+    public ResponseEntity<Map<String, Object>> sendOtp(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Email is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            email = email.toLowerCase().trim();
+            String otpCode = otpService.generateAndSaveOtp(email);
+
+            // Dispatch email asynchronously or synchronously
+            emailService.sendOtpEmail(email, otpCode);
+
+            response.put("success", true);
+            response.put("message", "OTP sent successfully");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to send OTP: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @PostMapping("/otp/verify")
+    public ResponseEntity<Map<String, Object>> verifyOtp(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String email = request.get("email");
+            String otpCode = request.get("otpCode");
+            String name = request.get("name"); // Optional, provided during first-time signup
+
+            if (email == null || otpCode == null) {
+                response.put("success", false);
+                response.put("message", "Email and OTP code are required");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            email = email.toLowerCase().trim();
+
+            boolean isValid = otpService.validateOtp(email, otpCode);
+            if (!isValid) {
+                response.put("success", false);
+                response.put("message", "Invalid or expired OTP");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // OTP is valid. Now fetch or create the user.
+            User user;
+            var userOpt = userService.findByEmail(email);
+
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+                // Update last login
+                user.setLastLoginAt(LocalDateTime.now());
+                userService.saveUser(user);
+            } else {
+                // First time logging in (Signup flow)
+                String firstName = "";
+                String lastName = "";
+                if (name != null && !name.trim().isEmpty()) {
+                    String[] parts = name.trim().split(" ", 2);
+                    firstName = parts[0];
+                    if (parts.length > 1) {
+                        lastName = parts[1];
+                    }
+                }
+
+                // create a strong random stub password since they won't use it
+                String stubPassword = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString();
+                user = userService.registerUser(email, stubPassword, firstName, lastName);
+
+                // Force email verification to true since they just verified via OTP
+                user.setEmailVerified(true);
+                userService.saveUser(user);
+            }
+
+            // Remove sensitive information for response payload
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("email", user.getEmail());
+            userData.put("firstName", user.getFirstName());
+            userData.put("lastName", user.getLastName());
+            userData.put("subscriptionPlan", user.getSubscriptionPlan());
+            userData.put("emailVerified", user.isEmailVerified());
+            userData.put("totalUrls", user.getTotalUrls());
+            userData.put("totalQrCodes", user.getTotalQrCodes());
+            userData.put("totalFiles", user.getTotalFiles());
+            userData.put("totalClicks", user.getTotalClicks());
+            userData.put("lastLoginAt", user.getLastLoginAt());
+            userData.put("apiKey", user.getApiKey());
+            userData.put("roles", user.getRoles());
+
+            // Generate JWT token
+            String token = generateToken(user);
+
+            response.put("success", true);
+            response.put("message", "Authentication successful");
+            response.put("user", userData);
+            response.put("token", token);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
     @PostMapping("/register")

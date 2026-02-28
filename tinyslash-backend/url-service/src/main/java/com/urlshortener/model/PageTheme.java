@@ -44,8 +44,16 @@ public class PageTheme {
   // Advanced
   private Integer pageMaxWidth;
   private String contentSpacing;
+  private Integer marginTop;
+  private Integer marginX;
 
   private boolean showBranding = true; // Powered by TinySlash
+
+  // Block Containers
+  private String blockBackgroundColor;
+  private String blockBorderColor;
+  private String blockShadow;
+  private String blockCornerRadius;
 
   public PageTheme() {
   }
@@ -341,5 +349,53 @@ public class PageTheme {
 
   public void setContentSpacing(String contentSpacing) {
     this.contentSpacing = contentSpacing;
+  }
+
+  public Integer getMarginTop() {
+    return marginTop;
+  }
+
+  public void setMarginTop(Integer marginTop) {
+    this.marginTop = marginTop;
+  }
+
+  public Integer getMarginX() {
+    return marginX;
+  }
+
+  public void setMarginX(Integer marginX) {
+    this.marginX = marginX;
+  }
+
+  public String getBlockBackgroundColor() {
+    return blockBackgroundColor;
+  }
+
+  public void setBlockBackgroundColor(String blockBackgroundColor) {
+    this.blockBackgroundColor = blockBackgroundColor;
+  }
+
+  public String getBlockBorderColor() {
+    return blockBorderColor;
+  }
+
+  public void setBlockBorderColor(String blockBorderColor) {
+    this.blockBorderColor = blockBorderColor;
+  }
+
+  public String getBlockShadow() {
+    return blockShadow;
+  }
+
+  public void setBlockShadow(String blockShadow) {
+    this.blockShadow = blockShadow;
+  }
+
+  public String getBlockCornerRadius() {
+    return blockCornerRadius;
+  }
+
+  public void setBlockCornerRadius(String blockCornerRadius) {
+    this.blockCornerRadius = blockCornerRadius;
   }
 }

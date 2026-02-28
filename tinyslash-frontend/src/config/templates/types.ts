@@ -1,6 +1,6 @@
 import { PageBlock, PageTheme } from '../../types/page';
 
-export type TemplateCategory = 'ALL' | 'INFLUENCER' | 'BUSINESS' | 'PORTFOLIO' | 'PERSONAL' | 'BLANK' | 'SERVICE_PROVIDER' | 'COACH' | 'LOCAL_STORE' | 'AGENCY';
+export type TemplateCategory = 'ALL' | 'CREATOR' | 'PORTFOLIO' | 'COACH_WELLNESS' | 'PROFESSIONAL' | 'LOCAL_BUSINESS' | 'ECOMMERCE' | 'AGENCY_B2B' | 'EVENTS_NGO' | 'BLANK';
 
 export interface Template {
   id: string;

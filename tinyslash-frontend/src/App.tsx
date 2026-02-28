@@ -69,6 +69,12 @@ const PublicPage = lazy(() => import('./pages/public/PublicPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const PixelManager = lazy(() => import('./components/pixels/PixelManager'));
 
+// Business Hub (New)
+const BusinessHub = lazy(() => import('./pages/dashboard/business/BusinessHub'));
+const AgencyClients = lazy(() => import('./pages/dashboard/business/AgencyClients'));
+const ClientReview = lazy(() => import('./pages/dashboard/business/ClientReview'));
+const AgencySettings = lazy(() => import('./pages/dashboard/business/AgencySettings'));
+
 import './App.css';
 
 console.log('MODULE LOADED: App.tsx');
@@ -180,6 +186,22 @@ const AppContent: React.FC = () => {
                 </AuthRedirect>
               } />
 
+              <Route path="/dashboard/utm-templates" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <UnifiedDashboard />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
+              <Route path="/dashboard/team/utm-templates" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <UnifiedDashboard />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
               <Route path="/dashboard/leads" element={
                 <AuthRedirect requireAuth={true}>
                   <DashboardLayout>
@@ -196,10 +218,59 @@ const AppContent: React.FC = () => {
                 </AuthRedirect>
               } />
 
+              <Route path="/dashboard/clients" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <AgencyClients />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
+              <Route path="/dashboard/clients/review/:id" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <ClientReview />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
+              <Route path="/dashboard/business/settings" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <AgencySettings />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
               <Route path="/dashboard/pixels" element={
                 <AuthRedirect requireAuth={true}>
                   <DashboardLayout>
                     <PixelManager />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
+              {/* Business Hub Routes */}
+              <Route path="/dashboard/business/orders" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <BusinessHub view="orders" />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
+              <Route path="/dashboard/business/bookings" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <BusinessHub view="bookings" />
+                  </DashboardLayout>
+                </AuthRedirect>
+              } />
+
+              <Route path="/dashboard/business/payouts" element={
+                <AuthRedirect requireAuth={true}>
+                  <DashboardLayout>
+                    <BusinessHub view="payouts" />
                   </DashboardLayout>
                 </AuthRedirect>
               } />

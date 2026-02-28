@@ -34,7 +34,18 @@ public class PageBlock {
     DIVIDER,
     PAYMENT,
     AFFILIATE,
-    CARD
+    CARD,
+    COUNTDOWN,
+    VOICE,
+    WA_CATALOG,
+    UPI_PAY,
+    DIGITAL_PRODUCT,
+    REVIEW_CAROUSEL,
+    STORY_HIGHLIGHT,
+    NATIVE_BOOKING,
+    COMMUNITY_JOIN,
+    MAPS_HUB,
+    MONETIZATION
   }
 
   public String getId() {

@@ -13,6 +13,8 @@ declare global {
 interface User {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   plan: string;
   avatar?: string;
@@ -30,6 +32,9 @@ interface User {
   authProvider?: 'email' | 'google';
   subscriptionPlan?: string;
   subscriptionExpiry?: string;
+  razorpayAccountId?: string;
+  razorpayConnected?: boolean;
+  roles?: string[];
 }
 
 interface AuthContextType {
@@ -43,6 +48,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean; // Add loading state to interface
   redirectAfterAuth: () => void;
+  sendOtp: (email: string) => Promise<void>;
+  verifyOtp: (email: string, otpCode: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -205,7 +212,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         timezone: 'Asia/Kolkata',
         language: 'en',
         isAuthenticated: true,
-        authProvider: userData.authProvider === 'GOOGLE' ? 'google' : 'email'
+        authProvider: userData.authProvider === 'GOOGLE' ? 'google' : 'email',
+        razorpayAccountId: userData.razorpayAccountId,
+        razorpayConnected: userData.razorpayConnected
       };
 
       setAuthState(prev => ({ ...prev, user: refreshedUser, token: newToken, isAuthenticated: true }));
@@ -327,7 +336,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   timezone: 'Asia/Kolkata',
                   language: 'en',
                   isAuthenticated: true,
-                  authProvider: data.user.authProvider === 'GOOGLE' ? 'google' : 'email'
+                  authProvider: data.user.authProvider === 'GOOGLE' ? 'google' : 'email',
+                  razorpayAccountId: data.user.razorpayAccountId,
+                  razorpayConnected: data.user.razorpayConnected
                 };
 
                 // Single atomic update — isLoading=false & isAuthenticated=true in one render
@@ -438,7 +449,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           timezone: 'Asia/Kolkata',
           language: 'en',
           isAuthenticated: true,
-          authProvider: 'google'
+          authProvider: 'google',
+          razorpayAccountId: response.user.razorpayAccountId,
+          razorpayConnected: response.user.razorpayConnected
         };
 
         console.log('Setting Google user with token:', user.email);
@@ -515,6 +528,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         throw new Error(error.message || 'Login failed. Please try again.');
       }
+    }
+  };
+
+  const sendOtp = async (email: string) => {
+    try {
+      console.log('=== Sending OTP to email ===', email);
+      const response = await api.sendOtp(email);
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to send OTP.');
+      }
+    } catch (error: any) {
+      console.error('Send OTP Error:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to send login code.');
+    }
+  };
+
+  const verifyOtp = async (email: string, otpCode: string) => {
+    try {
+      console.log('=== Verifying OTP ===', email);
+      const response = await api.verifyOtp(email, otpCode);
+
+      if (response.success && response.user && response.token) {
+        const user: User = {
+          id: response.user.id,
+          name: `${response.user.firstName} ${response.user.lastName}`.trim() || response.user.email.split('@')[0],
+          email: response.user.email,
+          plan: normalizePlanName(response.user.subscriptionPlan || 'FREE'),
+          subscriptionPlan: response.user.subscriptionPlan,
+          subscriptionExpiry: response.user.subscriptionExpiry,
+          avatar: response.user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(response.user.firstName || response.user.email.split('@')[0])}&background=3b82f6&color=fff`,
+          createdAt: response.user.createdAt,
+          timezone: 'Asia/Kolkata',
+          language: 'en',
+          isAuthenticated: true,
+          authProvider: 'email' // Or explicitly 'otp'
+        };
+
+        console.log('OTP verified successfully, setting user:', user.email);
+        setUserWithAuth(user, response.token);
+
+        localStorage.setItem('tokenExpiry', (Date.now() + 86400000).toString());
+        startSessionManagement();
+      } else {
+        throw new Error(response.message || 'Invalid OTP code.');
+      }
+    } catch (error: any) {
+      console.error('Verify OTP Error:', error);
+      if (error.response?.status === 401 || error.response?.status === 400) {
+        throw new Error('Invalid or expired login code. Please request a new one.');
+      }
+      throw new Error(error.response?.data?.message || 'Failed to verify login code.');
     }
   };
 
@@ -646,7 +710,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       isAuthenticated,
       isLoading,
-      redirectAfterAuth
+      redirectAfterAuth,
+      sendOtp,
+      verifyOtp
     }}>
       {children}
     </AuthContext.Provider>

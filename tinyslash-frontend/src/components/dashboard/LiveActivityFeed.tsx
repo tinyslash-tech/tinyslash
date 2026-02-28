@@ -136,11 +136,11 @@ const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 ${className}`}>
-        <div className="animate-pulse space-y-3">
+      <div className={`bg-[#ffffff] rounded-xl p-4 sm:p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex flex-col h-full ${className}`}>
+        <div className="animate-pulse space-y-3 flex-1">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+            <div key={i} className="flex items-center space-x-3 p-2 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg">
+              <div className="w-8 h-8 bg-gray-200 rounded-lg"></div>
               <div className="flex-1">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
@@ -153,21 +153,24 @@ const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   }
 
   return (
-    <div className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 ${className}`}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-gray-900 flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-blue-600" />
+    <div className={`bg-[#ffffff] rounded-xl p-4 sm:p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex flex-col h-full ${className}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+          <Clock className="w-5 h-5 text-green-600" />
           <span>Live Activity</span>
         </h3>
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Live updates"></div>
+        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse border-2 border-green-200" title="Live updates"></div>
       </div>
 
       {activities.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
           {activities.map((activity) => (
-            <div key={activity.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
+            <div key={activity.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-900 transition-colors group gap-2 sm:gap-0">
               <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border-2 shrink-0 ${activity.type === 'qr' ? 'bg-purple-50 border-purple-200 group-hover:bg-purple-100 group-hover:border-purple-300' :
+                    activity.type === 'file' ? 'bg-orange-50 border-orange-200 group-hover:bg-orange-100 group-hover:border-orange-300' :
+                      'bg-blue-50 border-blue-200 group-hover:bg-blue-100 group-hover:border-blue-300'
+                  }`}>
                   {getIcon(activity.type)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -186,25 +189,25 @@ const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center space-x-1">
-                <span className="text-xs text-gray-500">
+              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t-2 border-dashed border-gray-100 sm:border-0 pl-12 sm:pl-0 sm:ml-4">
+                <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
                   {getTimeAgo(activity.timestamp)}
                 </span>
                 {showActions && (
                   <div className="flex items-center space-x-1 ml-2">
                     <button
                       onClick={() => copyToClipboard(activity.shortUrl)}
-                      className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                      className="text-gray-400 hover:text-gray-900 bg-white p-1 rounded border border-gray-200 hover:border-gray-900 transition-colors"
                       title="Copy link"
                     >
-                      <Copy className="w-3 h-3" />
+                      <Copy className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => window.open(activity.shortUrl, '_blank')}
-                      className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                      className="text-gray-400 hover:text-gray-900 bg-white p-1 rounded border border-gray-200 hover:border-gray-900 transition-colors"
                       title="Open link"
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
@@ -213,9 +216,11 @@ const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
           ))}
         </div>
       ) : (
-        <div className="text-center py-4">
-          <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">No recent activity</p>
+        <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl flex-1 flex flex-col items-center justify-center">
+          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
+            <Clock className="w-6 h-6 text-gray-400" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">No recent activity</p>
         </div>
       )}
     </div>

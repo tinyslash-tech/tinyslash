@@ -96,7 +96,7 @@ public class SecurityConfig {
                                                 "HEAD", "PATCH"));
                 configuration.setAllowedHeaders(java.util.Arrays.asList("Authorization", "Content-Type",
                                 "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method",
-                                "Access-Control-Request-Headers"));
+                                "Access-Control-Request-Headers", "X-Request-Id"));
                 configuration.setAllowCredentials(true);
                 org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);

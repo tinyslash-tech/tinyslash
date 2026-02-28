@@ -46,10 +46,10 @@ export const LivePreviewCard: React.FC<LivePreviewCardProps> = ({ data, selected
   const getButtonStyle = () => ({
     backgroundColor: theme.buttonStyle === 'OUTLINE' ? 'transparent' : theme.buttonStyle === 'SOFT' ? `${theme.buttonColor}20` : theme.buttonColor,
     color: theme.buttonStyle === 'OUTLINE' || theme.buttonStyle === 'SOFT' ? theme.buttonColor : theme.buttonTextColor,
-    border: theme.buttonStyle === 'OUTLINE' ? `1px solid ${theme.buttonColor}` : 'none',
-    borderRadius: theme.buttonShape === 'ROUNDED' ? '6px' : theme.buttonShape === 'PILL' ? '99px' : '0px',
+    border: theme.buttonStyle === 'OUTLINE' ? `2px solid ${theme.buttonColor}` : 'none',
+    borderRadius: theme.buttonShape === 'ROUNDED' ? '6px' : theme.buttonShape === 'PILL' ? '999px' : '0px',
     boxShadow: theme.buttonShadow !== 'NONE' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
-    fontFamily: theme.font || 'inherit',
+    fontFamily: theme.buttonFont || theme.font || 'inherit',
   });
 
   return (
@@ -132,11 +132,25 @@ export const LivePreviewCard: React.FC<LivePreviewCardProps> = ({ data, selected
                 )
               }
 
-              // IMAGE
-              if (block.type === 'IMAGE' && block.content.url) {
+              // AFFILIATE
+              if (block.type === 'AFFILIATE') {
+                return (
+                  <div key={i} className="w-full bg-white/50 backdrop-blur-sm rounded-lg p-1 mt-1 border border-black/5" style={{ borderColor: block.content.strokeColor }}>
+                    <div className="w-16 h-2 rounded-full mb-1 opacity-80" style={{ backgroundColor: theme.textColor }} />
+                    <div className="flex gap-1">
+                      <div className="flex-1 h-3 rounded bg-white" />
+                      <div className="flex-1 h-3 rounded bg-white" />
+                    </div>
+                  </div>
+                );
+              }
+
+              // IMAGE OR MEDIA BLOCKS (Card, Countdown)
+              if (['IMAGE', 'CARD', 'COUNTDOWN'].includes(block.type) && block.content.imageUrl || block.type === 'IMAGE' && block.content.url) {
+                const imageUrl = block.type === 'IMAGE' ? block.content.url : block.content.imageUrl;
                 return (
                   <div key={i} className="w-full h-16 rounded-lg bg-cover bg-center shadow-sm opacity-90"
-                    style={{ backgroundImage: `url(${block.content.url})` }}
+                    style={{ backgroundImage: `url(${imageUrl})` }}
                   />
                 )
               }

@@ -18,6 +18,7 @@ export R2_ENDPOINT=$(grep "^R2_ENDPOINT=" ../../.env | cut -d '=' -f2-)
 export R2_BUCKET_NAME=$(grep "^R2_BUCKET_NAME=" ../../.env | cut -d '=' -f2-)
 export R2_PUBLIC_DOMAIN=$(grep "^R2_PUBLIC_DOMAIN=" ../../.env | cut -d '=' -f2-)
 export FILE_STORAGE_TYPE=$(grep "^FILE_STORAGE_TYPE=" ../../.env | cut -d '=' -f2-)
+export OPENAI_API_KEY=$(grep "^OPENAI_API_KEY=" ../../.env | cut -d '=' -f2-)
 
 echo "✅ Environment configured."
 echo "Using MongoDB URI: $DEV_MONGODB_URI"

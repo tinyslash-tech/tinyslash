@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TEMPLATES, Template, TemplateCategory } from '../../../config/templates/index';
 import { LivePreviewCard } from '../LivePreviewCard';
-import { Check, ArrowRight, Grid, User, Briefcase, Palette, Layout, Sparkles, Store, Wrench, Lightbulb, Building } from 'lucide-react';
+import { Check, ArrowRight, Grid, User, Briefcase, Palette, Layout, Sparkles, Store, Wrench, Lightbulb, Building, ShoppingCart, Calendar } from 'lucide-react';
 
 interface TemplatesTabProps {
   onSelect: (template: Template) => void;
@@ -10,14 +10,14 @@ interface TemplatesTabProps {
 
 const CATEGORIES: { id: TemplateCategory | 'ALL'; label: string; icon: React.ElementType }[] = [
   { id: 'ALL', label: 'All Templates', icon: Grid },
-  { id: 'INFLUENCER', label: 'Influencer', icon: Sparkles },
-  { id: 'BUSINESS', label: 'Business', icon: Briefcase },
-  { id: 'AGENCY', label: 'Agency', icon: Building },
-  { id: 'PORTFOLIO', label: 'Portfolio', icon: Palette },
-  { id: 'PERSONAL', label: 'Personal', icon: User },
-  { id: 'SERVICE_PROVIDER', label: 'Service Providers', icon: Wrench },
-  { id: 'COACH', label: 'Coaches / Consultants', icon: Lightbulb },
-  { id: 'LOCAL_STORE', label: 'Local Stores', icon: Store },
+  { id: 'CREATOR', label: 'Creator & Influencer', icon: Sparkles },
+  { id: 'PORTFOLIO', label: 'Creative Portfolio & Profiles', icon: Palette },
+  { id: 'COACH_WELLNESS', label: 'Coach, Mentor & Wellness', icon: Lightbulb },
+  { id: 'PROFESSIONAL', label: 'Professional Services', icon: Briefcase },
+  { id: 'LOCAL_BUSINESS', label: 'Local Business & Retail', icon: Store },
+  { id: 'ECOMMERCE', label: 'Online Store & E-Commerce', icon: ShoppingCart },
+  { id: 'AGENCY_B2B', label: 'Agency & B2B Services', icon: Building },
+  { id: 'EVENTS_NGO', label: 'Events & NGOs', icon: Calendar },
   { id: 'BLANK', label: 'Blank', icon: Layout },
 ];
 

@@ -73,6 +73,7 @@ public class SubscriptionController {
             planData.put("canUsePageCustomDomain", info.isCanUsePageCustomDomain());
             planData.put("canUseSmartLinks", info.isCanUseSmartLinks());
             planData.put("canUseLeadForms", info.isCanUseLeadForms());
+            planData.put("canUsePremiumTemplates", info.isCanUsePremiumTemplates());
             response.put("success", true);
             response.put("data", planData);
             return ResponseEntity.ok(response);

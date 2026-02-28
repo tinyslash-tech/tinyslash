@@ -42,6 +42,9 @@ public class CacheConfig {
                 "adminDashboard",
                 "domains_list",
                 "verified_domains",
+                "aiPages",
+                "aiFields",
+                "creator_schedule",
                 "geoData"));
 
         cacheManager.setAllowNullValues(false);

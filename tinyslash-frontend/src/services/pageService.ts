@@ -94,5 +94,10 @@ export const pageService = {
   getBySlug: async (slug: string) => {
     const response = await api.get<Page>(`/public/pages/${slug}`);
     return response.data;
+  },
+
+  generateField: async (data: { category: string; prompt: string; fieldName: string }) => {
+    const response = await api.post<string>('/ai/pages/generate-field', data);
+    return response.data;
   }
 };

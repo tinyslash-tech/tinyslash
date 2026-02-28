@@ -90,7 +90,7 @@ const WorldMapWidget: React.FC<WorldMapWidgetProps> = ({ className = '' }) => {
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-xl p-6 shadow-sm border border-gray-200 ${className}`}>
+      <div className={`bg-[#ffffff] rounded-xl p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all ${className}`}>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -100,9 +100,9 @@ const WorldMapWidget: React.FC<WorldMapWidgetProps> = ({ className = '' }) => {
   }
 
   return (
-    <div className={`bg-white rounded-xl p-6 shadow-sm border border-gray-200 ${className}`}>
+    <div className={`bg-[#ffffff] rounded-xl p-6 border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all group ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+        <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center space-x-2">
           <Globe className="w-5 h-5 text-blue-600" />
           <span>Global Traffic Map</span>
         </h3>
@@ -118,7 +118,7 @@ const WorldMapWidget: React.FC<WorldMapWidgetProps> = ({ className = '' }) => {
       {locationPoints.length > 0 ? (
         <>
           {/* Simplified World Map */}
-          <div className="relative bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg p-4 mb-4">
+          <div className="relative bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg p-4 mb-4 border-2 border-gray-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
             <svg
               viewBox="0 0 800 400"
               className="w-full h-64"

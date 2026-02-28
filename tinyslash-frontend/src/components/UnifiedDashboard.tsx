@@ -17,8 +17,9 @@ const AnalyticsSection = lazy(() => import('./dashboard/AnalyticsSection'));
 const CustomDomainManager = lazy(() => import('./CustomDomainManager'));
 const Leads = lazy(() => import('../pages/dashboard/Leads'));
 const TrustBadge = lazy(() => import('../pages/dashboard/TrustBadge'));
+const UtmTemplatesManager = lazy(() => import('./dashboard/settings/UtmTemplatesManager'));
 
-type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings';
+type SidebarSection = 'dashboard' | 'create' | 'links' | 'qr-codes' | 'file-to-url' | 'leads' | 'trust-badge' | 'analytics' | 'domains' | 'team-members' | 'team-settings' | 'utm-templates';
 type CreateMode = 'url' | 'qr' | 'file';
 
 const DashboardLoader = () => <CardDotsLoader className="h-64" />;
@@ -61,6 +62,8 @@ const UnifiedDashboard: React.FC = () => {
       setActiveSection('team-members');
     } else if (path.includes('/dashboard/team/settings')) {
       setActiveSection('team-settings');
+    } else if (path.includes('/dashboard/team/utm-templates') || path.includes('/dashboard/utm-templates')) {
+      setActiveSection('utm-templates');
     }
   }, [location.pathname]); // Remove activeSection dependency to allow external updates
 
@@ -107,6 +110,11 @@ const UnifiedDashboard: React.FC = () => {
   };
 
   const renderContent = () => {
+    if (user?.roles?.includes('ROLE_CLIENT')) {
+      if (activeSection === 'analytics') return <AnalyticsSection />;
+      return <DashboardOverview onCreateClick={handleCreateClick} />;
+    }
+
     switch (activeSection) {
       case 'dashboard':
         return <DashboardOverview onCreateClick={handleCreateClick} />;
@@ -149,6 +157,8 @@ const UnifiedDashboard: React.FC = () => {
         return currentScope.type === 'TEAM' ? <TeamManagement teamId={currentScope.id} /> : <DashboardOverview onCreateClick={handleCreateClick} />;
       case 'team-settings':
         return currentScope.type === 'TEAM' ? <TeamSettings teamId={currentScope.id} /> : <DashboardOverview onCreateClick={handleCreateClick} />;
+      case 'utm-templates':
+        return <UtmTemplatesManager />;
       default:
         return <DashboardOverview onCreateClick={handleCreateClick} />;
     }

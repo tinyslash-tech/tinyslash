@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, ChevronDown, Megaphone } from 'lucide-react';
 import { SecurityError } from '../ui/SecurityError';
+import { TemplateSelector } from '../ui/TemplateSelector';
+import { PlatformDropdown } from '../../../ui/PlatformDropdown';
+import { UtmTemplate } from '../../../../services/utmTemplateService';
 
 const PLATFORM_OPTIONS = [
   { label: 'Select Platform', value: '' },
@@ -89,6 +92,16 @@ export const UrlCreate: React.FC<UrlCreateProps> = ({
 
       {showCampaign && (
         <div className="mt-3 p-4 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100 rounded-xl space-y-3 animate-in slide-in-from-top-2">
+
+          <TemplateSelector
+            onSelect={(template: UtmTemplate) => {
+              if (template.utmCampaign) setCampaignName(template.utmCampaign);
+              if (template.utmSource) setUtmSource(template.utmSource);
+              if (template.utmMedium) setUtmMedium(template.utmMedium);
+              // Handle custom values if necessary in the UI or backend map
+            }}
+          />
+
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1.5">
               Campaign Name
@@ -105,31 +118,31 @@ export const UrlCreate: React.FC<UrlCreateProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                Platform
+                Platform (UTM Source)
               </label>
-              <select
+              <PlatformDropdown
                 value={utmSource}
-                onChange={(e) => setUtmSource(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white appearance-none cursor-pointer"
-              >
-                {PLATFORM_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                onChange={setUtmSource}
+                placeholder="e.g. linkedin, facebook"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                Type
+                Type (UTM Medium)
               </label>
-              <select
+              <input
+                type="text"
+                list="type-options"
                 value={utmMedium}
                 onChange={(e) => setUtmMedium(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white appearance-none cursor-pointer"
-              >
-                {TYPE_OPTIONS.map((opt) => (
+                placeholder="e.g. social, cpc"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+              />
+              <datalist id="type-options">
+                {TYPE_OPTIONS.filter(opt => opt.value !== '').map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
-              </select>
+              </datalist>
             </div>
           </div>
 

@@ -1,7 +1,9 @@
 package com.urlshortener.controller;
 
+import com.urlshortener.model.ClientAccess;
 import com.urlshortener.model.Page;
 import com.urlshortener.model.User;
+import com.urlshortener.service.ClientService;
 import com.urlshortener.service.PageService;
 import com.urlshortener.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,9 @@ public class PageController {
   @Autowired
   private UserService userService;
 
+  @Autowired
+  private ClientService clientService;
+
   private User getAuthenticatedUser(Authentication authentication) {
     String userId;
     Object principal = authentication.getPrincipal();
@@ -38,6 +43,23 @@ public class PageController {
   @GetMapping
   public ResponseEntity<List<Page>> getUserPages(Authentication authentication) {
     User user = getAuthenticatedUser(authentication);
+
+    // If they are strictly a CLIENT, only return their allowed pages
+    if (user.getRoles().contains("ROLE_CLIENT")) {
+      ClientAccess access = clientService.getClientAccess(user.getId());
+      if (access != null && !access.getAllowedPageIds().isEmpty()) {
+        List<Page> allowedPages = new java.util.ArrayList<>();
+        for (String pid : access.getAllowedPageIds()) {
+          try {
+            allowedPages.add(pageService.getPage(pid));
+          } catch (Exception ignored) {
+          }
+        }
+        return ResponseEntity.ok(allowedPages);
+      }
+      return ResponseEntity.ok(java.util.List.of());
+    }
+
     return ResponseEntity.ok(pageService.getUserPages(user.getId()));
   }
 
@@ -64,6 +86,15 @@ public class PageController {
   @GetMapping("/{id}")
   public ResponseEntity<Page> getPage(@PathVariable String id, Authentication authentication) {
     User user = getAuthenticatedUser(authentication);
+
+    if (user.getRoles().contains("ROLE_CLIENT")) {
+      ClientAccess access = clientService.getClientAccess(user.getId());
+      if (access != null && access.getAllowedPageIds().contains(id)) {
+        return ResponseEntity.ok(pageService.getPage(id));
+      }
+      return ResponseEntity.status(403).build();
+    }
+
     return ResponseEntity.ok(pageService.getPageById(id, user.getId()));
   }
 
@@ -101,6 +132,15 @@ public class PageController {
       @PathVariable String id, Authentication authentication) {
 
     User user = getAuthenticatedUser(authentication);
+
+    if (user.getRoles().contains("ROLE_CLIENT")) {
+      ClientAccess access = clientService.getClientAccess(user.getId());
+      if (access != null && access.getAllowedPageIds().contains(id)) {
+        return ResponseEntity.ok(pageService.getAnalytics(id));
+      }
+      return ResponseEntity.status(403).build();
+    }
+
     // Verify ownership
     pageService.getPageById(id, user.getId());
     return ResponseEntity.ok(pageService.getAnalytics(id));

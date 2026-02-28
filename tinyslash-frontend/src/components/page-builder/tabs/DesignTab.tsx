@@ -46,69 +46,133 @@ const THEME_PRESETS: Partial<PageTheme>[] = [
     socialStyle: 'FILLED',
   },
 
-  // --- GRADIENTS (8) ---
+  // --- PREMIUM MODERN THEMES (12) ---
   {
-    // 5. Sunset Vibes
-    backgroundType: 'GRADIENT', gradientStart: '#FF512F', gradientEnd: '#DD2476', gradientDirection: 'to bottom right',
+    // 5. Minimalist Glass
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#f8fafc', gradientEnd: '#e2e8f0', gradientDirection: 'to bottom right',
+    buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'SUBTLE',
+    buttonColor: '#ffffff', buttonTextColor: '#0f172a',
+    font: 'Inter', textColor: '#334155',
+    socialStyle: 'FILLED',
+  },
+  {
+    // 6. Midnight Glow
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#0f172a', gradientEnd: '#1e1b4b', gradientDirection: 'to bottom',
+    buttonShape: 'PILL', buttonStyle: 'SOFT', buttonShadow: 'GLOW',
+    buttonColor: '#8b5cf6', buttonTextColor: '#ffffff',
+    font: 'Outfit', textColor: '#f8fafc',
+    socialStyle: 'OUTLINE',
+  },
+  {
+    // 7. Rose Gold Luxe
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#27272a', gradientEnd: '#18181b', gradientDirection: 'to bottom right',
+    buttonShape: 'SHARP', buttonStyle: 'OUTLINE', buttonShadow: 'NONE',
+    buttonColor: '#fda4af', buttonTextColor: '#fda4af',
+    font: 'Playfair Display', textColor: '#ffe4e6',
+    socialStyle: 'MONOCHROME',
+  },
+  {
+    // 8. Sunset Vibrant
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#f97316', gradientEnd: '#e11d48', gradientDirection: 'to bottom right',
     buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'STRONG',
-    buttonColor: '#ffffff', buttonTextColor: '#DD2476',
+    buttonColor: '#ffffff', buttonTextColor: '#e11d48',
     font: 'Poppins', textColor: '#ffffff',
     socialStyle: 'FILLED',
   },
   {
-    // 6. Ocean Breeze
-    backgroundType: 'GRADIENT', gradientStart: '#2193b0', gradientEnd: '#6dd5ed', gradientDirection: 'to bottom',
-    buttonShape: 'PILL', buttonStyle: 'SOFT', buttonShadow: 'SUBTLE',
-    buttonColor: '#ffffff', buttonTextColor: '#2193b0',
-    font: 'Outfit', textColor: '#ffffff',
-    socialStyle: 'OUTLINE',
-  },
-  {
-    // 7. Berry Fusion
-    backgroundType: 'GRADIENT', gradientStart: '#C33764', gradientEnd: '#1D2671', gradientDirection: 'to right',
-    buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'GLOW',
-    buttonColor: '#FF6B6B', buttonTextColor: '#ffffff',
-    font: 'Montserrat', textColor: '#ffffff',
-    socialStyle: 'FILLED',
-  },
-  {
-    // 8. Aurora
-    backgroundType: 'GRADIENT', gradientStart: '#00c6ff', gradientEnd: '#0072ff', gradientDirection: 'to bottom right',
-    buttonShape: 'PILL', buttonStyle: 'FILLED', buttonShadow: 'STRONG',
-    buttonColor: '#ffffff', buttonTextColor: '#0072ff',
-    font: 'Inter', textColor: '#ffffff',
-    socialStyle: 'FILLED',
-  },
-  {
-    // 9. Lush Forest
-    backgroundType: 'GRADIENT', gradientStart: '#134E5E', gradientEnd: '#71B280', gradientDirection: 'to bottom',
-    buttonShape: 'ROUNDED', buttonStyle: 'OUTLINE', buttonShadow: 'NONE',
-    buttonColor: '#ffffff', buttonTextColor: '#ffffff',
-    font: 'Lora', textColor: '#ffffff',
-    socialStyle: 'OUTLINE',
-  },
-  {
-    // 10. Golden Hour
-    backgroundType: 'GRADIENT', gradientStart: '#f8b500', gradientEnd: '#fceabb', gradientDirection: 'to bottom',
-    buttonShape: 'SHARP', buttonStyle: 'FILLED', buttonShadow: 'SUBTLE',
-    buttonColor: '#000000', buttonTextColor: '#ffffff',
-    font: 'Oswald', textColor: '#000000',
-    socialStyle: 'FILLED',
-  },
-  {
-    // 11. Deep Space
-    backgroundType: 'GRADIENT', gradientStart: '#000000', gradientEnd: '#434343', gradientDirection: 'to bottom',
-    buttonShape: 'PILL', buttonStyle: 'SOFT', buttonShadow: 'GLOW',
-    buttonColor: '#00f260', buttonTextColor: '#000000',
-    font: 'Space Mono', textColor: '#00f260',
+    // 9. Cyberpunk Neon
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#111827', gradientEnd: '#000000', gradientDirection: 'to bottom',
+    buttonShape: 'ROUNDED', buttonStyle: 'SOFT', buttonShadow: 'GLOW',
+    buttonColor: '#10b981', buttonTextColor: '#10b981',
+    font: 'Space Mono', textColor: '#e5e7eb',
     socialStyle: 'MONOCHROME',
   },
   {
-    // 12. Cotton Candy
-    backgroundType: 'GRADIENT', gradientStart: '#D9AFD9', gradientEnd: '#97D9E1', gradientDirection: 'to top right',
+    // 10. Ocean Breeze
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#e0f2fe', gradientEnd: '#bae6fd', gradientDirection: 'to bottom',
+    buttonShape: 'PILL', buttonStyle: 'FILLED', buttonShadow: 'SUBTLE',
+    buttonColor: '#0369a1', buttonTextColor: '#ffffff',
+    font: 'DM Sans', textColor: '#0c4a6e',
+    socialStyle: 'FILLED',
+  },
+  {
+    // 11. Emerald Forest
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#064e3b', gradientEnd: '#022c22', gradientDirection: 'to bottom right',
     buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'STRONG',
-    buttonColor: '#ffffff', buttonTextColor: '#6B7280',
-    font: 'Outfit', textColor: '#ffffff',
+    buttonColor: '#10b981', buttonTextColor: '#022c22',
+    font: 'Lora', textColor: '#ecfdf5',
+    socialStyle: 'FILLED',
+  },
+  {
+    // 12. Lavender Dream
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#f3e8ff', gradientEnd: '#e0e7ff', gradientDirection: 'to right',
+    buttonShape: 'PILL', buttonStyle: 'FILLED', buttonShadow: 'SUBTLE',
+    buttonColor: '#7c3aed', buttonTextColor: '#ffffff',
+    font: 'Outfit', textColor: '#4c1d95',
+    socialStyle: 'FILLED',
+  },
+  {
+    // 13. Crimson Dark
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#450a0a', gradientEnd: '#000000', gradientDirection: 'to bottom',
+    buttonShape: 'ROUNDED', buttonStyle: 'SOFT', buttonShadow: 'NONE',
+    buttonColor: '#f87171', buttonTextColor: '#fca5a5',
+    font: 'Inter', textColor: '#fef2f2',
+    socialStyle: 'OUTLINE',
+  },
+  {
+    // 14. Golden Desert
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#fef3c7', gradientEnd: '#fde68a', gradientDirection: 'to bottom',
+    buttonShape: 'SHARP', buttonStyle: 'FILLED', buttonShadow: 'STRONG',
+    buttonColor: '#b45309', buttonTextColor: '#fffbeb',
+    font: 'Oswald', textColor: '#78350f',
+    socialStyle: 'FILLED',
+  },
+  {
+    // 15. Deep Sapphire
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#1e3a8a', gradientEnd: '#172554', gradientDirection: 'to bottom right',
+    buttonShape: 'PILL', buttonStyle: 'OUTLINE', buttonShadow: 'GLOW',
+    buttonColor: '#60a5fa', buttonTextColor: '#60a5fa',
+    font: 'Montserrat', textColor: '#eff6ff',
+    socialStyle: 'OUTLINE',
+  },
+  {
+    // 16. Minty Fresh
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#d1fae5', gradientEnd: '#a7f3d0', gradientDirection: 'to bottom',
+    buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'SUBTLE',
+    buttonColor: '#059669', buttonTextColor: '#ffffff',
+    font: 'DM Sans', textColor: '#064e3b',
+    socialStyle: 'FILLED',
+  },
+  {
+    // 17. Cosmic Purple
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#2e1065', gradientEnd: '#4c1d95', gradientDirection: 'to bottom right',
+    buttonShape: 'PILL', buttonStyle: 'FILLED', buttonShadow: 'GLOW',
+    buttonColor: '#a855f7', buttonTextColor: '#ffffff',
+    font: 'Outfit', textColor: '#f3e8ff',
+    socialStyle: 'FILLED',
+  },
+  {
+    // 18. Slate Elegance
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#0f172a', gradientEnd: '#334155', gradientDirection: 'to bottom',
+    buttonShape: 'ROUNDED', buttonStyle: 'SOFT', buttonShadow: 'SUBTLE',
+    buttonColor: '#94a3b8', buttonTextColor: '#0f172a',
+    font: 'Space Mono', textColor: '#f8fafc',
+    socialStyle: 'OUTLINE',
+  },
+  {
+    // 19. Ruby Flare
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#4c0519', gradientEnd: '#9f1239', gradientDirection: 'to bottom right',
+    buttonShape: 'SHARP', buttonStyle: 'FILLED', buttonShadow: 'STRONG',
+    buttonColor: '#fb7185', buttonTextColor: '#4c0519',
+    font: 'Playfair Display', textColor: '#ffe4e6',
+    socialStyle: 'MONOCHROME',
+  },
+  {
+    // 20. Frosty Aqua
+    backgroundType: 'GRADIENT', background: '', gradientStart: '#f0fdf4', gradientEnd: '#ccfbf1', gradientDirection: 'to right',
+    buttonShape: 'PILL', buttonStyle: 'FILLED', buttonShadow: 'NONE',
+    buttonColor: '#0d9488', buttonTextColor: '#ffffff',
+    font: 'Inter', textColor: '#115e59',
     socialStyle: 'FILLED',
   },
 ];
@@ -372,9 +436,24 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
           <div>
             <label className="text-xs font-medium text-gray-500 mb-2 block">Style</label>
             <div className="grid grid-cols-3 gap-2">
-              <OptionButton label="Filled" active={theme.buttonStyle === 'FILLED'} onClick={() => updateTheme({ buttonStyle: 'FILLED' })} />
-              <OptionButton label="Outline" active={theme.buttonStyle === 'OUTLINE'} onClick={() => updateTheme({ buttonStyle: 'OUTLINE' })} />
-              <OptionButton label="Soft" active={theme.buttonStyle === 'SOFT'} onClick={() => updateTheme({ buttonStyle: 'SOFT' })} />
+              <OptionButton
+                label="Filled"
+                active={theme.buttonStyle === 'FILLED'}
+                onClick={() => updateTheme({ buttonStyle: 'FILLED' })}
+                preview={<div className="w-8 h-4 bg-current rounded-md" />}
+              />
+              <OptionButton
+                label="Outline"
+                active={theme.buttonStyle === 'OUTLINE'}
+                onClick={() => updateTheme({ buttonStyle: 'OUTLINE' })}
+                preview={<div className="w-8 h-4 border-2 border-current rounded-md" />}
+              />
+              <OptionButton
+                label="Soft"
+                active={theme.buttonStyle === 'SOFT'}
+                onClick={() => updateTheme({ buttonStyle: 'SOFT' })}
+                preview={<div className="w-8 h-4 bg-current opacity-30 rounded-md" />}
+              />
             </div>
           </div>
 
@@ -540,9 +619,25 @@ export const DesignTab: React.FC<DesignTabProps> = ({ page, onChange }) => {
         <div className="space-y-4">
           <SliderControl
             label="Page Max Width"
-            value={theme.pageMaxWidth}
+            value={theme.pageMaxWidth || 680}
             min={480} max={960} step={20}
             onChange={(val: number) => updateTheme({ pageMaxWidth: val })}
+            unit="px"
+          />
+
+          <SliderControl
+            label="Top Margin"
+            value={theme.marginTop ?? 64}
+            min={0} max={200} step={8}
+            onChange={(val: number) => updateTheme({ marginTop: val })}
+            unit="px"
+          />
+
+          <SliderControl
+            label="Side Margin"
+            value={theme.marginX ?? 24}
+            min={0} max={100} step={4}
+            onChange={(val: number) => updateTheme({ marginX: val })}
             unit="px"
           />
 
@@ -601,13 +696,13 @@ const Section = ({ title, icon: Icon, children }: any) => (
 );
 
 const SegmentedControl = ({ options, value, onChange }: any) => (
-  <div className="flex bg-gray-100/80 p-1.5 rounded-xl border border-gray-100/50">
+  <div className="flex bg-gray-100/80 p-1.5 rounded-xl border border-gray-200/50 shadow-inner">
     {options.map((opt: string) => (
       <button
         key={opt}
         onClick={() => onChange(opt)}
-        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-200 capitalize ${value === opt
-          ? 'bg-white text-gray-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] ring-1 ring-black/5'
+        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-200 capitalize relative ${value === opt
+          ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5 transform scale-[1.02]'
           : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
           }`}
       >
@@ -654,15 +749,17 @@ const ColorPicker = ({ label, value, onChange }: any) => (
 const OptionButton = ({ active, onClick, label, preview }: any) => (
   <button
     onClick={onClick}
-    className={`group flex flex-col items-center justify-center gap-3 p-4 border rounded-xl transition-all duration-200 ${active
-      ? 'border-black bg-gray-900 text-white shadow-lg scale-[1.02]'
-      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+    className={`group flex flex-col items-center justify-center gap-2.5 p-3.5 border rounded-xl transition-all duration-300 ${active
+      ? 'border-gray-900 bg-gray-900 text-white shadow-md ring-2 ring-gray-900 ring-offset-1 scale-[1.02]'
+      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm hover:-translate-y-0.5'
       }`}
   >
-    <div className={`transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-105'}`}>
-      {preview}
-    </div>
-    <span className={`text-xs font-semibold tracking-wide ${active ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'}`}>{label}</span>
+    {preview && (
+      <div className={`transition-transform duration-300 flex items-center justify-center h-5 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+        {preview}
+      </div>
+    )}
+    <span className={`text-[11px] font-bold tracking-wider uppercase ${active ? 'text-white' : 'group-hover:text-gray-900 transition-colors'}`}>{label}</span>
   </button>
 );
 

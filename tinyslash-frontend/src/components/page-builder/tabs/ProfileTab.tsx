@@ -9,10 +9,13 @@ interface ProfileTabProps {
   onChange: (updates: Partial<Page>) => void;
 }
 
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Wand2, Loader2 } from 'lucide-react';
+import { generateAIField } from '../../../services/api';
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({ page, onChange }) => {
   const [copied, setCopied] = React.useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = React.useState(false);
+  const [isGeneratingBio, setIsGeneratingBio] = React.useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,6 +46,36 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ page, onChange }) => {
     setCopied(true);
     toast.success('Link copied!');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleGenerateField = async (fieldName: 'title' | 'bio') => {
+    if (fieldName === 'title') setIsGeneratingTitle(true);
+    else setIsGeneratingBio(true);
+
+    try {
+      // Use existing bio or title as context, fallback to empty string
+      const promptContext = fieldName === 'title' ? page.bio || 'creator' : page.title || 'creator';
+
+      const response = await generateAIField({
+        category: 'CREATOR_LIFESTYLE', // Defaulting for simple wand, could be pulled from page template
+        prompt: `Make a ${fieldName} for a page with context: ${promptContext}`,
+        fieldName: fieldName === 'title' ? 'headline' : 'bio'
+      });
+
+      if (fieldName === 'title') onChange({ title: response });
+      if (fieldName === 'bio') onChange({ bio: response });
+
+      toast.success(`${fieldName === 'title' ? 'Name' : 'Bio'} generated!`);
+    } catch (error: any) {
+      if (error.response?.status === 402 || error.response?.status === 403) {
+        toast.error(error.response?.data || 'Check plan limits.');
+      } else {
+        toast.error('Failed to generate.');
+      }
+    } finally {
+      if (fieldName === 'title') setIsGeneratingTitle(false);
+      else setIsGeneratingBio(false);
+    }
   };
 
   return (
@@ -106,13 +139,24 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ page, onChange }) => {
 
           {/* Page Name */}
           <section className="space-y-3">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center bg-transparent">
               <label className="block text-sm font-medium text-gray-900">
                 Display Name <span className="text-red-500">*</span>
               </label>
-              <span className={`text-xs ${page.title.length > 48 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                {page.title.length}/48
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleGenerateField('title')}
+                  disabled={isGeneratingTitle}
+                  className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                  title="Improve with AI"
+                >
+                  {isGeneratingTitle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                </button>
+                <span className={`text-xs ${page.title.length > 48 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                  {page.title.length}/48
+                </span>
+              </div>
             </div>
             <div className="relative">
               <input
@@ -140,11 +184,22 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ page, onChange }) => {
 
           {/* Bio */}
           <section className="space-y-3">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <label className="block text-sm font-medium text-gray-900">Bio</label>
-              <span className={`text-xs ${(page.bio || '').length >= 160 ? 'text-amber-500 font-bold' : 'text-gray-400'}`}>
-                {(page.bio || '').length}/160
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleGenerateField('bio')}
+                  disabled={isGeneratingBio}
+                  className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                  title="Improve with AI"
+                >
+                  {isGeneratingBio ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                </button>
+                <span className={`text-xs ${(page.bio || '').length >= 160 ? 'text-amber-500 font-bold' : 'text-gray-400'}`}>
+                  {(page.bio || '').length}/160
+                </span>
+              </div>
             </div>
             <textarea
               value={page.bio || ''}

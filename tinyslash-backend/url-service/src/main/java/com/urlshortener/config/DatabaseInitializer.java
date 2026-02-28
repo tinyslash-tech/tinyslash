@@ -27,6 +27,8 @@ public class DatabaseInitializer implements CommandLineRunner {
         try {
             initializeDomainsCollection();
             initializeTrustVerificationCollection();
+            initializeCreatorSchedulesCollection();
+            initializeBookingsCollection();
             logger.info("Database initialization completed successfully");
         } catch (Exception e) {
             logger.error("Database initialization failed", e);
@@ -177,6 +179,67 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         } catch (Exception e) {
             logger.warn("Failed to create Trust Verification indexes: {}", e.getMessage());
+        }
+    }
+
+    private void initializeCreatorSchedulesCollection() {
+        logger.info("Initializing creator_schedules collection...");
+        boolean exists = mongoTemplate.collectionExists(com.urlshortener.model.CreatorSchedule.class);
+        if (!exists) {
+            mongoTemplate.createCollection(com.urlshortener.model.CreatorSchedule.class);
+        }
+
+        IndexOperations indexOps = mongoTemplate.indexOps(com.urlshortener.model.CreatorSchedule.class);
+        try {
+            indexOps.ensureIndex(
+                    new Index()
+                            .on("userId", org.springframework.data.domain.Sort.Direction.ASC)
+                            .unique()
+                            .named("idx_creatorschedule_userid_unique")
+                            .background());
+            logger.info("CreatorSchedule indexes created");
+        } catch (Exception e) {
+            logger.warn("Failed to create CreatorSchedule indexes: {}", e.getMessage());
+        }
+    }
+
+    private void initializeBookingsCollection() {
+        logger.info("Initializing bookings collection...");
+        boolean exists = mongoTemplate.collectionExists(com.urlshortener.model.Booking.class);
+        if (!exists) {
+            mongoTemplate.createCollection(com.urlshortener.model.Booking.class);
+        }
+
+        IndexOperations indexOps = mongoTemplate.indexOps(com.urlshortener.model.Booking.class);
+        try {
+            // 1. Unique index on slotLockKey wrapper
+            indexOps.ensureIndex(
+                    new Index()
+                            .on("slotLockKey", org.springframework.data.domain.Sort.Direction.ASC)
+                            .unique()
+                            .named("idx_booking_slotlockkey_unique")
+                            .background());
+
+            // 2. Compound index for overlaps
+            indexOps.ensureIndex(
+                    new Index()
+                            .on("creatorId", org.springframework.data.domain.Sort.Direction.ASC)
+                            .on("bookingDate", org.springframework.data.domain.Sort.Direction.ASC)
+                            .on("status", org.springframework.data.domain.Sort.Direction.ASC)
+                            .named("idx_booking_overlap_compound")
+                            .background());
+
+            // 3. TTL Index on expiresAt
+            indexOps.ensureIndex(
+                    new Index()
+                            .on("expiresAt", org.springframework.data.domain.Sort.Direction.ASC)
+                            .expire(0)
+                            .named("idx_booking_ttl")
+                            .background());
+
+            logger.info("Booking indexes created");
+        } catch (Exception e) {
+            logger.warn("Failed to create Booking indexes: {}", e.getMessage());
         }
     }
 }

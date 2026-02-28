@@ -55,7 +55,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-[#ffffff] border-b-2 border-gray-900 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -101,7 +101,7 @@ const Header: React.FC = () => {
               <div className="lg:hidden relative" ref={menuRef}>
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg border-2 border-transparent hover:border-gray-900 hover:shadow-[2px_2px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
                   aria-label="Toggle menu"
                 >
                   {mobileMenuOpen ? (
@@ -119,10 +119,10 @@ const Header: React.FC = () => {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 max-h-[calc(100vh-6rem)] overflow-y-auto"
+                      className="absolute right-0 mt-3 w-80 max-w-[calc(100vw-1rem)] bg-[#ffffff] rounded-xl border-2 border-gray-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] py-2 z-50 max-h-[calc(100vh-6rem)] overflow-y-auto"
                     >
                       {/* User Info */}
-                      <div className="px-4 py-4 border-b border-gray-100">
+                      <div className="px-4 py-4 border-b-2 border-gray-100">
                         <div className="flex items-center space-x-3">
                           <img
                             src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=3b82f6&color=fff`}
@@ -144,9 +144,9 @@ const Header: React.FC = () => {
                       </div>
 
                       {/* Primary Actions - Create */}
-                      <div className="py-2 border-b border-gray-100">
+                      <div className="py-2 border-b-2 border-dashed border-gray-200">
                         <div className="px-4 py-2">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Create</p>
+                          <p className="text-xs font-black text-gray-900 uppercase tracking-widest mb-2">Create</p>
                         </div>
 
                         <button
@@ -190,14 +190,14 @@ const Header: React.FC = () => {
                       </div>
 
                       {/* Navigation */}
-                      <div className="py-2 border-b border-gray-100">
+                      <div className="py-2 border-b-2 border-dashed border-gray-200">
                         <div className="px-4 py-2">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Navigate</p>
+                          <p className="text-xs font-black text-gray-900 uppercase tracking-widest mb-2">Navigate</p>
                         </div>
 
                         <button
                           onClick={() => handleNavigation('/dashboard')}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <LayoutDashboard className="w-4 h-4 mr-3" />
                           Dashboard
@@ -205,7 +205,7 @@ const Header: React.FC = () => {
 
                         <button
                           onClick={() => handleNavigation('/dashboard/links')}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <LinkIcon className="w-4 h-4 mr-3" />
                           My Links
@@ -213,7 +213,7 @@ const Header: React.FC = () => {
 
                         <button
                           onClick={() => handleNavigation('/dashboard/qr-codes')}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <QrCode className="w-4 h-4 mr-3" />
                           My QR Codes
@@ -221,7 +221,7 @@ const Header: React.FC = () => {
 
                         <button
                           onClick={() => handleNavigation('/dashboard/file-links')}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <Upload className="w-4 h-4 mr-3" />
                           File Links
@@ -229,20 +229,20 @@ const Header: React.FC = () => {
                       </div>
 
                       {/* Analytics & Trust */}
-                      <div className="py-2 border-b border-gray-100">
+                      <div className="py-2 border-b-2 border-dashed border-gray-200">
                         <button
                           onClick={() => {
                             navigate('/dashboard/trust-badge');
                             setMobileMenuOpen(false);
                           }}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <Shield className="w-4 h-4 mr-3 text-blue-600" />
                           Get Verified Trust Badge
                         </button>
                         <button
                           onClick={() => handleNavigation('/dashboard/analytics')}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <BarChart3 className="w-4 h-4 mr-3" />
                           Analytics
@@ -253,7 +253,7 @@ const Header: React.FC = () => {
                       <div className="py-2">
                         <button
                           onClick={() => handleNavigation('/profile')}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <User className="w-4 h-4 mr-3" />
                           Profile Settings
@@ -261,7 +261,7 @@ const Header: React.FC = () => {
 
                         <button
                           onClick={() => handleNavigation('/account-settings')}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
                           <Settings className="w-4 h-4 mr-3" />
                           Account Settings
@@ -270,7 +270,7 @@ const Header: React.FC = () => {
                         {user?.plan === 'free' && (
                           <button
                             onClick={() => handleNavigation('/pricing')}
-                            className="w-full flex items-center px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors"
+                            className="w-full flex items-center px-4 py-2 text-sm font-bold text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-colors"
                           >
                             <Crown className="w-4 h-4 mr-3" />
                             Upgrade to Pro
@@ -282,7 +282,7 @@ const Header: React.FC = () => {
                             logout();
                             setMobileMenuOpen(false);
                           }}
-                          className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          className="w-full flex items-center px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                         >
                           <LogOut className="w-4 h-4 mr-3" />
                           Sign Out

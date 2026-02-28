@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import Header from '../Header';
 import Sidebar from '../dashboard/Sidebar';
+import ClientDashboardLayout from './ClientDashboardLayout';
+import { useAuth } from '../../context/AuthContext';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  if (user?.roles?.includes('ROLE_CLIENT')) {
+    return <ClientDashboardLayout>{children}</ClientDashboardLayout>;
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50">

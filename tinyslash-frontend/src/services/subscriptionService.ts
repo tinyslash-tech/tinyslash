@@ -28,6 +28,7 @@ export interface UserPlanInfo {
   canUseSmartLinks?: boolean;
   canUseLeadForms?: boolean;
   canUsePremiumTemplates?: boolean;
+  canUseAIGeneration?: boolean;
 }
 
 export interface PricingPlan {

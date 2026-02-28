@@ -55,6 +55,11 @@ public class Subscription {
     private String couponCode;
     private Integer discountAmount;
 
+    // AI Generation Usage
+    private Integer aiPagesGenerated = 0;
+    private Integer aiFieldsGenerated = 0;
+    private LocalDateTime aiUsageResetAt = LocalDateTime.now().plusMonths(1);
+
     // ── Constructors ──
 
     public Subscription() {
@@ -224,5 +229,29 @@ public class Subscription {
 
     public void setDiscountAmount(Integer discountAmount) {
         this.discountAmount = discountAmount;
+    }
+
+    public Integer getAiPagesGenerated() {
+        return aiPagesGenerated;
+    }
+
+    public void setAiPagesGenerated(Integer aiPagesGenerated) {
+        this.aiPagesGenerated = aiPagesGenerated;
+    }
+
+    public Integer getAiFieldsGenerated() {
+        return aiFieldsGenerated;
+    }
+
+    public void setAiFieldsGenerated(Integer aiFieldsGenerated) {
+        this.aiFieldsGenerated = aiFieldsGenerated;
+    }
+
+    public LocalDateTime getAiUsageResetAt() {
+        return aiUsageResetAt;
+    }
+
+    public void setAiUsageResetAt(LocalDateTime aiUsageResetAt) {
+        this.aiUsageResetAt = aiUsageResetAt;
     }
 }

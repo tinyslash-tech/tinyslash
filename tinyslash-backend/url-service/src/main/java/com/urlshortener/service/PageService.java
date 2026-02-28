@@ -1,6 +1,7 @@
 package com.urlshortener.service;
 
 import com.urlshortener.model.Page;
+import com.urlshortener.model.PageBlock;
 import com.urlshortener.model.PlanPolicy;
 import com.urlshortener.model.PageTheme;
 import com.urlshortener.model.PageView;
@@ -25,6 +26,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class PageService {
+
+  private static final Set<String> ALLOWED_AUDIO_TYPES = Set.of(
+      "audio/webm", "audio/webm;codecs=opus",
+      "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav");
 
   private final PageRepository pageRepository;
   private final StorageService storageService;
@@ -60,6 +65,23 @@ public class PageService {
   }
 
   public String uploadAsset(MultipartFile file, String userId) throws IOException {
+    String contentType = file.getContentType();
+    if (contentType == null) {
+      throw new IllegalArgumentException("File content type is missing.");
+    }
+
+    boolean isImage = contentType.startsWith("image/");
+    boolean isAudio = ALLOWED_AUDIO_TYPES.contains(contentType);
+
+    if (!isImage && !isAudio) {
+      throw new IllegalArgumentException(
+          "Invalid file type. Only images and standard audio files are allowed. Got: " + contentType);
+    }
+
+    if (isAudio && file.getSize() > 5 * 1024 * 1024) {
+      throw new IllegalArgumentException("Audio file exceeds maximum allowed size of 5MB.");
+    }
+
     String path = "pages/" + userId + "/" + System.currentTimeMillis() + "-" + file.getOriginalFilename();
     String storedPath = storageService.uploadFile(file, path);
     String publicUrl = storageService.getPublicUrl(storedPath);
@@ -154,13 +176,47 @@ public class PageService {
       throw new IllegalArgumentException("Upgrade required: Custom domains are available on the Pro plan.");
     }
 
-    // 4. Validate Premium Blocks (Lead Forms)
+    // 4. Validate Premium Blocks and strict configurations
     if (updates.getBlocks() != null) {
       boolean hasForm = updates.getBlocks().stream()
-          .anyMatch(b -> "FORM".equals(b.getType()) || "NEWSLETTER".equals(b.getType())); // Assuming FORM/NEWSLETTER
-                                                                                          // types
+          .anyMatch(b -> "FORM".equals(b.getType()) || "NEWSLETTER".equals(b.getType()));
       if (hasForm && !plan.hasLeadForms()) {
         throw new IllegalArgumentException("Upgrade required: Lead forms are available on the Business plan.");
+      }
+
+      boolean hasAdvancedBlocks = updates.getBlocks().stream()
+          .anyMatch(b -> Set.of("PAYMENT", "AFFILIATE", "CARD", "COUNTDOWN", "VOICE").contains(b.getType()));
+      if (hasAdvancedBlocks && !plan.hasSmartLinks()) {
+        throw new IllegalArgumentException("Upgrade required: Advanced blocks are available on the Pro plan.");
+      }
+
+      for (PageBlock block : updates.getBlocks()) {
+        if ("COUNTDOWN".equals(block.getType())) {
+          Map<String, Object> content = block.getContent();
+          if (content == null || content.get("endDateUTC") == null) {
+            throw new IllegalArgumentException("Countdown block must have an end date.");
+          }
+          long endDateUTC = 0;
+          Object dateObj = content.get("endDateUTC");
+          if (dateObj instanceof Number) {
+            endDateUTC = ((Number) dateObj).longValue();
+          } else {
+            throw new IllegalArgumentException("Invalid date format for Countdown block.");
+          }
+          if (endDateUTC > 0 && endDateUTC < System.currentTimeMillis() - 86400000) {
+            throw new IllegalArgumentException("Countdown end date cannot be more than a day in the past.");
+          }
+        }
+        if ("VOICE".equals(block.getType())) {
+          Map<String, Object> content = block.getContent();
+          if (content == null || content.get("audioUrl") == null || content.get("audioUrl").toString().isEmpty()) {
+            throw new IllegalArgumentException("Voice block must have an uploaded audio track.");
+          }
+          String audioUrl = content.get("audioUrl").toString();
+          if (!audioUrl.startsWith("http://") && !audioUrl.startsWith("https://")) {
+            throw new IllegalArgumentException("Invalid audio URL format.");
+          }
+        }
       }
     }
 
@@ -186,6 +242,11 @@ public class PageService {
     existing.setMetaTitle(updates.getMetaTitle());
     existing.setMetaDescription(updates.getMetaDescription());
 
+    // Integrations
+    existing.setFbPixelId(updates.getFbPixelId());
+    existing.setGoogleAnalyticsId(updates.getGoogleAnalyticsId());
+    existing.setCustomScripts(updates.getCustomScripts());
+
     // Handle slug updates if changed
     if (updates.getSlug() != null && !updates.getSlug().equals(existing.getSlug())) {
       String safeSlug = slugService.sanitizeSlug(updates.getSlug());
@@ -201,12 +262,16 @@ public class PageService {
       existing.setSlug(safeSlug);
 
       try {
+        // TODO: delete orphaned R2 assets if a block with an image or audio URL was
+        // removed
         return pageRepository.save(existing);
       } catch (org.springframework.dao.DuplicateKeyException e) {
         throw new IllegalArgumentException("Slug is already taken: " + safeSlug);
       }
     }
 
+    // TODO: delete orphaned R2 assets if a block with an image or audio URL was
+    // removed
     return pageRepository.save(existing);
   }
 
@@ -235,6 +300,11 @@ public class PageService {
     }
 
     return page;
+  }
+
+  public Page getPage(String pageId) {
+    return pageRepository.findById(pageId)
+        .orElseThrow(() -> new RuntimeException("Page not found"));
   }
 
   public void recordView(String pageId, String ip, String userAgentRaw, String referer, PageInteractionBatchRequest req,

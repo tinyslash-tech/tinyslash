@@ -6,7 +6,7 @@ import { Page } from '../../types/page';
 import {
   Loader2, Save, ChevronLeft,
   User, Palette, Layers, Settings,
-  Monitor, Smartphone, BarChart3, LayoutTemplate
+  Monitor, Smartphone, BarChart3, LayoutTemplate, Wand2, ShoppingBag
 } from 'lucide-react';
 import { ThreeDotsLoader } from '../../components/ui/ThreeDotsLoader';
 import { TemplatesTab } from '../../components/page-builder/tabs/TemplatesTab';
@@ -18,8 +18,11 @@ import { ContentTab } from '../../components/page-builder/tabs/ContentTab';
 import { SettingsTab } from '../../components/page-builder/tabs/SettingsTab';
 import { AnalyticsTab } from '../../components/page-builder/tabs/AnalyticsTab';
 import { Preview } from '../../components/page-builder/Preview';
+import { AiGenerationModal } from '../../components/page-builder/AiGenerationModal';
 
 import { useDebounce } from '../../hooks/useDebounce';
+import { useAuth } from '../../context/AuthContext';
+import { getActivePageDraft, savePageDraft, submitPageDraft } from '../../services/api';
 
 type Tab = 'TEMPLATES' | 'PROFILE' | 'CONTENT' | 'DESIGN' | 'SETTINGS' | 'ANALYTICS';
 
@@ -45,11 +48,19 @@ const DEVICE_PRESETS = [
 const PageBuilder = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAgency = user?.roles?.includes('ROLE_AGENCY') || user?.roles?.includes('ROLE_AGENCY_OWNER');
+
   const [searchParams, setSearchParams] = useSearchParams();
   const isNewPage = searchParams.get('new') === 'true';
   const queryClient = useQueryClient();
   const [page, setPage] = useState<Page | null>(null);
-  // const [showTemplates, setShowTemplates] = useState(isNewPage); // No longer needed
+
+  // Draft State
+  const [isDraftMode, setIsDraftMode] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [activeTab, setActiveTab] = useState<Tab>(isNewPage ? 'TEMPLATES' : 'PROFILE');
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -57,11 +68,11 @@ const PageBuilder = () => {
   const [selectedDevice, setSelectedDevice] = useState(DEVICE_PRESETS[2]); // Default to iPhone 15/14
   const [scale, setScale] = useState(1);
   const [isDevicePickerOpen, setIsDevicePickerOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Sync state with URL params
   useEffect(() => {
     if (searchParams.get('new') === 'true') {
-      // setShowTemplates(true);
       setActiveTab('TEMPLATES');
     }
   }, [searchParams]);
@@ -70,17 +81,31 @@ const PageBuilder = () => {
   const debouncedPage = useDebounce(page, 1000);
 
   // Fetch Page Data
-  const { data: fetchedPage, isLoading } = useQuery({
+  const { data: fetchedPage, isLoading: isPageLoading } = useQuery({
     queryKey: ['page', id],
     queryFn: () => pageService.getById(id!),
     enabled: !!id
   });
 
+  // Fetch Active Draft
+  const { data: activeDraft, isLoading: isDraftLoading } = useQuery({
+    queryKey: ['pageDraft', id],
+    queryFn: () => getActivePageDraft(id!),
+    enabled: !!id && !!isAgency,
+    retry: false
+  });
+
+  const isLoading = isPageLoading || (isAgency && isDraftLoading);
+
   useEffect(() => {
-    if (fetchedPage && !page) {
+    if (isAgency && activeDraft && !page) {
+      setPage(activeDraft);
+      setIsDraftMode(true);
+      setDraftStatus(activeDraft.status);
+    } else if (fetchedPage && !page && !activeDraft) {
       setPage(fetchedPage);
     }
-  }, [fetchedPage]);
+  }, [fetchedPage, activeDraft]);
 
   // Adjust scale to fit screen automatically
   useEffect(() => {
@@ -100,18 +125,35 @@ const PageBuilder = () => {
 
   // Save Mutation
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<Page>) => pageService.update(id!, data),
+    mutationFn: (data: Partial<Page>) =>
+      isDraftMode ? savePageDraft(id!, data as any) : pageService.update(id!, data),
     onSuccess: (data) => {
       // Don't update full page state to avoid cursor jumps, just confirm save
       setLastSaved(new Date());
       setIsSaving(false);
       queryClient.invalidateQueries({ queryKey: ['page', id] });
+      if (isDraftMode) {
+        queryClient.invalidateQueries({ queryKey: ['pageDraft', id] });
+      }
     },
     onError: () => {
       setIsSaving(false);
       toast.error('Failed to auto-save');
     }
   });
+
+  const handleSubmitDraft = async () => {
+    try {
+      setIsSubmitting(true);
+      await submitPageDraft(id!);
+      setDraftStatus('PENDING');
+      toast.success('Draft submitted for review');
+    } catch (err) {
+      toast.error('Failed to submit draft');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Auto-Save Effect
   useEffect(() => {
@@ -131,11 +173,86 @@ const PageBuilder = () => {
     }
   }, [debouncedPage]);
 
-
-
   const handleUpdate = (updates: Partial<Page>) => {
     if (!page) return;
     setPage(prev => prev ? ({ ...prev, ...updates }) : null);
+  };
+
+  const handleAiSuccess = (aiData: import('../../services/api').AIGenerateResponse) => {
+    if (!page) return;
+    const updates: Partial<Page> = {
+      bio: aiData.bio,
+    };
+
+    if (aiData.metaTitle) updates.metaTitle = aiData.metaTitle;
+    if (aiData.metaDescription) updates.metaDescription = aiData.metaDescription;
+    if (aiData.waDefaultMessage) updates.waDefaultMessage = aiData.waDefaultMessage;
+
+    // Map the AI selected theme string to actual PageTheme properties
+    if (aiData.theme) {
+      // Import the preset logic (using hardcoded mapping to match DesignTab presets)
+      const themeMap: Record<string, any> = {
+        'MONOCHROME': { backgroundType: 'SOLID', background: '#000000', buttonShape: 'SHARP', buttonStyle: 'OUTLINE', buttonShadow: 'NONE', buttonColor: '#ffffff', buttonTextColor: '#ffffff', font: 'Space Mono', textColor: '#ffffff', socialStyle: 'MONOCHROME' },
+        'SUNSET': { backgroundType: 'GRADIENT', background: '', gradientStart: '#f97316', gradientEnd: '#e11d48', gradientDirection: 'to bottom right', buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'STRONG', buttonColor: '#ffffff', buttonTextColor: '#e11d48', font: 'Poppins', textColor: '#ffffff', socialStyle: 'FILLED' },
+        'OCEAN': { backgroundType: 'GRADIENT', background: '', gradientStart: '#e0f2fe', gradientEnd: '#bae6fd', gradientDirection: 'to bottom', buttonShape: 'PILL', buttonStyle: 'FILLED', buttonShadow: 'SUBTLE', buttonColor: '#0369a1', buttonTextColor: '#ffffff', font: 'DM Sans', textColor: '#0c4a6e', socialStyle: 'FILLED' },
+        'LAVENDER': { backgroundType: 'GRADIENT', background: '', gradientStart: '#f3e8ff', gradientEnd: '#e0e7ff', gradientDirection: 'to right', buttonShape: 'PILL', buttonStyle: 'FILLED', buttonShadow: 'SUBTLE', buttonColor: '#7c3aed', buttonTextColor: '#ffffff', font: 'Outfit', textColor: '#4c1d95', socialStyle: 'FILLED' },
+        'NEON': { backgroundType: 'GRADIENT', background: '', gradientStart: '#111827', gradientEnd: '#000000', gradientDirection: 'to bottom', buttonShape: 'ROUNDED', buttonStyle: 'SOFT', buttonShadow: 'GLOW', buttonColor: '#10b981', buttonTextColor: '#10b981', font: 'Space Mono', textColor: '#e5e7eb', socialStyle: 'MONOCHROME' },
+        'NATURE': { backgroundType: 'GRADIENT', background: '', gradientStart: '#064e3b', gradientEnd: '#022c22', gradientDirection: 'to bottom right', buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'STRONG', buttonColor: '#10b981', buttonTextColor: '#022c22', font: 'Lora', textColor: '#ecfdf5', socialStyle: 'FILLED' },
+        'COFFEE': { backgroundType: 'SOLID', background: '#fdf4dc', buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'STRONG', buttonColor: '#78350f', buttonTextColor: '#fffbeb', font: 'Dm Sans', textColor: '#78350f', socialStyle: 'FILLED' },
+        'MINIMAL_LIGHT': { backgroundType: 'SOLID', background: '#ffffff', buttonShape: 'ROUNDED', buttonStyle: 'FILLED', buttonShadow: 'NONE', buttonColor: '#000000', buttonTextColor: '#ffffff', font: 'Inter', textColor: '#000000', socialStyle: 'FILLED' },
+        'DEEP_SEA': { backgroundType: 'GRADIENT', background: '', gradientStart: '#1e3a8a', gradientEnd: '#172554', gradientDirection: 'to bottom right', buttonShape: 'PILL', buttonStyle: 'OUTLINE', buttonShadow: 'GLOW', buttonColor: '#60a5fa', buttonTextColor: '#60a5fa', font: 'Montserrat', textColor: '#eff6ff', socialStyle: 'OUTLINE' }
+      };
+
+      const selectedTheme = themeMap[aiData.theme] || themeMap['MINIMAL_LIGHT'];
+      updates.theme = {
+        ...page.theme,
+        ...selectedTheme
+      };
+    }
+
+    let appendedBlocks: any[] = [];
+
+    // Map complex Advanced Blocks if they exist
+    if (aiData.blocks && aiData.blocks.length > 0) {
+      appendedBlocks = aiData.blocks.map((b: any, idx: number) => ({
+        ...b,
+        id: Math.random().toString(36).substr(2, 9),
+        order: page.blocks.length + idx
+      }));
+    } else if (aiData.linkSuggestions && aiData.linkSuggestions.length > 0) {
+      // Fallback to legacy link suggestions if advanced blocks failed
+      appendedBlocks = aiData.linkSuggestions.map((titleText: string, idx: number) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        type: 'LINK' as const,
+        content: { title: titleText, url: '' },
+        order: page.blocks.length + idx,
+        visible: true
+      }));
+    }
+
+    // Map Social Links into a single Social block if they exist
+    if (aiData.socialLinks && aiData.socialLinks.length > 0) {
+      appendedBlocks.push({
+        id: Math.random().toString(36).substr(2, 9),
+        type: 'SOCIAL' as const,
+        content: {
+          style: 'ICONS',
+          platforms: aiData.socialLinks
+        },
+        order: page.blocks.length + appendedBlocks.length,
+        visible: true
+      });
+    }
+
+    if (appendedBlocks.length > 0) {
+      // If no existing links/blocks are configured, we append the generated ones
+      const existingContentBlocks = page.blocks.filter(b => b.type !== 'SOCIAL');
+      if (existingContentBlocks.length === 0) {
+        updates.blocks = [...page.blocks, ...appendedBlocks];
+      }
+    }
+
+    handleUpdate(updates);
   };
 
   const handleTemplateSelect = (template: Template) => {
@@ -186,6 +303,7 @@ const PageBuilder = () => {
     { id: 'CONTENT', label: 'Content', icon: Layers },
     { id: 'DESIGN', label: 'Design', icon: Palette },
     { id: 'ANALYTICS', label: 'Analytics', icon: BarChart3 },
+    { id: 'BUSINESS', label: 'Sales & Bookings', icon: ShoppingBag },
     { id: 'SETTINGS', label: 'Settings', icon: Settings },
   ];
 
@@ -227,6 +345,30 @@ const PageBuilder = () => {
             )}
           </div>
 
+          {/* Draft Mode Toggle (Agency Only) */}
+          {isAgency && (
+            <>
+              <div className="h-6 w-px bg-gray-200 mx-2"></div>
+              <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200">
+                <span className="text-xs font-bold uppercase tracking-wider text-yellow-700">
+                  {isDraftMode ? 'Drafting' : 'Live Edit'}
+                </span>
+                <button
+                  onClick={() => setIsDraftMode(!isDraftMode)}
+                  className={`
+                          relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ring-offset-2
+                          ${isDraftMode ? 'bg-yellow-500' : 'bg-gray-200'}
+                      `}
+                >
+                  <span className={`
+                          pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                          ${isDraftMode ? 'translate-x-5' : 'translate-x-0'}
+                      `} />
+                </button>
+              </div>
+            </>
+          )}
+
           {/* Publish Toggle */}
           <div className="h-6 w-px bg-gray-200 mx-2"></div>
 
@@ -248,36 +390,79 @@ const PageBuilder = () => {
             </button>
           </div>
 
-          <a
-            href={`/p/${page.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors ml-2"
-          >
-            <Monitor className="w-4 h-4" />
-            Go Live
-          </a>
+          {isDraftMode ? (
+            <button
+              onClick={handleSubmitDraft}
+              disabled={isSubmitting || draftStatus === 'PENDING'}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ml-2
+                ${draftStatus === 'PENDING'
+                  ? 'bg-yellow-100 text-yellow-700 cursor-not-allowed border border-yellow-200'
+                  : 'bg-yellow-500 text-white hover:bg-yellow-600 shadow-sm'}`}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : draftStatus === 'PENDING' ? (
+                'Pending Review'
+              ) : (
+                'Submit for Review'
+              )}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsAiModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium border border-blue-200 hover:bg-blue-100 transition-colors ml-2"
+              >
+                <Wand2 className="w-4 h-4" />
+                Generate with AI
+              </button>
+              <a
+                href={`/p/${page.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors ml-2"
+              >
+                <Monitor className="w-4 h-4" />
+                Go Live
+              </a>
+            </>
+          )}
         </div>
       </header>
+
+      <AiGenerationModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onSuccess={handleAiSuccess}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
 
         {/* Sidebar Tabs */}
-        <div className="w-[500px] bg-white border-r border-gray-200 flex flex-col z-10">
+        <div className="w-[650px] bg-white border-r border-gray-200 flex flex-col z-10">
           {/* Tab Navigation */}
-          <div className="flex border-b border-gray-100">
+          <div className="flex border-b border-gray-100 overflow-x-auto hide-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as Tab)}
-                className={`flex-1 flex flex-col items-center justify-center py-3 border-b-2 transition-colors ${activeTab === tab.id
+                onClick={() => {
+                  if (tab.id === 'BUSINESS') {
+                    navigate(`/dashboard/business/orders?pageId=${page.id}&pageName=${encodeURIComponent(page.title)}`);
+                  } else {
+                    setActiveTab(tab.id as Tab);
+                  }
+                }}
+                className={`min-w-[85px] flex-1 flex flex-col items-center justify-center py-3 border-b-2 transition-colors ${activeTab === tab.id
                   ? 'border-black text-blue-600 bg-blue-50/50'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
               >
                 <tab.icon className="w-5 h-5 mb-1" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">{tab.label}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">{tab.label}</span>
               </button>
             ))}
           </div>

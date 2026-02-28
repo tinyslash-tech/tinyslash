@@ -14,53 +14,52 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMode, onSuccess }) => {
-  const { login, signup, loginWithGoogle } = useAuth();
+  const { sendOtp, verifyOtp, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [step, setStep] = useState<'email' | 'otp'>('email');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
-    confirmPassword: ''
+    otp: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Reset step when modal closes or mode switches
+  React.useEffect(() => {
+    if (!isOpen) {
+      setStep('email');
+      setFormData(prev => ({ ...prev, otp: '' }));
+    }
+  }, [isOpen, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (mode === 'signup' && formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      if (mode === 'login') {
-        await login(formData.email, formData.password);
-        toast.success('Welcome back!');
+      if (step === 'email') {
+        // Step 1: Send OTP
+        await sendOtp(formData.email);
+        toast.success(`Login code sent to ${formData.email}`);
+        setStep('otp');
       } else {
-        await signup(formData.name, formData.email, formData.password);
-        toast.success('Account created successfully!');
+        // Step 2: Verify OTP
+        if (formData.otp.length !== 6) {
+          toast.error('Please enter a valid 6-digit code');
+          setIsLoading(false);
+          return;
+        }
+        await verifyOtp(formData.email, formData.otp);
+        toast.success('Successfully authenticated!');
+        onClose();
+        navigate('/dashboard');
+        if (onSuccess) onSuccess();
       }
+    } catch (error: any) {
+      toast.error(error.message || 'Authentication failed');
+    } finally {
       setIsLoading(false);
-      onClose();
-
-      // Redirect to dashboard after successful auth
-      navigate('/dashboard');
-
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      setIsLoading(false);
-      toast.error(mode === 'login' ? 'Invalid credentials' : 'Failed to create account');
-      console.error('Auth error:', error);
     }
   };
 
@@ -187,78 +186,70 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
               </div>
             </div>
 
-            {/* Email Form */}
+            {/* Email / OTP Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
-              {mode === 'signup' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name
+              {step === 'email' ? (
+                <>
+                  {mode === 'signup' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                        placeholder="Enter your full name"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Enter the 6-digit code sent to <br />
+                    <strong className="text-gray-900">{formData.email}</strong>
+                  </p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
+                    Login Code
                   </label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="otp"
+                    value={formData.otp}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                    placeholder="Enter your full name"
+                    maxLength={6}
+                    className="w-full px-3 py-3 text-center tracking-widest text-2xl border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all uppercase"
+                    placeholder="------"
                     required
                   />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                    placeholder="Enter your password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {mode === 'signup' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm Password
-                  </label>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                    placeholder="Confirm your password"
-                    required
-                  />
+                  <div className="mt-4 text-sm text-gray-500">
+                    <button type="button" onClick={() => setStep('email')} className="text-blue-600 hover:text-black">
+                      Wrong email?
+                    </button>
+                    {" • "}
+                    <button type="button" onClick={handleSubmit} disabled={isLoading} className="text-blue-600 hover:text-black">
+                      Resend code
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -282,10 +273,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                 {isLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    {mode === 'login' ? 'Signing In...' : 'Creating Account...'}
+                    {step === 'email' ? 'Sending Code...' : 'Verifying...'}
                   </div>
                 ) : (
-                  mode === 'login' ? 'Sign In' : 'Create Account'
+                  step === 'email' ? 'Continue with Email' : 'Verify & Sign In'
                 )}
               </button>
             </form>

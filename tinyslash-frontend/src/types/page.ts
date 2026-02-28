@@ -1,4 +1,4 @@
-export type BlockType = 'LINK' | 'HEADER' | 'IMAGE' | 'SOCIAL' | 'TEXT' | 'VIDEO' | 'FORM' | 'EMAIL' | 'DIVIDER' | 'PAYMENT' | 'AFFILIATE' | 'CARD';
+export type BlockType = 'LINK' | 'HEADER' | 'IMAGE' | 'SOCIAL' | 'TEXT' | 'VIDEO' | 'FORM' | 'EMAIL' | 'DIVIDER' | 'PAYMENT' | 'AFFILIATE' | 'CARD' | 'COUNTDOWN' | 'VOICE' | 'WA_CATALOG' | 'UPI_PAY' | 'DIGITAL_PRODUCT' | 'REVIEW_CAROUSEL' | 'STORY_HIGHLIGHT' | 'NATIVE_BOOKING' | 'COMMUNITY_JOIN' | 'MAPS_HUB' | 'MONETIZATION';
 
 export interface PageBlock {
   id: string;
@@ -54,9 +54,17 @@ export interface PageTheme {
   // Advanced
   pageMaxWidth: number; // 480 - 960
   contentSpacing: 'COMPACT' | 'NORMAL' | 'RELAXED';
+  marginTop?: number;
+  marginX?: number;
 
   // Branding
   showBranding: boolean;
+
+  // Block Containers
+  blockBackgroundColor?: string; // e.g. '#ffffff', 'rgba(255,255,255,0.7)', or 'transparent'
+  blockBorderColor?: string;
+  blockShadow?: 'NONE' | 'SM' | 'MD' | 'LG' | 'GLOW';
+  blockCornerRadius?: 'SHARP' | 'ROUNDED' | 'PILL' | 'XL';
 }
 
 export interface Page {

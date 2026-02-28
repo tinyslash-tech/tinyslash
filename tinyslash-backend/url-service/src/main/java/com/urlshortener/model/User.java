@@ -24,6 +24,12 @@ public class User {
     private String profilePicture;
     private Set<String> roles = new HashSet<>();
 
+    // Agency White-Label Settings
+    private String agencyLogoUrl;
+    private String agencyBrandColor;
+    private String agencyCustomDomain;
+    private String agencySupportEmail;
+
     // Account details
     private String subscriptionPlan = "FREE"; // FREE, PRO_MONTHLY, PRO_YEARLY, BUSINESS_MONTHLY, BUSINESS_YEARLY
     private LocalDateTime subscriptionExpiry;
@@ -32,6 +38,10 @@ public class User {
     private boolean emailVerified = false;
     private String subscriptionId; // Razorpay subscription ID
     private String customerId; // Razorpay customer ID
+
+    // Razorpay Route (Monetization)
+    private String razorpayAccountId; // Creator's connected Razorpay account ID
+    private boolean razorpayConnected = false;
 
     // Usage statistics
     private int totalUrls = 0;
@@ -136,6 +146,38 @@ public class User {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public String getAgencyLogoUrl() {
+        return agencyLogoUrl;
+    }
+
+    public void setAgencyLogoUrl(String agencyLogoUrl) {
+        this.agencyLogoUrl = agencyLogoUrl;
+    }
+
+    public String getAgencyBrandColor() {
+        return agencyBrandColor;
+    }
+
+    public void setAgencyBrandColor(String agencyBrandColor) {
+        this.agencyBrandColor = agencyBrandColor;
+    }
+
+    public String getAgencyCustomDomain() {
+        return agencyCustomDomain;
+    }
+
+    public void setAgencyCustomDomain(String agencyCustomDomain) {
+        this.agencyCustomDomain = agencyCustomDomain;
+    }
+
+    public String getAgencySupportEmail() {
+        return agencySupportEmail;
+    }
+
+    public void setAgencySupportEmail(String agencySupportEmail) {
+        this.agencySupportEmail = agencySupportEmail;
     }
 
     public String getSubscriptionPlan() {
@@ -280,6 +322,22 @@ public class User {
 
     public void setCustomerId(String customerId) {
         this.customerId = customerId;
+    }
+
+    public String getRazorpayAccountId() {
+        return razorpayAccountId;
+    }
+
+    public void setRazorpayAccountId(String razorpayAccountId) {
+        this.razorpayAccountId = razorpayAccountId;
+    }
+
+    public boolean isRazorpayConnected() {
+        return razorpayConnected;
+    }
+
+    public void setRazorpayConnected(boolean razorpayConnected) {
+        this.razorpayConnected = razorpayConnected;
     }
 
     public int getDailyUrlsCreated() {

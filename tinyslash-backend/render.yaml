@@ -3,7 +3,7 @@ services:
     name: pebly-backend
     env: java
     buildCommand: cd url-service && mvn clean package -DskipTests
-    startCommand: cd url-service && java -Dspring.profiles.active=prod -Dserver.port=$PORT -jar target/url-service-1.0.0.jar
+    startCommand: cd url-service && java -Dspring.profiles.active=prod -Dresend.api.key=$RESEND_API_KEY -Dresend.from.auth=$RESEND_FROM_AUTH -Dresend.from.notifications=$RESEND_FROM_NOTIFICATIONS -Dresend.from.updates=$RESEND_FROM_UPDATES -Dserver.port=$PORT -jar target/url-service-1.0.0.jar
     plan: starter
     healthCheckPath: /actuator/health
     envVars:

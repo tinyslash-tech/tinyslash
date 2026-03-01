@@ -104,18 +104,25 @@ public class EmailService {
                                         .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                                         .build();
 
+                        logger.info("Attempting to send email via Resend to {}. Request body length: {}. Key length: {}",
+                                        toEmail, requestBody.length(),
+                                        resendApiKey != null ? resendApiKey.length() : "NULL");
+
                         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
                         if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                                logger.info("Email dispatched successfully to {} via {}", toEmail, fromEmailAddress);
+                                logger.info("Email dispatched successfully to {} via {}. Status: {}", toEmail,
+                                                fromEmailAddress, response.statusCode());
                         } else {
                                 logger.error("Failed to sequence Resend dispatch to {}. API Status: {}. Response: {}",
                                                 toEmail,
                                                 response.statusCode(), response.body());
+                                logger.error("Failed payload body: {}", requestBody);
                         }
 
                 } catch (Exception e) {
-                        logger.error("Critical failure constructing Resend payload for {}", toEmail, e);
+                        logger.error("Critical failure constructing/sending Resend payload for {}. Exception: {}",
+                                        toEmail, e.getMessage(), e);
                 }
         }
 

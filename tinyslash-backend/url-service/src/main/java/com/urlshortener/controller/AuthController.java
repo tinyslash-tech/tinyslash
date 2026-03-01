@@ -62,6 +62,58 @@ public class AuthController {
                 .compact();
     }
 
+    @PostMapping("/welcome/test")
+    public ResponseEntity<Map<String, Object>> testWelcomeEmail(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Email is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            String name = request.getOrDefault("name", "Test User");
+            emailService.sendWelcomeEmail(email, name);
+
+            response.put("success", true);
+            response.put("message", "Welcome email sent successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to send welcome email: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @PostMapping("/payment/test")
+    public ResponseEntity<Map<String, Object>> testPaymentEmail(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String email = request.get("email");
+            String type = request.getOrDefault("type", "success");
+            if (email == null || email.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Email is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            if ("success".equalsIgnoreCase(type)) {
+                emailService.sendPaymentSuccess(email, "Pro Plan", "$29.00", "https://tinyslash.com/receipt/123");
+            } else {
+                emailService.sendPaymentFailed(email, "Pro Plan");
+            }
+
+            response.put("success", true);
+            response.put("message", "Payment " + type + " email sent successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to send payment email: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     @PostMapping("/otp/send")
     public ResponseEntity<Map<String, Object>> sendOtp(@RequestBody Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();

@@ -62,12 +62,13 @@ google:
   redirect:
     uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/auth/callback}
 
-sendgrid:
+resend:
   api:
-    key: ${SENDGRID_API_KEY:SG.default}
+    key: ${RESEND_API_KEY:default}
   from:
-    email: ${SENDGRID_FROM_EMAIL:noreply@tinyslash.com}
-    name: ${SENDGRID_FROM_NAME:Tinyslash Team}
+    auth: ${RESEND_FROM_AUTH:auth@tinyslash.com}
+    notifications: ${RESEND_FROM_NOTIFICATIONS:notifications@tinyslash.com}
+    updates: ${RESEND_FROM_UPDATES:updates@tinyslash.com}
 
 cloudflare:
   api:

@@ -1,663 +1,508 @@
 package com.urlshortener.service;
 
-import com.sendgrid.Method;
-import com.sendgrid.Request;
-import com.sendgrid.Response;
-import com.sendgrid.SendGrid;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.urlshortener.model.SupportTicket;
 import com.urlshortener.model.SupportResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.urlshortener.model.CustomerOrder;
+import com.urlshortener.model.Booking;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 import org.springframework.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 @Service
 public class EmailService {
 
-    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
+        private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
+        private static final String RESEND_API_URL = "https://api.resend.com/emails";
 
-    @Autowired
-    private SendGrid sendGrid;
+        private final ObjectMapper objectMapper;
+        private final HttpClient httpClient;
 
-    @Value("${app.frontend.url:https://tinyslash.com}")
-    private String frontendUrl;
+        @Value("${app.frontend.url:https://tinyslash.com}")
+        private String frontendUrl;
 
-    @Value("${app.support.email:support@pebly.com}")
-    private String supportEmail;
+        @Value("${app.support.email:support@pebly.com}")
+        private String supportEmail;
 
-    @Value("${sendgrid.api.key:}")
-    private String sendGridApiKey;
+        @Value("${resend.from.name:Tinyslash Team}")
+        private String defaultFromName;
 
-    @Value("${sendgrid.from.email:noreply@pebly.com}")
-    private String fromEmail;
+        // Resend specific configurations injected from application.properties / .env
+        @Value("${resend.api.key:re_placeholder_key_here}")
+        private String resendApiKey;
 
-    @Value("${sendgrid.from.name:Pebly Team}")
-    private String fromName;
+        @Value("${resend.from.auth:auth@tinyslash.com}")
+        private String fromAuthEmail;
 
-    /**
-     * Send ticket created confirmation email to user
-     */
-    public void sendTicketCreatedEmail(String userEmail, String userName, String ticketId, String subject) {
-        try {
-            String emailSubject = "Support Ticket Created - #" + ticketId.substring(ticketId.length() - 6);
-            String emailBody = buildTicketCreatedEmailBody(userName, ticketId, subject);
+        @Value("${resend.from.notifications:notifications@tinyslash.com}")
+        private String fromNotificationsEmail;
 
-            // TODO: Implement actual email sending (SMTP, SendGrid, etc.)
-            logger.info("Sending ticket created email to {} for ticket {}", userEmail, ticketId);
-
-            // For now, just log the email content
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send ticket created email to {}", userEmail, e);
+        public EmailService() {
+                this.objectMapper = new ObjectMapper();
+                this.httpClient = HttpClient.newBuilder()
+                                .version(HttpClient.Version.HTTP_2)
+                                .connectTimeout(Duration.ofSeconds(10))
+                                .build();
         }
-    }
 
-    /**
-     * Send agent response email to user
-     */
-    public void sendAgentResponseEmail(String userEmail, String userName, String ticketId,
-            String ticketSubject, String responseMessage) {
-        try {
-            String emailSubject = "New Response to Your Support Ticket - #" + ticketId.substring(ticketId.length() - 6);
-            String emailBody = buildAgentResponseEmailBody(userName, ticketId, ticketSubject, responseMessage);
+        @PostConstruct
+        public void init() {
+                if (this.resendApiKey != null)
+                        this.resendApiKey = this.resendApiKey.trim();
+                if (this.fromAuthEmail != null)
+                        this.fromAuthEmail = this.fromAuthEmail.trim();
+                if (this.fromNotificationsEmail != null)
+                        this.fromNotificationsEmail = this.fromNotificationsEmail.trim();
 
-            logger.info("Sending agent response email to {} for ticket {}", userEmail, ticketId);
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send agent response email to {}", userEmail, e);
+                logger.info("EmailService initialized with RESEND_API_KEY length: {}",
+                                resendApiKey != null ? resendApiKey.length() : 0);
+                logger.info("EmailService from addresses: auth={}, notifications={}", fromAuthEmail,
+                                fromNotificationsEmail);
         }
-    }
 
-    /**
-     * Send ticket resolved email to user
-     */
-    public void sendTicketResolvedEmail(String userEmail, String userName, String ticketId, String subject) {
-        try {
-            String emailSubject = "Support Ticket Resolved - #" + ticketId.substring(ticketId.length() - 6);
-            String emailBody = buildTicketResolvedEmailBody(userName, ticketId, subject);
+        /**
+         * Core Private Dispatcher using Native Java 11+ HttpClient
+         */
+        private void dispatchTransnationalEmail(String toEmail, String fromEmailAddress, String subject,
+                        String htmlBody) {
+                if (!StringUtils.hasText(resendApiKey) || resendApiKey.contains("placeholder")
+                                || resendApiKey.isEmpty()) {
+                        logger.warn("[MOCK MODE] Resend API key missing. Would have sent via {}: {} -> {}",
+                                        fromEmailAddress,
+                                        subject, toEmail);
+                        logger.debug(htmlBody);
+                        return;
+                }
 
-            logger.info("Sending ticket resolved email to {} for ticket {}", userEmail, ticketId);
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
+                try {
+                        ObjectNode payload = objectMapper.createObjectNode();
+                        payload.put("from", defaultFromName + " <" + fromEmailAddress + ">");
 
-        } catch (Exception e) {
-            logger.error("Failed to send ticket resolved email to {}", userEmail, e);
+                        ArrayNode toArray = payload.putArray("to");
+                        toArray.add(toEmail);
+
+                        payload.put("subject", subject);
+                        payload.put("html", htmlBody);
+
+                        String requestBody = objectMapper.writeValueAsString(payload);
+
+                        HttpRequest request = HttpRequest.newBuilder()
+                                        .uri(URI.create(RESEND_API_URL))
+                                        .header("Authorization", "Bearer " + resendApiKey)
+                                        .header("Content-Type", "application/json")
+                                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build();
+
+                        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                                logger.info("Email dispatched successfully to {} via {}", toEmail, fromEmailAddress);
+                        } else {
+                                logger.error("Failed to sequence Resend dispatch to {}. API Status: {}. Response: {}",
+                                                toEmail,
+                                                response.statusCode(), response.body());
+                        }
+
+                } catch (Exception e) {
+                        logger.error("Critical failure constructing Resend payload for {}", toEmail, e);
+                }
         }
-    }
 
-    /**
-     * Generic method to send email with subject and body
-     */
-    public void sendEmail(String toEmail, String subject, String body) {
-        try {
-            logger.info("Attempting to send email to {} with subject: {}", toEmail, subject);
+        /**
+         * Wraps content in standard B2B HTML structure (Sans-serif, neutral palette, no
+         * emojis)
+         */
+        private String wrapHtmlBody(String headerText, String mainContent, String subText) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(
+                                "<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;\">");
+                sb.append("<div style=\"border-bottom: 1px solid #e5e7eb; padding-bottom: 24px; margin-bottom: 32px;\">");
+                sb.append("<strong style=\"color: #111827; font-size: 20px; font-weight: 600; margin: 0;\">")
+                                .append(headerText)
+                                .append("</strong>");
+                sb.append("</div>");
 
-            // Check if SendGrid is properly configured
-            if (!StringUtils.hasText(sendGridApiKey) || "mock-api-key".equals(sendGridApiKey)) {
-                logger.warn("SendGrid API key not configured. Email will be logged instead of sent.");
-                logger.info("EMAIL CONTENT - To: {}, Subject: {}", toEmail, subject);
-                logger.info("EMAIL BODY: {}", body);
-                return;
-            }
+                sb.append("<div style=\"color: #374151; font-size: 15px; line-height: 1.6; margin-bottom: 32px;\">");
+                sb.append(mainContent);
+                sb.append("</div>");
 
-            // Create SendGrid email
-            Email from = new Email(fromEmail, fromName);
-            Email to = new Email(toEmail);
-            Content content = new Content("text/plain", body);
-            Mail mail = new Mail(from, subject, to, content);
+                if (StringUtils.hasText(subText)) {
+                        sb.append(
+                                        "<div style=\"background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px; margin-bottom: 32px;\">");
+                        sb.append("<p style=\"color: #4b5563; font-size: 14px; margin: 0;\">").append(subText)
+                                        .append("</p>");
+                        sb.append("</div>");
+                }
 
-            // Send email via SendGrid
-            Request request = new Request();
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
+                sb.append("<div style=\"border-top: 1px solid #e5e7eb; padding-top: 24px; text-align: left;\">");
+                sb.append(
+                                "<p style=\"color: #9ca3af; font-size: 12px; margin: 0;\">This is an automated system notification from Tinyslash Inc. Please do not reply directly to this address.</p>");
+                sb.append("</div>");
+                sb.append("</div>");
 
-            Response response = sendGrid.api(request);
-
-            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
-                logger.info("✅ Email sent successfully to {} (Status: {})", toEmail, response.getStatusCode());
-            } else {
-                logger.error("❌ Failed to send email to {}. Status: {}, Body: {}",
-                        toEmail, response.getStatusCode(), response.getBody());
-            }
-
-        } catch (IOException e) {
-            logger.error("❌ SendGrid API error when sending email to {}: {}", toEmail, e.getMessage(), e);
-        } catch (Exception e) {
-            logger.error("❌ Unexpected error when sending email to {}: {}", toEmail, e.getMessage(), e);
+                return sb.toString();
         }
-    }
 
-    /**
-     * Send HTML email with both plain text and HTML content
-     */
-    public void sendHtmlEmail(String toEmail, String subject, String plainTextBody, String htmlBody) {
-        try {
-            logger.info("Attempting to send HTML email to {} with subject: {}", toEmail, subject);
+        /* -------------------------------------------------------------------------- */
+        /* 1. AUTHENTICATION (OTP) */
+        /* -------------------------------------------------------------------------- */
 
-            // Check if SendGrid is properly configured
-            if (!StringUtils.hasText(sendGridApiKey) || "mock-api-key".equals(sendGridApiKey)) {
-                logger.warn("SendGrid API key not configured. Email will be logged instead of sent.");
-                logger.info("HTML EMAIL CONTENT - To: {}, Subject: {}", toEmail, subject);
-                logger.info("HTML EMAIL BODY: {}", htmlBody);
-                return;
-            }
+        public void sendOtpEmail(String userEmail, String otpCode) {
+                String mainContent = "<p style=\"margin-top: 0;\">A login attempt was initiated for your Tinyslash account. Use the following authorization code to complete your login:</p>"
+                                +
+                                "<div style=\"background-color: #f3f4f6; border-radius: 4px; padding: 24px; text-align: center; margin: 32px 0;\">"
+                                +
+                                "<span style=\"font-family: monospace; font-size: 36px; font-weight: 700; letter-spacing: 12px; color: #111827;\">"
+                                + otpCode + "</span>" +
+                                "</div>" +
+                                "<p style=\"margin-bottom: 0;\">This code is valid for 5 minutes. If you did not initiate this request, you may securely ignore this warning.</p>";
 
-            // Create SendGrid email with HTML content
-            Email from = new Email(fromEmail, fromName);
-            Email to = new Email(toEmail);
-            Content plainContent = new Content("text/plain", plainTextBody);
-            Content htmlContent = new Content("text/html", htmlBody);
-
-            Mail mail = new Mail(from, subject, to, plainContent);
-            mail.addContent(htmlContent);
-
-            // Send email via SendGrid
-            Request request = new Request();
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
-
-            Response response = sendGrid.api(request);
-
-            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
-                logger.info("✅ HTML email sent successfully to {} (Status: {})", toEmail, response.getStatusCode());
-            } else {
-                logger.error("❌ Failed to send HTML email to {}. Status: {}, Body: {}",
-                        toEmail, response.getStatusCode(), response.getBody());
-            }
-
-        } catch (IOException e) {
-            logger.error("❌ SendGrid API error when sending HTML email to {}: {}", toEmail, e.getMessage(), e);
-        } catch (Exception e) {
-            logger.error("❌ Unexpected error when sending HTML email to {}: {}", toEmail, e.getMessage(), e);
+                String htmlBody = wrapHtmlBody("Account Authentication", mainContent, "");
+                dispatchTransnationalEmail(userEmail, fromAuthEmail, "Authorization Code: " + otpCode, htmlBody);
         }
-    }
 
-    /**
-     * Send new ticket notification to support team
-     */
-    public void sendNewTicketNotificationToSupport(SupportTicket ticket) {
-        try {
-            String emailSubject = String.format("[%s] New %s Support Ticket - #%s",
-                    ticket.getPriority().getDisplayName(),
-                    ticket.getCategory().getDisplayName(),
-                    ticket.getId().substring(ticket.getId().length() - 6));
+        /* -------------------------------------------------------------------------- */
+        /* 2. COLLABORATION (TEAM INVITES) */
+        /* -------------------------------------------------------------------------- */
 
-            String emailBody = buildSupportTeamNotificationBody(ticket);
+        public void sendTeamInviteEmail(String toEmail, String teamName, String inviterName, String role,
+                        String inviteLink) {
+                String mainContent = "<p>You have been invited by <strong>" + inviterName
+                                + "</strong> to join the workspace <strong>" + teamName + "</strong> as a <strong>"
+                                + role
+                                + "</strong>.</p>" +
+                                "<p>Tinyslash provides unified link management, routing, and analytics. Access your new workspace by accepting the invitation below.</p>"
+                                +
+                                "<div style=\"margin: 32px 0;\">" +
+                                "<a href=\"" + inviteLink
+                                + "\" style=\"background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 500; display: inline-block;\">Accept Invitation</a>"
+                                +
+                                "</div>" +
+                                "<p style=\"font-size: 13px; color: #6b7280;\">If the button fails, copy and paste this link into your browser:<br>"
+                                + inviteLink + "</p>";
 
-            logger.info("Sending new ticket notification to support team for ticket {}", ticket.getId());
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send new ticket notification to support team", e);
+                String htmlBody = wrapHtmlBody("Workspace Invitation", mainContent,
+                                "Note: This invitation will expire in 7 days.");
+                dispatchTransnationalEmail(toEmail, fromNotificationsEmail,
+                                "Invitation to join " + teamName + " on Tinyslash",
+                                htmlBody);
         }
-    }
 
-    /**
-     * Send user response notification to assigned agent
-     */
-    public void sendUserResponseNotificationToAgent(SupportTicket ticket, SupportResponse response) {
-        try {
-            String emailSubject = String.format("User Response - Ticket #%s",
-                    ticket.getId().substring(ticket.getId().length() - 6));
+        /* -------------------------------------------------------------------------- */
+        /* 3. BILLING & SUBSCRIPTIONS */
+        /* -------------------------------------------------------------------------- */
 
-            String emailBody = buildAgentNotificationBody(ticket, response);
+        public void sendPaymentSuccess(String userEmail, String planName, String amount, String receiptUrl) {
+                String mainContent = "<p>We have successfully processed your recent payment for the <strong>" + planName
+                                + "</strong>.</p>" +
+                                "<p>Your subscription is active and your account limits have been automatically updated. You can view your detailed billing history and download official invoices directly from your workspace settings.</p>"
+                                +
+                                "<div style=\"margin: 32px 0;\">" +
+                                "<a href=\"" + receiptUrl
+                                + "\" style=\"color: #2563eb; text-decoration: underline; font-weight: 500;\">View or Download Invoice</a>"
+                                +
+                                "</div>";
 
-            logger.info("Sending user response notification to agent {} for ticket {}",
-                    ticket.getAssignedAgent(), ticket.getId());
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send user response notification to agent", e);
+                String htmlBody = wrapHtmlBody("Payment Receipt Scheduled", mainContent, "Amount Processed: " + amount);
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail, "Payment Confirmation: " + planName,
+                                htmlBody);
         }
-    }
 
-    /**
-     * Build ticket created email body
-     */
-    private String buildTicketCreatedEmailBody(String userName, String ticketId, String subject) {
-        return String.format(
-                """
-                        Hi %s,
+        public void sendPaymentFailed(String userEmail, String planName) {
+                String mainContent = "<p>We encountered an error while attempting to process the renewal payment for your <strong>"
+                                + planName + "</strong>.</p>" +
+                                "<p>Please update your payment method in your billing settings to prevent any interruption in service. We will attempt to process the payment again in 24 hours.</p>"
+                                +
+                                "<div style=\"margin: 32px 0;\">" +
+                                "<a href=\"" + frontendUrl
+                                + "/settings/billing\" style=\"background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 500; display: inline-block;\">Update Billing Detail</a>"
+                                +
+                                "</div>";
 
-                        Thank you for contacting Pebly Support! We've received your support request and our team will get back to you soon.
-
-                        Ticket Details:
-                        • Ticket ID: #%s
-                        • Subject: %s
-                        • Status: Open
-
-                        What happens next?
-                        • Our support team will review your request
-                        • You'll receive updates via email
-                        • You can track your ticket status in your dashboard
-
-                        Need urgent help?
-                        • For payment issues, include your transaction ID
-                        • For technical problems, provide steps to reproduce the issue
-                        • For account issues, verify your email address
-
-                        View your ticket: %s/dashboard
-
-                        Best regards,
-                        Pebly Support Team
-
-                        ---
-                        This is an automated message. Please do not reply to this email.
-                        For immediate assistance, visit: %s/contact
-                        """,
-                userName,
-                ticketId.substring(ticketId.length() - 6),
-                subject,
-                frontendUrl,
-                frontendUrl);
-    }
-
-    /**
-     * Build agent response email body
-     */
-    private String buildAgentResponseEmailBody(String userName, String ticketId,
-            String ticketSubject, String responseMessage) {
-        return String.format("""
-                Hi %s,
-
-                You have a new response from our support team regarding your ticket.
-
-                Ticket Details:
-                • Ticket ID: #%s
-                • Subject: %s
-
-                Support Team Response:
-                %s
-
-                Next Steps:
-                • Reply to continue the conversation
-                • View full conversation in your dashboard
-                • Mark as resolved if your issue is fixed
-
-                View your ticket: %s/dashboard
-
-                Best regards,
-                Pebly Support Team
-
-                ---
-                This is an automated message. Please do not reply to this email.
-                For immediate assistance, visit: %s/contact
-                """,
-                userName,
-                ticketId.substring(ticketId.length() - 6),
-                ticketSubject,
-                responseMessage,
-                frontendUrl,
-                frontendUrl);
-    }
-
-    /**
-     * Build ticket resolved email body
-     */
-    private String buildTicketResolvedEmailBody(String userName, String ticketId, String subject) {
-        return String.format("""
-                Hi %s,
-
-                Great news! Your support ticket has been resolved.
-
-                Ticket Details:
-                • Ticket ID: #%s
-                • Subject: %s
-                • Status: Resolved
-
-                Was this helpful?
-                We'd love to hear your feedback about our support experience.
-
-                Still need help?
-                If your issue isn't fully resolved, you can reopen this ticket or create a new one.
-
-                View your ticket: %s/dashboard
-
-                Thank you for using Pebly!
-
-                Best regards,
-                Pebly Support Team
-
-                ---
-                This is an automated message. Please do not reply to this email.
-                For immediate assistance, visit: %s/contact
-                """,
-                userName,
-                ticketId.substring(ticketId.length() - 6),
-                subject,
-                frontendUrl,
-                frontendUrl);
-    }
-
-    /**
-     * Build support team notification body
-     */
-    private String buildSupportTeamNotificationBody(SupportTicket ticket) {
-        return String.format("""
-                New Support Ticket Received
-
-                Ticket Details:
-                • ID: #%s
-                • Category: %s
-                • Priority: %s
-                • Status: %s
-                • User: %s (%s)
-                • Created: %s
-
-                Subject: %s
-
-                Message:
-                %s
-
-                User Information:
-                • Email: %s
-                • User Agent: %s
-                • IP Address: %s
-                • Current Page: %s
-
-                Actions Required:
-                • Review and assign ticket
-                • Respond within SLA timeframe
-                • Update ticket status
-
-                View ticket in admin panel: %s/admin/tickets/%s
-                """,
-                ticket.getId().substring(ticket.getId().length() - 6),
-                ticket.getCategory().getDisplayName(),
-                ticket.getPriority().getDisplayName(),
-                ticket.getStatus().getDisplayName(),
-                ticket.getUserName(),
-                ticket.getUserEmail(),
-                ticket.getCreatedAt(),
-                ticket.getSubject(),
-                ticket.getMessage(),
-                ticket.getUserEmail(),
-                ticket.getUserAgent(),
-                ticket.getIpAddress(),
-                ticket.getCurrentPage(),
-                frontendUrl,
-                ticket.getId());
-    }
-
-    /**
-     * Build agent notification body
-     */
-    private String buildAgentNotificationBody(SupportTicket ticket, SupportResponse response) {
-        return String.format("""
-                User Response Received
-
-                Ticket Details:
-                • ID: #%s
-                • Subject: %s
-                • User: %s (%s)
-                • Priority: %s
-
-                User Response:
-                %s
-
-                Response Time: %s
-
-                Actions Required:
-                • Review user response
-                • Provide assistance
-                • Update ticket status if resolved
-
-                View ticket: %s/admin/tickets/%s
-                """,
-                ticket.getId().substring(ticket.getId().length() - 6),
-                ticket.getSubject(),
-                ticket.getUserName(),
-                ticket.getUserEmail(),
-                ticket.getPriority().getDisplayName(),
-                response.getMessage(),
-                response.getTimestamp(),
-                frontendUrl,
-                ticket.getId());
-    }
-
-    /**
-     * Send domain transfer notification email
-     */
-    public void sendDomainTransferNotification(String userEmail, String domainName, String reason) {
-        try {
-            String emailSubject = "Domain Transfer Notification - " + domainName;
-            String emailBody = buildDomainTransferEmailBody(domainName, reason);
-
-            logger.info("Sending domain transfer notification to {} for domain {}", userEmail, domainName);
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send domain transfer notification to {}", userEmail, e);
+                String htmlBody = wrapHtmlBody("Action Required: Payment Failed", mainContent,
+                                "Your routing services may be suspended if payment is not secured.");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Action Required: Payment Processing Failure",
+                                htmlBody);
         }
-    }
 
-    /**
-     * Send One-Time Password (OTP)
-     */
-    public void sendOtpEmail(String userEmail, String otpCode) {
-        try {
-            String emailSubject = "Your Login Code: " + otpCode;
+        public void sendSubscriptionCancelled(String userEmail, String planName, String endOfBillingPeriod) {
+                String mainContent = "<p>Your subscription to the <strong>" + planName
+                                + "</strong> has been successfully cancelled.</p>" +
+                                "<p>You will retain access to all plan features until the end of your current billing period on <strong>"
+                                + endOfBillingPeriod
+                                + "</strong>. Afterward, your account will be reverted to the strictly restricted free tier limitations.</p>";
 
-            String plainTextBody = "Hello,\n\n" +
-                    "Your secure login code is: " + otpCode + "\n\n" +
-                    "This code will expire in 5 minutes.\n\n" +
-                    "If you did not request this code, you can safely ignore this email.";
-
-            String htmlBody = "<div style=\"font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;\">"
-                    +
-                    "<div style=\"text-align: center; margin-bottom: 30px;\">" +
-                    "<h1 style=\"color: #111827; font-size: 24px; font-weight: 700; margin: 0;\">Login securely to Tinyslash</h1>"
-                    +
-                    "</div>" +
-                    "<div style=\"background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 30px;\">"
-                    +
-                    "<p style=\"color: #4b5563; font-size: 16px; margin-top: 0; margin-bottom: 24px;\">Use the following code to sign in to your account. This code is valid for <strong>5 minutes</strong>.</p>"
-                    +
-                    "<div style=\"background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 16px; display: inline-block;\">"
-                    +
-                    "<span style=\"font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #111827;\">" + otpCode
-                    + "</span>" +
-                    "</div>" +
-                    "</div>" +
-                    "<div style=\"text-align: center;\">" +
-                    "<p style=\"color: #6b7280; font-size: 14px; margin: 0;\">If you didn't attempt to log in, you can safely ignore this email.</p>"
-                    +
-                    "<p style=\"color: #9ca3af; font-size: 12px; margin-top: 20px;\">© "
-                    + java.time.Year.now().getValue() + " Tinyslash. All rights reserved.</p>" +
-                    "</div>" +
-                    "</div>";
-
-            logger.info("Sending OTP email to {}", userEmail);
-
-            // Call existing unified HTML sender
-            sendHtmlEmail(userEmail, emailSubject, plainTextBody, htmlBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send OTP email to {}", userEmail, e);
-            throw new RuntimeException("Failed to send login code");
+                String htmlBody = wrapHtmlBody("Subscription Adjusted", mainContent,
+                                "If this was an error, you can resume billing from your workspace dashboard.");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail, "Subscription Cancellation Notice",
+                                htmlBody);
         }
-    }
 
-    /**
-     * Send domain verification success email
-     */
-    public void sendDomainVerificationSuccess(String userEmail, String domainName) {
-        try {
-            String emailSubject = "Domain Verified Successfully - " + domainName;
-            String emailBody = buildDomainVerificationSuccessEmailBody(domainName);
+        public void sendSubscriptionEndingAlert(String userEmail, String planName, String endOfBillingPeriod,
+                        int daysRemaining) {
+                String urgencyWord = daysRemaining == 1 ? "tomorrow" : "in " + daysRemaining + " days";
+                String mainContent = "<p>Your access to the <strong>" + planName + "</strong> expires " + urgencyWord
+                                + ".</p>" +
+                                "<p>On <strong>" + endOfBillingPeriod
+                                + "</strong>, your account will lose access to custom domains, advanced analytics, and priority support. Active links using custom routing may be suspended.</p>"
+                                +
+                                "<div style=\"margin: 32px 0;\">" +
+                                "<a href=\"" + frontendUrl
+                                + "/settings/billing\" style=\"background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 500; display: inline-block;\">Renew Subscription</a>"
+                                +
+                                "</div>";
 
-            logger.info("Sending domain verification success email to {} for domain {}", userEmail, domainName);
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send domain verification success email to {}", userEmail, e);
+                String htmlBody = wrapHtmlBody("Action Required: Subscription Expiring", mainContent,
+                                "Avoid service interruption by updating your billing.");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Action Required: " + planName + " Expires " + urgencyWord, htmlBody);
         }
-    }
 
-    /**
-     * Send domain verification failure email
-     */
-    public void sendDomainVerificationFailure(String userEmail, String domainName, String error) {
-        try {
-            String emailSubject = "Domain Verification Failed - " + domainName;
-            String emailBody = buildDomainVerificationFailureEmailBody(domainName, error);
+        public void sendSubscriptionRenewingAlert(String userEmail, String planName, String amount, String renewalDate,
+                        int daysRemaining) {
+                String urgencyWord = daysRemaining == 1 ? "tomorrow" : "in " + daysRemaining + " days";
+                String mainContent = "<p>Your <strong>" + planName + "</strong> is scheduled to automatically renew "
+                                + urgencyWord + " on <strong>" + renewalDate + "</strong>.</p>" +
+                                "<p>Your payment method on file will be charged <strong>" + amount
+                                + "</strong>. If you wish to make changes to your plan or cancel your subscription, please do so before the renewal date.</p>"
+                                +
+                                "<div style=\"margin: 32px 0;\">" +
+                                "<a href=\"" + frontendUrl
+                                + "/settings/billing\" style=\"color: #2563eb; text-decoration: underline; font-weight: 500;\">Manage Billing Settings</a>"
+                                +
+                                "</div>";
 
-            logger.info("Sending domain verification failure email to {} for domain {}", userEmail, domainName);
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send domain verification failure email to {}", userEmail, e);
+                String htmlBody = wrapHtmlBody("Upcoming Subscription Renewal", mainContent,
+                                "No action is required to maintain service.");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail, "Upcoming Renewal: " + planName,
+                                htmlBody);
         }
-    }
+        /* -------------------------------------------------------------------------- */
+        /* 4. DOMAINS & SSL infrastructure */
+        /* -------------------------------------------------------------------------- */
 
-    /**
-     * Send SSL certificate renewal failure alert
-     */
-    public void sendSslRenewalFailureAlert(String userEmail, String domainName) {
-        try {
-            String emailSubject = "SSL Certificate Renewal Failed - " + domainName;
-            String emailBody = buildSslRenewalFailureEmailBody(domainName);
+        public void sendDomainVerificationSuccess(String userEmail, String domainName) {
+                String mainContent = "<p>DNS Verification for <strong>" + domainName
+                                + "</strong> has been completed successfully.</p>" +
+                                "<p>Our systems have automatically provisioned universal SSL certificates. This custom domain is now fully active across your workspace and is ready to route traffic.</p>";
 
-            logger.info("Sending SSL renewal failure alert to {} for domain {}", userEmail, domainName);
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send SSL renewal failure alert to {}", userEmail, e);
+                String htmlBody = wrapHtmlBody("Domain Infrastructure Operative", mainContent, "");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Infrastructure Status: Domain " + domainName + " Verified", htmlBody);
         }
-    }
 
-    // Private helper methods for building email bodies
+        public void sendDomainVerificationFailure(String userEmail, String domainName, String error) {
+                String mainContent = "<p>Our automated systems failed to verify the DNS configuration for <strong>"
+                                + domainName
+                                + "</strong>.</p>" +
+                                "<p>Diagnostic Error: <code>" + error + "</code></p>" +
+                                "<p>Please ensure your registrar holds the correct CNAME propagation:</p>" +
+                                "<pre style=\"background-color: #f3f4f6; border-radius: 4px; padding: 16px; font-size: 13px; color: #1f2937;\">"
+                                +
+                                "Type: CNAME\n" +
+                                "Name: " + domainName + "\n" +
+                                "Value: tinyslash.com" +
+                                "</pre>" +
+                                "<p>DNS propagation relies on global infrastructure limits and may take up to 48 hours in rare cases.</p>";
 
-    private String buildDomainTransferEmailBody(String domainName, String reason) {
-        return String.format("""
-                Hello,
-
-                Your custom domain %s has been successfully transferred.
-
-                Transfer Reason: %s
-                Transfer Date: %s
-
-                If you have any questions about this transfer, please contact our support team.
-
-                Best regards,
-                The Pebly Team
-                """, domainName, reason, java.time.LocalDateTime.now().toString());
-    }
-
-    private String buildDomainVerificationSuccessEmailBody(String domainName) {
-        return String.format("""
-                Congratulations!
-
-                Your custom domain %s has been successfully verified and is now active.
-
-                ✅ Domain verified
-                🔒 SSL certificate provisioned
-                🚀 Ready to use for short links
-
-                You can now create short links using your custom domain in the Advanced Settings.
-
-                Best regards,
-                The Pebly Team
-                """, domainName);
-    }
-
-    private String buildDomainVerificationFailureEmailBody(String domainName, String error) {
-        return String.format("""
-                Domain Verification Update
-
-                We were unable to verify your custom domain %s.
-
-                Error: %s
-
-                Please check your DNS configuration and ensure the CNAME record is correctly set up:
-
-                Type: CNAME
-                Name: %s
-                Value: tinyslash.com
-
-                Once you've updated your DNS settings, you can retry verification in your dashboard.
-
-                Need help? Contact our support team.
-
-                Best regards,
-                The Pebly Team
-                """, domainName, error, domainName);
-    }
-
-    private String buildSslRenewalFailureEmailBody(String domainName) {
-        return String.format(
-                """
-                        SSL Certificate Renewal Alert
-
-                        We were unable to renew the SSL certificate for your custom domain %s.
-
-                        Your domain will continue to work, but the SSL certificate may expire soon.
-
-                        We will continue attempting to renew the certificate automatically. If the issue persists, please contact our support team.
-
-                        Best regards,
-                        The Pebly Team
-                        """,
-                domainName);
-    }
-
-    /**
-     * Send domain misconfigured notification
-     */
-    public void sendDomainMisconfiguredNotification(String userEmail, String domainName) {
-        try {
-            String emailSubject = "Action Required: Domain Misconfigured - " + domainName;
-            String emailBody = buildDomainMisconfiguredEmailBody(domainName);
-
-            logger.info("Sending domain misconfigured email to {} for domain {}", userEmail, domainName);
-            logger.debug("Email Subject: {}", emailSubject);
-            logger.debug("Email Body: {}", emailBody);
-
-            // Send logic calling sendEmail (internally handles mock/sendgrid)
-            sendEmail(userEmail, emailSubject, emailBody);
-
-        } catch (Exception e) {
-            logger.error("Failed to send domain misconfigured email to {}", userEmail, e);
+                String htmlBody = wrapHtmlBody("Action Required: Domain Configuration Failed", mainContent,
+                                "Traffic masking will remain disabled until verification succeeds.");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Action Required: Domain Verification Failure for " + domainName, htmlBody);
         }
-    }
 
-    private String buildDomainMisconfiguredEmailBody(String domainName) {
-        return String.format("""
-                Domain Configuration Alert
+        public void sendDomainMisconfiguredNotification(String userEmail, String domainName) {
+                String mainContent = "<p>Our infrastructure monitors detected a configuration fault with <strong>"
+                                + domainName
+                                + "</strong>.</p>" +
+                                "<p>The required CNAME records routing to Tinyslash have been removed or altered at your registrar. If this was intentional, no action is required. Otherwise, link routing for this domain is currently suspended.</p>";
 
-                We detected that your custom domain %s is no longer pointing correctly to our servers.
+                String htmlBody = wrapHtmlBody("Routing Notification", mainContent,
+                                "Restore CNAME values to port traffic back to Tinyslash network.");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Routing Warning: " + domainName + " Configuration Dropped", htmlBody);
+        }
 
-                This may happen if DNS records were changed or removed.
+        public void sendSslRenewalFailureAlert(String userEmail, String domainName) {
+                String mainContent = "<p>Automated certificate renewal failed for the domain <strong>" + domainName
+                                + "</strong>.</p>" +
+                                "<p>This typically indicates the domain is no longer directly pointing to our ingress servers. Without intervention, HTTPS negotiations for your routed links may soon trigger browser security warnings.</p>";
 
-                Please check your DNS configuration:
-                Type: CNAME
-                Name: %s
-                Value: tinyslash.com
+                String htmlBody = wrapHtmlBody("Certificate Authority Warning", mainContent, "");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Action Requested: SSL Certificate Renewal Failure", htmlBody);
+        }
 
-                If this was intentional, you can ignore this email.
-                Otherwise, please fix your DNS settings to restore service.
+        public void sendDomainTransferNotification(String userEmail, String domainName, String reason) {
+                String mainContent = "<p>Traffic authority for <strong>" + domainName
+                                + "</strong> has been permanently transferred.</p>" +
+                                "<p>System Registration Trigger: <code>" + reason + "</code></p>";
 
-                Best regards,
-                The Pebly Team
-                """, domainName, domainName);
-    }
+                String htmlBody = wrapHtmlBody("Infrastructure Modification", mainContent, "");
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Domain Transfer System Alert: " + domainName,
+                                htmlBody);
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* 5. SUPPORT (TICKETS) */
+        /* -------------------------------------------------------------------------- */
+
+        public void sendTicketCreatedEmail(String userEmail, String userName, String ticketId, String subject) {
+                String shortenedId = ticketId.length() >= 6 ? ticketId.substring(ticketId.length() - 6) : ticketId;
+                String mainContent = "<p>Hello " + userName + ",</p>" +
+                                "<p>We have received your support request regarding <strong>" + subject
+                                + "</strong>.</p>" +
+                                "<p>Our engineering and support operations team will review the details you provided. Status updates will be communicated directly to this address or accessible via your administrative dashboard.</p>";
+
+                String subText = "Ticket Allocation ID: #" + shortenedId + " | Status: Open";
+                String htmlBody = wrapHtmlBody("Support Request Registered", mainContent, subText);
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Request Received: [#" + shortenedId + "] " + subject, htmlBody);
+        }
+
+        public void sendAgentResponseEmail(String userEmail, String userName, String ticketId, String ticketSubject,
+                        String responseMessage) {
+                String shortenedId = ticketId.length() >= 6 ? ticketId.substring(ticketId.length() - 6) : ticketId;
+                String mainContent = "<p>Hello " + userName + ",</p>" +
+                                "<p>An agent from our operations team has updated your ticket:</p>" +
+                                "<div style=\"border-left: 3px solid #d1d5db; padding-left: 16px; margin: 24px 0; color: #374151;\">"
+                                +
+                                responseMessage.replace("\n", "<br>") +
+                                "</div>" +
+                                "<p>You can reply directly to this notification block via your dashboard to append diagnostic logs or further questions.</p>";
+
+                String subText = "Reference Ticket ID: #" + shortenedId;
+                String htmlBody = wrapHtmlBody("Case Update: " + ticketSubject, mainContent, subText);
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Case Update [#" + shortenedId + "]: " + ticketSubject, htmlBody);
+        }
+
+        public void sendTicketResolvedEmail(String userEmail, String userName, String ticketId, String subject) {
+                String shortenedId = ticketId.length() >= 6 ? ticketId.substring(ticketId.length() - 6) : ticketId;
+                String mainContent = "<p>Hello " + userName + ",</p>" +
+                                "<p>The support case <strong>" + subject
+                                + "</strong> has been marked as completely resolved by our infrastructure team.</p>" +
+                                "<p>If you believe this issue was closed prematurely, access your dashboard to reopen the file and re-flag for queue review.</p>";
+
+                String htmlBody = wrapHtmlBody("Case Resolved", mainContent, "Reference Ticket ID: #" + shortenedId);
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Resolved [#" + shortenedId + "]: " + subject,
+                                htmlBody);
+        }
+
+        public void sendNewTicketNotificationToSupport(SupportTicket ticket) {
+                String shortenedId = ticket.getId().length() >= 6
+                                ? ticket.getId().substring(ticket.getId().length() - 6)
+                                : ticket.getId();
+                String mainContent = "<p>A new engineering or support flag has breached queues.</p>" +
+                                "<pre style=\"background-color: #f3f4f6; border-radius: 4px; padding: 16px; font-size: 13px; color: #1f2937;\">"
+                                +
+                                "User: " + ticket.getUserEmail() + "\n" +
+                                "Subject: " + ticket.getSubject() + "\n" +
+                                "Category: " + ticket.getCategory().getDisplayName() + "\n" +
+                                "Priority: " + ticket.getPriority().getDisplayName() + "\n" +
+                                "Page Trace: " + ticket.getCurrentPage() + "\n" +
+                                "</pre>" +
+                                "<p><strong>Payload:</strong><br>" + ticket.getMessage().replace("\n", "<br>") + "</p>";
+
+                String htmlBody = wrapHtmlBody("ESCALATION ALERT", mainContent, "Trace ID: " + shortenedId);
+                dispatchTransnationalEmail(supportEmail, fromNotificationsEmail,
+                                "ESCALATION [" + ticket.getPriority().getDisplayName() + "]: " + ticket.getSubject(),
+                                htmlBody);
+        }
+
+        public void sendUserResponseNotificationToAgent(SupportTicket ticket, SupportResponse response) {
+                String shortenedId = ticket.getId().length() >= 6
+                                ? ticket.getId().substring(ticket.getId().length() - 6)
+                                : ticket.getId();
+                String mainContent = "<p>User " + ticket.getUserEmail() + " appended logs/text to open case data.</p>" +
+                                "<div style=\"border-left: 3px solid #d1d5db; padding-left: 16px; margin: 24px 0;\">" +
+                                response.getMessage().replace("\n", "<br>") +
+                                "</div>";
+
+                String htmlBody = wrapHtmlBody("Append Modification", mainContent, "Trace ID: " + shortenedId);
+                dispatchTransnationalEmail(supportEmail, fromNotificationsEmail,
+                                "UPDATE [#" + shortenedId + "]: " + ticket.getSubject(), htmlBody);
+        }
+
+        public void sendWelcomeEmail(String toEmail, String name) {
+                String subject = "Welcome to Tinyslash!";
+                String headerText = "Welcome to Tinyslash";
+
+                String mainContent = "<p style=\"margin-top: 0; margin-bottom: 24px;\">Hi " + (name != null ? name : "")
+                                + ",</p>"
+                                + "<p style=\"margin-top: 0; margin-bottom: 24px;\">We're thrilled to have you here at Tinyslash! Our platform gives you the power to manage your brand links efficiently with state-of-the-art tools and analytics.</p>"
+                                + "<p style=\"margin-top: 0; margin-bottom: 24px;\">To get started, simply log in and explore your dashboard. We recommend setting up your workspace and exploring our features.</p>"
+                                + "<a href=\"" + frontendUrl
+                                + "/dashboard\" style=\"display: inline-block; padding: 12px 24px; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600;\">Go to Dashboard</a>";
+
+                String subText = "If you have any questions or need assistance, simply reply to this email. We're here to help.";
+
+                String htmlBody = wrapHtmlBody(headerText, mainContent, subText);
+
+                // Use the auth email address for welcome emails directly
+                dispatchTransnationalEmail(toEmail, fromAuthEmail, subject, htmlBody);
+        }
+
+        public void sendHtmlEmail(String toEmail, String subject, String plainTextBody, String htmlBody) {
+                String wrappedBody = wrapHtmlBody(subject, htmlBody, "");
+                dispatchTransnationalEmail(toEmail, fromNotificationsEmail, subject, wrappedBody);
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* 6. CREATOR COMMERCE (Booking & Orders) */
+        /* -------------------------------------------------------------------------- */
+
+        public void sendOrderConfirmation(String userEmail, CustomerOrder order) {
+                String mainContent = "<p>Attached is the official fulfillment receipt for your order ID <strong>"
+                                + order.getId() + "</strong>.</p>" +
+                                "<p>The requested digital payload or service directive is being processed by the system.</p>"
+                                +
+                                "<div style=\"background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 24px; margin: 24px 0;\">"
+                                +
+                                "<p style=\"margin: 0 0 12px 0;\"><strong>Amount Authorized:</strong> "
+                                + order.getAmount() + " "
+                                + order.getCurrency() + "</p>" +
+                                "<p style=\"margin: 0; color: #6b7280;\">The charges will appear on your statement as TINYSLASH_COMMERCE.</p>"
+                                +
+                                "</div>";
+
+                String htmlBody = wrapHtmlBody("Fulfillment Receipt Initiated", mainContent,
+                                "Order ID: " + order.getId());
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail, "Order Confirmation: " + order.getId(),
+                                htmlBody);
+        }
+
+        public void sendBookingConfirmation(String userEmail, Booking booking) {
+                String mainContent = "<p>An allocation block has been successfully scheduled.</p>" +
+                                "<div style=\"background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 24px; margin: 24px 0;\">"
+                                +
+                                "<p style=\"margin: 0 0 12px 0;\"><strong>Date:</strong> " + booking.getBookingDate()
+                                + "</p>" +
+                                "<p style=\"margin: 0 0 12px 0;\"><strong>Time block (UTC):</strong> "
+                                + booking.getBookingStartUtc().toString() + " - "
+                                + booking.getBookingEndUtc().toString() + "</p>" +
+                                "<p style=\"margin: 0;\"><strong>Conferencing:</strong> Included link will be distributed via ICS protocol.</p>"
+                                +
+                                "</div>" +
+                                "<p>Standard cancellation SLA policies apply to this calendar block.</p>";
+
+                String htmlBody = wrapHtmlBody("Time Allocation Granted", mainContent,
+                                "Booking Reference: " + booking.getId());
+                dispatchTransnationalEmail(userEmail, fromNotificationsEmail,
+                                "Meeting Schedule Guaranteed - " + booking.getBookingDate(), htmlBody);
+        }
 }

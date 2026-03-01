@@ -381,19 +381,10 @@ public class TeamService {
                 inviterName = inviter != null ? inviter.getEmail() : "Someone";
             }
 
-            String subject = "🎉 You're invited to join " + team.getTeamName() + " on Tinyslash";
             String inviteUrl = "https://tinyslash.com/invite/" + invite.getInviteToken();
+            String roleStr = invite.getRole() != null ? invite.getRole().name() : "Member";
 
-            // Create plain text email
-            String plainTextBody = buildPlainTextInviteEmail(inviterName, team.getTeamName(),
-                    invite.getRole().getDisplayName(), inviteUrl);
-
-            // Create HTML email
-            String htmlBody = buildHtmlInviteEmail(inviterName, team.getTeamName(),
-                    invite.getRole().getDisplayName(), inviteUrl);
-
-            // Send HTML email with plain text fallback
-            emailService.sendHtmlEmail(invite.getEmail(), subject, plainTextBody, htmlBody);
+            emailService.sendTeamInviteEmail(invite.getEmail(), team.getTeamName(), inviterName, roleStr, inviteUrl);
 
             logger.info("✅ Team invite email sent to {} for team {} by {}",
                     invite.getEmail(), team.getTeamName(), inviterName);

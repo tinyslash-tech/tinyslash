@@ -20,6 +20,12 @@ export FRONTEND_URL=$(grep "^FRONTEND_URL=" ../../.env | cut -d '=' -f2-)
 export SHORT_URL_DOMAIN=$(grep "^SHORT_URL_DOMAIN=" ../../.env | cut -d '=' -f2-)
 export OPENAI_API_KEY=$(grep "^OPENAI_API_KEY=" ../../.env | cut -d '=' -f2-)
 
+# Load Resend API Keys manually before Maven boot
+export RESEND_API_KEY=$(grep "^RESEND_API_KEY=" ../../.env | cut -d '=' -f2-)
+export RESEND_FROM_AUTH=$(grep "^RESEND_FROM_AUTH=" ../../.env | cut -d '=' -f2-)
+export RESEND_FROM_NOTIFICATIONS=$(grep "^RESEND_FROM_NOTIFICATIONS=" ../../.env | cut -d '=' -f2-)
+export RESEND_FROM_UPDATES=$(grep "^RESEND_FROM_UPDATES=" ../../.env | cut -d '=' -f2-)
+
 # Redis Configuration
 export REDIS_HOST=$(grep "^REDIS_HOST=" ../../.env | cut -d '=' -f2-)
 export REDIS_PORT=$(grep "^REDIS_PORT=" ../../.env | cut -d '=' -f2-)
@@ -44,4 +50,4 @@ echo "⚠️  Redis port 6380 is blocked locally — using simple in-memory cach
 export CACHE_TYPE=simple
 
 # Run the application with prod profile
-./mvnw spring-boot:run -Dspring-boot.run.profiles=prod -Dspring-boot.run.jvmArguments="-Dspring.cache.type=simple"
+./mvnw spring-boot:run -Dspring-boot.run.profiles=prod -Dspring-boot.run.jvmArguments="-Dspring.cache.type=simple -Dresend.api.key=$RESEND_API_KEY -Dresend.from.auth=$RESEND_FROM_AUTH -Dresend.from.notifications=$RESEND_FROM_NOTIFICATIONS -Dresend.from.updates=$RESEND_FROM_UPDATES"

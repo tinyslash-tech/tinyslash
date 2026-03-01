@@ -21,6 +21,14 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_AUTH
+        value: auth@tinyslash.com
+      - key: RESEND_FROM_NOTIFICATIONS
+        value: notifications@tinyslash.com
+      - key: RESEND_FROM_UPDATES
+        value: updates@tinyslash.com
       - key: RAZORPAY_KEY_ID
         value: rzp_live_RWtmHyTZfva7rb
       - key: RAZORPAY_KEY_SECRET
